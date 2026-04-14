@@ -22,13 +22,22 @@ const CheckIcon = () => (
   </svg>
 );
 
-const OPTIONS: { type: PersonType; icon: React.ReactNode; label: string; desc: string }[] = [
-  { type: 'self', icon: <UserIcon />, label: 'Myself', desc: 'Assess your own symptoms' },
-  { type: 'family', icon: <UsersIcon />, label: 'Family Member', desc: 'Assess someone else\'s symptoms' },
+const OPTIONS: { type: PersonType; icon: React.ReactNode; label: { en: string; hi: string; mr: string }; desc: { en: string; hi: string; mr: string } }[] = [
+  { 
+    type: 'self', icon: <UserIcon />, 
+    label: { en: 'Myself', hi: 'मेरे लिए', mr: 'स्वतःसाठी' }, 
+    desc: { en: 'Assess your own symptoms', hi: 'अपने लक्षणों का आकलन करें', mr: 'स्वतःच्या लक्षणांचे मूल्यांकन करा' } 
+  },
+  { 
+    type: 'family', icon: <UsersIcon />, 
+    label: { en: 'Family Member', hi: 'परिवार के सदस्य', mr: 'कुटुंबातील सदस्य' }, 
+    desc: { en: 'Assess someone else\'s symptoms', hi: 'किसी और के लक्षणों का आकलन करें', mr: 'इतर सदस्याच्या लक्षणांचे मूल्यांकन करा' } 
+  },
 ];
 
 export default function PersonModal() {
-  const { personType, setPersonType, setTriageScreen, cancelTest } = useApp();
+  const { language, personType, setPersonType, setTriageScreen, cancelTest } = useApp();
+  const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
 
   return (
     <div className="modal-overlay" onClick={cancelTest}>
@@ -37,11 +46,11 @@ export default function PersonModal() {
         style={{ width: '100%', maxWidth: '420px', padding: '28px', margin: '16px', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--text-primary)', marginBottom: '5px' }}>
-          Who is this test for?
+        <h2 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '5px' }}>
+          {language === 'Hindi' ? 'यह परीक्षण किसके लिए है?' : language === 'Marathi' ? 'ही चाचणी कोणासाठी आहे?' : 'Who is this test for?'}
         </h2>
-        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginBottom: '22px' }}>
-          Sets the <code style={{ fontSize: '11.5px', background: '#F3F4F6', padding: '1px 5px', borderRadius: '4px' }}>testFor</code> parameter sent with <code style={{ fontSize: '11.5px', background: '#F3F4F6', padding: '1px 5px', borderRadius: '4px' }}>POST /api/triage/init</code>
+        <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '22px' }}>
+          {language === 'Hindi' ? 'तय करें कि आप किसका मूल्यांकन कर रहे हैं' : language === 'Marathi' ? 'तुम्ही कोणाचे मूल्यांकन करत आहात ते निवडा' : 'Determine who you are assessing today'}
         </p>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '22px' }}>
@@ -76,8 +85,8 @@ export default function PersonModal() {
                   transition: 'all 0.15s ease',
                 }}>{opt.icon}</div>
                 <div style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: sel ? '#991B1B' : 'var(--text-primary)' }}>{opt.label}</div>
-                  <div style={{ fontSize: '11.5px', color: 'var(--text-muted)', marginTop: '2px' }}>{opt.desc}</div>
+                  <div style={{ fontSize: '13.5px', fontWeight: '700', color: sel ? '#991B1B' : 'var(--text-1)' }}>{opt.label[langKey]}</div>
+                  <div style={{ fontSize: '11.5px', color: 'var(--text-4)', marginTop: '2px' }}>{opt.desc[langKey]}</div>
                 </div>
               </button>
             );
@@ -85,7 +94,9 @@ export default function PersonModal() {
         </div>
 
         <div style={{ display: 'flex', gap: '10px' }}>
-          <button id="person-cancel-btn" className="btn btn-outline" onClick={cancelTest} style={{ flex: 1, justifyContent: 'center' }}>← Back</button>
+          <button id="person-cancel-btn" className="btn btn-outline" onClick={cancelTest} style={{ flex: 1, justifyContent: 'center' }}>
+            {language === 'Hindi' ? 'पीछे' : language === 'Marathi' ? 'मागे' : 'Back'}
+          </button>
           <button
             id="person-continue-btn"
             className="btn btn-primary"
@@ -93,7 +104,7 @@ export default function PersonModal() {
             disabled={!personType}
             style={{ flex: 2, justifyContent: 'center', opacity: personType ? 1 : 0.45, cursor: personType ? 'pointer' : 'not-allowed' }}
           >
-            Start Assessment →
+            {language === 'Hindi' ? 'चाचणी शुरू करें' : language === 'Marathi' ? 'चाचणी सुरू करा' : 'Start Assessment'} →
           </button>
         </div>
       </div>

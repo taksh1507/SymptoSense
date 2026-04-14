@@ -80,7 +80,11 @@ export default function ResultsPage() {
             {language === 'Hindi' ? 'मूल्यांकन परिणाम' : language === 'Marathi' ? 'मूल्यांकन निकाल' : 'Assessment Result'}
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
-            {language === 'Hindi' ? 'रिपोर्ट जनरेट की गई:' : 'Report generated on'} {new Date().toLocaleDateString(langKey, { year: 'numeric', month: 'long', day: 'numeric' })}
+            {language === 'Hindi' 
+              ? `रिपोर्ट जनरेट की गई: ${new Date().toLocaleDateString('hi-IN', { year: 'numeric', month: 'long', day: 'numeric' })}` 
+              : language === 'Marathi'
+              ? `अहवाल तयार केला: ${new Date().toLocaleDateString('mr-IN', { year: 'numeric', month: 'long', day: 'numeric' })}`
+              : `Report generated on ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}`}
           </p>
         </div>
         <button

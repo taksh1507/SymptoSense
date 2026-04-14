@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { useApp } from '../context/AppContext';
+import { useApp, Language } from '../context/AppContext';
 
 const Icons = {
   Home: () => (
@@ -78,7 +78,7 @@ function NavLink({ id, icon, label, active, onClick }: {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { language, triageScreen, cancelTest } = useApp();
+  const { language, setLanguage, triageScreen, cancelTest } = useApp();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -187,6 +187,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         )}
       </nav>
+
+      {/* Global Language Switcher */}
+      <div style={{ padding: '4px 10px', marginBottom: '8px' }}>
+        <div style={{ display: 'flex', gap: '4px', background: '#F8FAFC', padding: '4px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+          {(['English', 'Hindi', 'Marathi'] as Language[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => setLanguage(l)}
+              style={{
+                flex: 1, padding: '7px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '7px',
+                background: language === l ? 'white' : 'transparent',
+                color: language === l ? 'var(--red)' : '#64748B',
+                border: 'none', cursor: 'pointer', transition: 'all 0.2s',
+                boxShadow: language === l ? '0 1px 3px rgba(0,0,0,0.1)' : 'none',
+              }}
+            >
+              {l === 'English' ? 'EN' : l === 'Hindi' ? 'HI' : 'MR'}
+            </button>
+          ))}
+        </div>
+      </div>
 
       {/* User section */}
       <div style={{ padding: '10px 10px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>

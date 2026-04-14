@@ -40,6 +40,7 @@ export interface AppState {
   narrative?: {
     en: string;
     hi: string;
+    mr: string;
   };
 }
 
@@ -101,9 +102,19 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const symptoms = (answers[1] || '').split(',').filter(Boolean);
       const primaryCategory = symptoms[0] || 'general';
 
-      const getRecommendation = (s: number) => {
-        if (s >= 20) return 'Seek emergency care immediately.';
-        if (s >= 10) return 'Consult your doctor within 24 hours.';
+      const getRecommendation = (s: number, l: Language | null) => {
+        if (s >= 20) {
+            if (l === 'Hindi') return 'तुरंत चिकित्सा सहायता लें।';
+            if (l === 'Marathi') return 'ताबडतोब वैद्यकीय मदत घ्या.';
+            return 'Seek emergency care immediately.';
+        }
+        if (s >= 10) {
+            if (l === 'Hindi') return '24 घंटे के भीतर अपने डॉक्टर से सलाह लें।';
+            if (l === 'Marathi') return '२४ तासांच्या आत डॉक्टरांचा सल्ला घ्या.';
+            return 'Consult your doctor within 24 hours.';
+        }
+        if (l === 'Hindi') return 'घर पर लक्षणों की निगरानी करें।';
+        if (l === 'Marathi') return 'घरीच लक्षणांचे निरीक्षण करा.';
         return 'Monitor symptoms at home. See a doctor if they worsen.';
       };
 
@@ -118,14 +129,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
         userId: userId || null,
         personName: 'Myself',
         isSelf: true,
-        language: 'en',
+        language: state.language === 'Hindi' ? 'hi' : state.language === 'Marathi' ? 'mr' : 'en',
         answers: answersArray,
         result: {
           score,
           urgency,
           factors: symptoms.map((s) => ({ id: s, label: s, score: 0, isRedFlag: false, category: 'general' })),
           primaryCategory,
-          recommendation: getRecommendation(score),
+          recommendation: getRecommendation(score, state.language),
           hasRedFlag: score >= 20,
           symptomCount: symptoms.length,
           highestSeverity: urgency,

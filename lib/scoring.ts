@@ -24,6 +24,7 @@ export interface ScoreResult {
   narrative?: {
     en: string;
     hi: string;
+    mr: string;
   };
 }
 
@@ -170,6 +171,7 @@ export function computeScore(answers: Answer[]): ScoreResult {
   const narrative = {
     en: `Based on your report of ${mainSymptom}, we've assessed your risk level as ${urgency}. Factors including your age, severity, and duration have been weighted.`,
     hi: `${mainSymptom} की आपकी रिपोर्ट के आधार पर, हमने आपके जोखिम स्तर को ${urgency === 'High' ? 'उच्च' : urgency === 'Medium' ? 'मध्यम' : 'कम'} के रूप में मूल्यांकन किया है।`,
+    mr: `${mainSymptom} च्या तुमच्या अहवालाच्या आधारावर, आम्ही तुमची जोखीम पातळी ${urgency === 'High' ? 'उच्च' : urgency === 'Medium' ? 'मध्यम' : 'सौम्य'} म्हणून मूल्यांकन केली आहे.`
   };
 
   return {
