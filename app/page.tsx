@@ -112,7 +112,7 @@ export default function LandingPage() {
             Identify potential health risks instantly. Use our weighted 8-question algorithm to understand the urgency of your symptoms—available in 3 languages.
           </p>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
+          <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
             <button
               id="hero-getstarted-btn"
               className="btn btn-primary"
@@ -290,8 +290,8 @@ export default function LandingPage() {
       </section>
 
       {/* ── Footer ── */}
-      <footer className="mobile-padding" style={{ padding: '40px 48px', background: 'var(--text-1)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '20px' }}>
+      <footer className="mobile-padding mobile-column" style={{ padding: '40px 48px', background: 'var(--text-1)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+        <div className="mobile-column" style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
                 <HeartPulse />

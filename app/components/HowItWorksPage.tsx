@@ -136,11 +136,11 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Steps */}
-      <section style={{ padding: '72px 48px', background: '#F8FAFC' }}>
+      <section className="mobile-padding" style={{ padding: '72px 48px', background: '#F8FAFC' }}>
         <div style={{ maxWidth: '860px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {STEPS.map((step, i) => (
             <div key={i} className="card" style={{ padding: '0', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'stretch', minHeight: '200px' }}>
+              <div className="mobile-column" style={{ display: 'flex', alignItems: 'stretch', minHeight: '200px' }}>
                 {/* Step number col */}
                 <div style={{
                   width: '68px', background: step.bg,
@@ -160,7 +160,7 @@ export default function HowItWorksPage() {
                 </div>
 
                 {/* Content col */}
-                <div style={{ flex: 1, padding: '24px 28px', display: 'flex', gap: '24px' }}>
+                <div className="mobile-column" style={{ flex: 1, padding: '24px 28px', display: 'flex', gap: '24px' }}>
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '12px' }}>
                       <div style={{ color: step.color }}>{step.icon}</div>
@@ -178,7 +178,7 @@ export default function HowItWorksPage() {
                   </div>
 
                   {/* Code block */}
-                  <div style={{ width: '260px', flexShrink: 0 }}>
+                  <div className="hide-mobile" style={{ width: '260px', flexShrink: 0 }}>
                     <div className="code-block" style={{ height: '100%', fontSize: '10.5px', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                       {step.code}
                     </div>
@@ -191,7 +191,7 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Scoring formula deep-dive */}
-      <section style={{ padding: '72px 48px', background: 'white' }}>
+      <section className="mobile-padding" style={{ padding: '72px 48px', background: 'white' }}>
         <div style={{ maxWidth: '860px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '44px' }}>
             <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#E53E3E', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: '10px' }}>Risk Scoring</div>
@@ -201,7 +201,7 @@ export default function HowItWorksPage() {
             <p style={{ fontSize: '15px', color: '#4A5568' }}>The algorithm is transparent and deterministic — no black box.</p>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             {/* Weights table */}
             <div className="card" style={{ padding: '22px 24px' }}>
               <h3 style={{ fontSize: '14px', fontWeight: '700', color: '#1A202C', marginBottom: '14px' }}>Symptom Weights</h3>
@@ -290,9 +290,9 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '24px 48px', background: '#1A202C', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <footer className="mobile-padding mobile-column" style={{ padding: '24px 48px', background: '#1A202C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
         <span style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>Sympto<span style={{ color: '#FC8181' }}>Sense</span> <span style={{ color: '#4A5568', fontWeight: '400' }}>· v1.0.4</span></span>
-        <span style={{ fontSize: '12px', color: '#4A5568' }}>⚠️ Decision support only — not a medical diagnosis</span>
+        <span style={{ fontSize: '12px', color: '#4A5568', textAlign: 'center' }}>⚠️ Decision support only — not a medical diagnosis</span>
       </footer>
     </div>
   );

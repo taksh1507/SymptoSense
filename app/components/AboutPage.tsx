@@ -53,7 +53,7 @@ export default function AboutPage() {
       <PublicNav activeLink="about" />
 
       {/* Hero */}
-      <section style={{
+      <section className="mobile-padding" style={{
         padding: '64px 48px 56px',
         background: 'linear-gradient(160deg, #FFF5F5 0%, white 60%)',
         borderBottom: '1px solid #F1F5F9',
@@ -77,8 +77,8 @@ export default function AboutPage() {
       </section>
 
       {/* Mission */}
-      <section style={{ padding: '64px 48px', background: 'white' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
+      <section className="mobile-padding" style={{ padding: '64px 48px', background: 'white' }}>
+        <div className="mobile-grid-1" style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '60px', alignItems: 'center' }}>
           <div>
             <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#E53E3E', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: '10px' }}>Our Mission</div>
             <h2 style={{ fontSize: '30px', fontWeight: '800', color: '#1A202C', letterSpacing: '-0.6px', lineHeight: '1.25', marginBottom: '16px' }}>
@@ -99,7 +99,7 @@ export default function AboutPage() {
           </div>
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
             {[
               { num: '8', label: 'Adaptive questions', sub: 'per assessment' },
               { num: '3', label: 'Languages', sub: 'EN · हिन्दी · मराठी' },
@@ -122,7 +122,7 @@ export default function AboutPage() {
       </section>
 
       {/* Values */}
-      <section style={{ padding: '64px 48px', background: '#F8FAFC' }}>
+      <section className="mobile-padding" style={{ padding: '64px 48px', background: '#F8FAFC' }}>
         <div style={{ maxWidth: '900px', margin: '0 auto' }}>
           <div style={{ textAlign: 'center', marginBottom: '44px' }}>
             <div style={{ fontSize: '11.5px', fontWeight: '700', color: '#E53E3E', letterSpacing: '0.09em', textTransform: 'uppercase', marginBottom: '10px' }}>Our Values</div>
@@ -130,7 +130,7 @@ export default function AboutPage() {
               What we stand for
             </h2>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
             {VALUES.map((v, i) => (
               <div key={i} className="card" style={{ padding: '24px 26px', display: 'flex', gap: '18px', alignItems: 'flex-start' }}>
                 <div style={{
@@ -161,9 +161,9 @@ export default function AboutPage() {
             </p>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          <div className="mobile-grid-1" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
             {TECH_STACK.map((t, i) => (
-              <div key={i} style={{
+              <div key={i} className="mobile-column" style={{
                 display: 'flex', alignItems: 'center', gap: '20px',
                 padding: '18px 22px', borderRadius: '12px',
                 border: '1px solid #E2E8F0', background: 'white',
@@ -181,7 +181,7 @@ export default function AboutPage() {
                   <div style={{ fontSize: '14.5px', fontWeight: '700', color: '#1A202C' }}>{t.tech}</div>
                   <div style={{ fontSize: '12.5px', color: '#718096', marginTop: '2px' }}>{t.detail}</div>
                 </div>
-                <div style={{ background: t.bg, color: t.color, padding: '4px 12px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '600', whiteSpace: 'nowrap' }}>
+                <div className="hide-mobile" style={{ background: t.bg, color: t.color, padding: '4px 12px', borderRadius: '999px', fontSize: '11.5px', fontWeight: '600', whiteSpace: 'nowrap' }}>
                   {t.layer}
                 </div>
               </div>
@@ -211,9 +211,9 @@ export default function AboutPage() {
       </section>
 
       {/* Footer */}
-      <footer style={{ padding: '24px 48px', background: '#1A202C', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+      <footer className="mobile-padding mobile-column" style={{ padding: '24px 48px', background: '#1A202C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
         <span style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>Sympto<span style={{ color: '#FC8181' }}>Sense</span> <span style={{ color: '#4A5568', fontWeight: '400' }}>· v1.0.4</span></span>
-        <span style={{ fontSize: '12px', color: '#4A5568' }}>⚠️ Decision support only — not a medical diagnosis</span>
+        <span style={{ fontSize: '12px', color: '#4A5568', textAlign: 'center' }}>⚠️ Decision support only — not a medical diagnosis</span>
       </footer>
     </div>
   );
