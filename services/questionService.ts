@@ -108,6 +108,11 @@ export async function fetchAIQuestion(
   const fallback = FALLBACK_QUESTIONS[context.currentAiStep] ?? FALLBACK_QUESTIONS[0];
 
   try {
+    // Small delay to avoid rate limiting on rapid successive calls
+    if (context.currentAiStep > 0) {
+      await new Promise((r) => setTimeout(r, 500));
+    }
+
     const response = await fetch("/api/question-gen", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

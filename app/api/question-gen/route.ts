@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 import { QuestionContext, QuestionStep } from "../../../components/ai-question-engine/types";
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
+const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
+const GROQ_MODEL = "llama-3.3-70b-versatile"; // Fast, high quality, generous free tier
 
 export async function POST(req: Request) {
   try {
-    if (!GEMINI_API_KEY) {
-      throw new Error("Missing GEMINI_API_KEY in environment");
+    if (!GROQ_API_KEY) {
+      throw new Error("Missing GROQ_API_KEY in environment");
     }
 
     const context: QuestionContext = await req.json();
@@ -26,27 +27,23 @@ export async function POST(req: Request) {
       : language === "mr" ? "Marathi (Devanagari script)"
       : "English";
 
-    const systemPrompt = `You are a medical triage assistant helping assess a patient's symptoms.
+    const systemMessage = `You are a medical triage assistant. You ONLY respond with valid JSON. No explanations, no markdown, no extra text — just the JSON object.`;
 
-PATIENT CONTEXT:
+    const userMessage = `Generate ONE medical follow-up question for a patient with these details:
 - Age group: ${age || "adult"}
 - Reported symptoms: ${symptomsStr}
-- Previous follow-up answers: ${previousAnswersStr}
-- Follow-up question number: ${currentAiStep + 1} of 6
+- Previous answers: ${previousAnswersStr}
+- Question number: ${currentAiStep + 1} of 6
 - Language: ${langName}
 
-Generate ONE medically relevant follow-up question to better understand the patient's condition.
+Rules:
+- Ask about: onset, location, associated symptoms, triggers, or daily impact
+- Do NOT diagnose or give risk scores
+- Do NOT repeat already-answered topics
+- Use "mcq" type with 3-4 options
+- All text must appear in English (en), Hindi (hi), and Marathi (mr)
 
-STRICT RULES:
-1. Return ONLY valid JSON, no extra text.
-2. Use "mcq" type with exactly 3-4 options.
-3. Each option needs: label (en, hi, mr), value (English snake_case), emoji.
-4. Question must be in all 3 languages: English, Hindi (Devanagari), Marathi (Devanagari).
-5. Do NOT repeat questions already answered.
-6. Do NOT provide diagnosis or risk scores.
-7. Focus on: onset, location, associated symptoms, triggers, or impact on daily life.
-
-REQUIRED JSON FORMAT:
+Respond with ONLY this JSON structure:
 {
   "id": "ai_q${currentAiStep + 1}",
   "key": "ai_q${currentAiStep + 1}",
@@ -63,35 +60,39 @@ REQUIRED JSON FORMAT:
   ]
 }`;
 
-    const response = await fetch(`${GEMINI_URL}?key=${GEMINI_API_KEY}`, {
+    const response = await fetch(GROQ_URL, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${GROQ_API_KEY}`,
+      },
       body: JSON.stringify({
-        contents: [{ parts: [{ text: systemPrompt }] }],
-        generationConfig: {
-          response_mime_type: "application/json",
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        },
+        model: GROQ_MODEL,
+        messages: [
+          { role: "system", content: systemMessage },
+          { role: "user", content: userMessage },
+        ],
+        temperature: 0.7,
+        max_tokens: 1024,
+        response_format: { type: "json_object" },
       }),
     });
 
     if (!response.ok) {
       const err = await response.text();
-      console.error("[Gemini API Error]", response.status, err);
-      throw new Error(`Gemini API failed: ${response.status}`);
+      console.error("[Groq API Error]", response.status, err);
+      throw new Error(`Groq API failed: ${response.status}`);
     }
 
     const data = await response.json();
-    const resultText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    const resultText = data.choices?.[0]?.message?.content;
 
-    if (!resultText) throw new Error("Empty response from Gemini");
+    if (!resultText) throw new Error("Empty response from Groq");
 
     const question: QuestionStep = JSON.parse(resultText);
 
-    // Validate required fields
     if (!question?.question?.en || !question?.options?.length) {
-      throw new Error("Invalid question structure from Gemini");
+      throw new Error("Invalid question structure from Groq");
     }
 
     // Ensure mr field exists
@@ -105,7 +106,7 @@ REQUIRED JSON FORMAT:
       },
     }));
 
-    console.log(`[QuestionGen] AI question generated for step ${currentAiStep + 1}: "${question.question.en}"`);
+    console.log(`[QuestionGen] Groq question for step ${currentAiStep + 1}: "${question.question.en}"`);
     return NextResponse.json(question);
 
   } catch (error) {

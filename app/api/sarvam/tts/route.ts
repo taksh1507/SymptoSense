@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
         inputs: [text],
         target_language_code: language, // e.g. "hi-IN" | "en-IN"
         speaker: "anushka",
-        model: "bulbul:v1",
+        model: "bulbul:v2",
       }),
     });
 
