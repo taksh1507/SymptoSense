@@ -31,11 +31,13 @@ interface SpeechRecognitionStatic {
 const SARVAM_LANG_CODE: Record<Language, string> = {
   en: "en-IN",
   hi: "hi-IN",
+  mr: "mr-IN",
 };
 
 const BROWSER_LANG_CODE: Record<Language, string> = {
   en: "en-US",
   hi: "hi-IN",
+  mr: "mr-IN",
 };
 
 export interface UseSarvamSTTReturn {

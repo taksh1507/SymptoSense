@@ -17,6 +17,7 @@ import type { Language } from "./types";
 const SARVAM_LANG_CODE: Record<Language, string> = {
   en: "en-IN",
   hi: "hi-IN",
+  mr: "mr-IN",
 };
 
 export interface UseSarvamTranslateReturn {

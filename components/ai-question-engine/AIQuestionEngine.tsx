@@ -1,288 +1,268 @@
-// ============================================================
-// Module: AIQuestionEngine.tsx
-// Pure UI component — consumes useQuestionEngine hook.
-// Optimized for production-ready, plug-and-play integration.
-// ============================================================
-
 "use client";
 
 import React from "react";
 import { useQuestionEngine } from "./useQuestionEngine";
 import type { EngineProps } from "./types";
 
-// ---- Sub-components ----
-
-function ProgressBar({
-  current,
-  total,
-  progress,
-}: {
-  current: number;
-  total: number;
-  progress: number;
-}) {
+// ── Progress Bar ──────────────────────────────────────────────
+function ProgressBar({ step, total, progress }: { step: number; total: number; progress: number }) {
   return (
-    <div className="w-full space-y-2">
-      <div className="flex justify-between items-center text-sm">
-        <span className="text-indigo-300 font-medium tracking-wide">
-          Step {current + 1} of {total}
+    <div style={{ width: "100%", marginBottom: "20px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          Question {step + 1} of {total}
         </span>
-        <span className="text-indigo-400 font-bold">{progress}% completion</span>
+        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--red)" }}>{progress}%</span>
       </div>
-      <div className="w-full bg-white/10 rounded-full h-2 overflow-hidden shadow-inner">
-        <div
-          className="bg-gradient-to-r from-indigo-500 to-violet-500 h-full rounded-full transition-all duration-700 ease-[cubic-bezier(0.65,0,0.35,1)]"
-          style={{ width: `${progress}%` }}
-        />
+      <div style={{ width: "100%", height: "6px", background: "var(--border)", borderRadius: "999px", overflow: "hidden" }}>
+        <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #B91C1C, #7F1D1D)", borderRadius: "999px", transition: "width 0.5s ease" }} />
       </div>
     </div>
   );
 }
 
-function MuteToggle({ isMuted, onToggle }: { isMuted: boolean; onToggle: () => void }) {
+// ── Option Button ─────────────────────────────────────────────
+function OptionButton({
+  label, emoji, isSelected, onClick, disabled,
+}: {
+  label: string; emoji: string; isSelected: boolean; onClick: () => void; disabled: boolean;
+}) {
   return (
     <button
-      onClick={onToggle}
-      className={`flex items-center justify-center w-10 h-10 rounded-full border border-white/20 transition-all duration-200 hover:scale-110 active:scale-90 shadow-lg backdrop-blur-md ${
-        isMuted ? "bg-red-500/20 text-red-200" : "bg-white/10 text-white"
-      }`}
-      aria-label={isMuted ? "Unmute audio" : "Mute audio"}
+      onClick={onClick}
+      disabled={disabled}
+      style={{
+        display: "flex", alignItems: "center", gap: "12px",
+        padding: "16px 18px", borderRadius: "12px", width: "100%", textAlign: "left",
+        border: isSelected ? "2px solid var(--red)" : "1.5px solid var(--border)",
+        background: isSelected ? "var(--red-light)" : "white",
+        cursor: disabled ? "not-allowed" : "pointer",
+        fontFamily: "inherit", transition: "all 0.15s ease",
+        transform: isSelected ? "scale(1.01)" : "scale(1)",
+        boxShadow: isSelected ? "0 4px 12px rgba(185,28,28,0.15)" : "none",
+        opacity: disabled ? 0.6 : 1,
+        position: "relative",
+      }}
     >
-      <span className="text-lg">{isMuted ? "🔇" : "🔊"}</span>
-    </button>
-  );
-}
-
-function LanguageToggle({ language, onToggle }: { language: "en" | "hi"; onToggle: () => void }) {
-  return (
-    <button
-      onClick={onToggle}
-      className="flex items-center gap-2 px-4 py-2 rounded-full border border-white/20 bg-white/10 hover:bg-white/20 text-white text-xs font-bold transition-all duration-200 hover:scale-105 backdrop-blur-md shadow-lg"
-    >
-      <span className="text-base">🌐</span>
-      <span className={language === "en" ? "text-indigo-300" : "text-white/40"}>EN</span>
-      <span className="text-white/20">|</span>
-      <span className={language === "hi" ? "text-indigo-300" : "text-white/40"}>HI</span>
-    </button>
-  );
-}
-
-function QuestionCard({ text, isSpeaking, onReplay }: { text: string; isSpeaking: boolean; onReplay: () => void }) {
-  return (
-    <div className="relative w-full rounded-2xl bg-white/5 border border-white/10 p-6 space-y-4 shadow-2xl backdrop-blur-sm">
-      {isSpeaking && (
-        <div className="absolute top-4 right-4 flex items-center gap-1.5 h-6">
-          {[0, 1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="w-1.5 bg-indigo-400 rounded-full animate-pulse"
-              style={{
-                height: `${40 + Math.sin(i) * 30}%`,
-                animationDelay: `${i * 0.1}s`,
-              }}
-            />
-          ))}
+      <span style={{ fontSize: "24px", flexShrink: 0 }}>{emoji}</span>
+      <span style={{ fontSize: "14px", fontWeight: 600, color: isSelected ? "var(--red)" : "var(--text-2)", flex: 1 }}>
+        {label}
+      </span>
+      {isSelected && (
+        <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
         </div>
       )}
-      <p className="text-white text-xl font-bold leading-tight pr-14 select-none">
-        {text}
-      </p>
-      <button
-        onClick={onReplay}
-        disabled={isSpeaking}
-        className="flex items-center gap-2 text-indigo-300 hover:text-indigo-100 text-xs font-bold transition-all disabled:opacity-30 uppercase tracking-widest"
-      >
-        <span>🔊 Replay Voice</span>
-      </button>
-    </div>
+    </button>
   );
 }
 
-function OptionGrid({
-  options,
-  selectedValue,
-  language,
-  onSelect,
-  disabled,
-}: {
-  options: any[];
-  selectedValue: string | null;
-  language: "en" | "hi";
-  onSelect: (value: string) => void;
-  disabled: boolean;
-}) {
-  return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
-      {options.map((option, index) => {
-        const isSelected = selectedValue === option.value;
-        const themes: Record<string, string> = {
-          mild: isSelected ? "bg-emerald-600 border-emerald-400 shadow-emerald-900/40" : "hover:border-emerald-500/50 bg-emerald-500/5",
-          moderate: isSelected ? "bg-amber-600 border-amber-400 shadow-amber-900/40" : "hover:border-amber-500/50 bg-amber-500/5",
-          severe: isSelected ? "bg-red-600 border-red-400 shadow-red-900/30" : "hover:border-red-500/50 bg-red-500/5",
-        };
-        const themeClass = themes[option.value] || (isSelected ? "bg-indigo-600 border-indigo-400" : "bg-white/5 border-white/10 hover:bg-white/10");
+// ── Main Component ────────────────────────────────────────────
+export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel }: EngineProps) {
+  const engine = useQuestionEngine({ defaultLanguage, onComplete, onCancel });
 
-        return (
-          <button
-            key={option.value}
-            onClick={() => onSelect(option.value)}
-            disabled={disabled}
-            className={`group relative flex items-center gap-4 px-5 py-4 rounded-2xl border text-left font-bold transition-all duration-300 ${
-              disabled ? "opacity-50 cursor-not-allowed" : "hover:scale-[1.03] active:scale-95"
-            } ${themeClass} ${isSelected ? "text-white shadow-xl scale-[1.03]" : "text-white/80"}`}
-          >
-            <span className={`flex-shrink-0 flex items-center justify-center w-6 h-6 rounded-full text-[10px] font-black border ${
-              isSelected ? "bg-white/20 border-white/40" : "bg-white/5 border-white/10 text-white/40"
-            }`}>
-              {index + 1}
-            </span>
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">{option.emoji}</span>
-              <span className="text-base tracking-tight">{option.label[language]}</span>
-            </div>
-            {isSelected && <span className="ml-auto animate-in zoom-in duration-300">✓</span>}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
+  const {
+    currentQuestion, currentStep, totalSteps, progress, stage,
+    selectedOptions, customInput, customInputError, showCustomInput,
+    language, toggleLanguage, isSpeaking, isRecording, isLoading, isComplete,
+    voiceError, isMuted, toggleMute,
+    handleOptionToggle, handleCustomInputChange, handleNext, handleVoiceToggle,
+    replayQuestion,
+  } = engine;
 
-function MicButton({ isRecording, isLoading, onToggle }: { isRecording: boolean; isLoading: boolean; onToggle: () => void }) {
-  return (
-    <div className="flex flex-col items-center gap-4 py-4">
-      <button
-        onClick={onToggle}
-        disabled={isLoading}
-        className={`relative flex items-center justify-center w-20 h-20 rounded-full transition-all duration-500 shadow-2xl ${
-          isLoading ? "opacity-40" : "hover:scale-110 active:scale-90"
-        } ${isRecording ? "bg-red-500 ring-8 ring-red-500/20" : "bg-indigo-600 hover:bg-indigo-500"}`}
-      >
-        {isRecording ? (
-          <div className="flex items-center gap-1 h-8">
-            {[1, 2, 3, 4].map(i => (
-              <div key={i} className="w-1.5 bg-white rounded-full animate-bounce" style={{ height: '100%', animationDelay: `${i*0.1}s` }} />
-            ))}
-          </div>
-        ) : (
-          <span className="text-3xl">🎤</span>
-        )}
-      </button>
-      <span className="text-xs font-black uppercase tracking-[0.2em] text-white/40">
-        {isLoading ? "Processing AI..." : isRecording ? "Stop Talking" : "Hold to Speak"}
-      </span>
-    </div>
-  );
-}
+  const stageLabel: Record<string, { en: string; hi: string; mr: string }> = {
+    q1_age:         { en: "Demographics", hi: "जनसांख्यिकी", mr: "लोकसंख्याशास्त्र" },
+    q2_symptoms:    { en: "Symptoms", hi: "लक्षण", mr: "लक्षणे" },
+    ai_questions:   { en: "Follow-up", hi: "अनुवर्ती", mr: "पाठपुरावा" },
+    q9_duration:    { en: "Duration", hi: "अवधि", mr: "कालावधी" },
+    q10_severity:   { en: "Severity", hi: "गंभीरता", mr: "तीव्रता" },
+    q11_medications:{ en: "Medical History", hi: "चिकित्सा इतिहास", mr: "वैद्यकीय इतिहास" },
+  };
 
-// ---- Main Component ----
+  const canProceed =
+    stage === "q2_symptoms" || stage === "q11_medications"
+      ? selectedOptions.length > 0 || customInput.trim().length >= 3
+      : selectedOptions.length > 0;
 
-export const AIQuestionEngine = ({ 
-  initialSymptom, 
-  defaultLanguage = "en", 
-  onComplete 
-}: EngineProps) => {
-  const engine = useQuestionEngine({ 
-    initialSymptom, 
-    defaultLanguage, 
-    onComplete 
-  });
-
-  if (engine.isComplete) {
+  if (isComplete) {
     return (
-      <div className="w-full max-w-2xl mx-auto p-16 text-center space-y-6 bg-gray-900/50 rounded-[2.5rem] border border-emerald-500/20 backdrop-blur-xl shadow-2xl animate-in zoom-in duration-500">
-        <div className="w-20 h-20 bg-emerald-500/20 rounded-full mx-auto flex items-center justify-center text-emerald-400 text-4xl animate-bounce">
-          ✓
-        </div>
-        <div className="space-y-2">
-          <h3 className="text-2xl font-black text-white">Assessment Finalized</h3>
-          <p className="text-white/40 text-sm font-medium">Your data is ready for the risk scoring engine.</p>
-        </div>
-        <button aria-label="Reset" onClick={engine.reset} className="text-indigo-400 text-xs font-black uppercase tracking-widest hover:text-indigo-300 transition-colors">
-          Restart Assessment
-        </button>
+      <div style={{ padding: "60px 32px", textAlign: "center" }}>
+        <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
+        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "var(--text-1)" }}>
+          {language === "hi" ? "मूल्यांकन पूर्ण" : language === "mr" ? "मूल्यांकन पूर्ण" : "Assessment Complete"}
+        </h3>
+        <p style={{ color: "var(--text-3)", marginTop: "8px" }}>
+          {language === "hi" ? "आपका डेटा विश्लेषण किया जा रहा है..." : language === "mr" ? "तुमचा डेटा विश्लेषण केला जात आहे..." : "Analyzing your data..."}
+        </p>
       </div>
     );
   }
 
   return (
-    <div className="w-full max-w-2xl mx-auto font-sans">
-      <div className="relative rounded-[2.5rem] overflow-hidden shadow-[0_32px_64px_-16px_rgba(0,0,0,0.6)] border border-white/10">
-        <div className="absolute inset-0 bg-gradient-to-br from-indigo-950 via-gray-900 to-black" />
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-500/10 rounded-full blur-3xl" />
-        
-        <div className="relative z-10 p-10 space-y-8">
-          {/* Header */}
-          <div className="flex items-center justify-between border-b border-white/5 pb-6">
-            <div className="space-y-1">
-              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400/80">
-                SymptoSense Intelligence
-              </span>
-              <h1 className="text-2xl font-black text-white capitalize tracking-tight">
-                {initialSymptom}
-              </h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <MuteToggle isMuted={engine.isMuted} onToggle={engine.toggleMute} />
-              <LanguageToggle language={engine.language} onToggle={engine.toggleLanguage} />
-            </div>
-          </div>
-
-          <ProgressBar 
-            current={engine.currentStep} 
-            total={engine.totalSteps} 
-            progress={engine.progress} 
-          />
-
-          {engine.isLoading ? (
-            <div className="py-24 flex flex-col items-center justify-center space-y-6">
-              <div className="w-16 h-16 rounded-full border-[6px] border-indigo-500/10 border-t-indigo-500 animate-spin" />
-              <div className="text-center space-y-1">
-                <p className="text-white font-black text-lg">AI is thinking...</p>
-                <p className="text-white/30 text-[10px] uppercase tracking-widest">Bridging medical context</p>
-              </div>
-            </div>
-          ) : engine.currentQuestion ? (
-            <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-              <QuestionCard 
-                text={engine.currentQuestion.question[engine.language]} 
-                isSpeaking={engine.isSpeaking} 
-                onReplay={engine.replayQuestion} 
-              />
-              <OptionGrid 
-                options={engine.currentQuestion.options} 
-                selectedValue={engine.selectedOption} 
-                language={engine.language} 
-                onSelect={engine.handleAnswer} 
-                disabled={engine.isLoading || engine.isSpeaking} 
-              />
-            </div>
-          ) : null}
-
-          <div className="relative py-4">
-            <div className="absolute inset-x-0 top-1/2 h-px bg-white/5" />
-            <span className="relative z-10 mx-auto block w-max bg-[#0a0a10] px-4 text-[10px] font-black uppercase tracking-[0.4em] text-white/20">
-              Voice Interface
-            </span>
-          </div>
-
-          <MicButton 
-            isRecording={engine.isRecording} 
-            isLoading={engine.isLoading} 
-            onToggle={engine.handleVoiceToggle} 
-          />
-
-          {engine.voiceError && (
-            <div className="px-6 py-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-amber-400 text-xs text-center font-bold italic animate-pulse">
-                {engine.voiceError}
-              </p>
-            </div>
-          )}
+    <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
+        <div>
+          <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--red)", textTransform: "uppercase", letterSpacing: "0.08em", background: "var(--red-light)", padding: "3px 10px", borderRadius: "999px", border: "1px solid var(--red-border)" }}>
+            {stageLabel[stage]?.[language] ?? stage}
+          </span>
+        </div>
+        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          {/* Mute */}
+          <button onClick={toggleMute} style={{ background: "none", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "14px" }}>
+            {isMuted ? "🔇" : "🔊"}
+          </button>
+          {/* Language toggle */}
+          <button onClick={toggleLanguage} style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>
+            🌐 {language === "en" ? "EN" : language === "hi" ? "HI" : "MR"}
+          </button>
+          {/* Cancel */}
+          <button onClick={onCancel} style={{ background: "none", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px", color: "var(--text-3)", fontFamily: "inherit" }}>
+            ✕ {language === "hi" ? "रद्द" : language === "mr" ? "रद्द" : "Cancel"}
+          </button>
         </div>
       </div>
+
+      <ProgressBar step={currentStep} total={totalSteps} progress={progress} />
+
+      {/* Question Card */}
+      <div className="card" style={{ padding: "28px", marginBottom: "16px" }}>
+        {isLoading ? (
+          <div style={{ textAlign: "center", padding: "40px 0" }}>
+            <div style={{ width: "36px", height: "36px", border: "3px solid var(--border)", borderTopColor: "var(--red)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
+            <p style={{ color: "var(--text-3)", fontSize: "14px" }}>
+              {language === "hi" ? "AI प्रश्न तैयार कर रहा है..." : language === "mr" ? "AI प्रश्न तयार करत आहे..." : "AI is generating your question..."}
+            </p>
+          </div>
+        ) : currentQuestion ? (
+          <>
+            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
+              <h2 style={{ fontSize: "18px", fontWeight: 800, color: "var(--text-1)", lineHeight: 1.4, flex: 1, paddingRight: "12px" }}>
+                {currentQuestion.question[language]}
+              </h2>
+              {isSpeaking && (
+                <div style={{ display: "flex", gap: "3px", alignItems: "center", flexShrink: 0 }}>
+                  {[1, 2, 3].map((i) => (
+                    <div key={i} style={{ width: "3px", height: "16px", background: "var(--red)", borderRadius: "2px", animation: "pulse 0.8s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {currentQuestion.type === "multiselect" && (
+              <p style={{ fontSize: "12px", color: "var(--text-4)", marginBottom: "16px", fontStyle: "italic" }}>
+                {language === "hi" ? "एक या अधिक चुनें" : language === "mr" ? "एक किंवा अधिक निवडा" : "Select one or more"}
+              </p>
+            )}
+
+            {/* Options */}
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              {currentQuestion.options.map((opt) => (
+                <OptionButton
+                  key={opt.value}
+                  label={opt.label[language]}
+                  emoji={opt.emoji}
+                  isSelected={selectedOptions.includes(opt.value)}
+                  onClick={() => handleOptionToggle(opt.value)}
+                  disabled={isLoading}
+                />
+              ))}
+
+              {/* "Something else" option */}
+              {currentQuestion.allowOther && (
+                <OptionButton
+                  label={language === "hi" ? "कुछ और..." : language === "mr" ? "इतर काही..." : "Something else..."}
+                  emoji="✏️"
+                  isSelected={showCustomInput}
+                  onClick={() => handleOptionToggle("other")}
+                  disabled={isLoading}
+                />
+              )}
+            </div>
+
+            {/* Custom input field */}
+            {showCustomInput && (
+              <div style={{ marginTop: "12px" }}>
+                <input
+                  type="text"
+                  value={customInput}
+                  onChange={(e) => handleCustomInputChange(e.target.value)}
+                  placeholder={
+                    language === "hi" ? "अपना लक्षण या स्थिति लिखें..."
+                    : language === "mr" ? "तुमचे लक्षण किंवा स्थिती लिहा..."
+                    : "Describe your symptom or condition..."
+                  }
+                  className="input"
+                  style={{ width: "100%", borderColor: customInputError ? "#EF4444" : undefined }}
+                />
+                {customInputError && (
+                  <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px", fontWeight: 600 }}>
+                    ⚠️ {customInputError}
+                  </p>
+                )}
+              </div>
+            )}
+          </>
+        ) : null}
+      </div>
+
+      {/* Voice + Next */}
+      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+        {/* Voice button */}
+        <button
+          onClick={handleVoiceToggle}
+          disabled={isLoading}
+          style={{
+            width: "52px", height: "52px", borderRadius: "50%", flexShrink: 0,
+            background: isRecording ? "#EF4444" : "var(--bg)",
+            border: `2px solid ${isRecording ? "#EF4444" : "var(--border)"}`,
+            cursor: isLoading ? "not-allowed" : "pointer",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: "20px", transition: "all 0.2s",
+          }}
+          title={isRecording ? "Stop recording" : "Speak your answer"}
+        >
+          {isRecording ? "⏹️" : "🎤"}
+        </button>
+
+        {/* Replay */}
+        <button
+          onClick={replayQuestion}
+          disabled={isLoading || isSpeaking}
+          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", opacity: isLoading || isSpeaking ? 0.4 : 1 }}
+          title="Replay question"
+        >
+          🔁
+        </button>
+
+        {/* Next */}
+        <button
+          onClick={handleNext}
+          disabled={!canProceed || isLoading}
+          className="btn btn-primary"
+          style={{ flex: 1, padding: "14px", fontSize: "15px", fontWeight: 700, opacity: !canProceed || isLoading ? 0.5 : 1, cursor: !canProceed || isLoading ? "not-allowed" : "pointer" }}
+        >
+          {stage === "q11_medications"
+            ? (language === "hi" ? "परिणाम देखें →" : language === "mr" ? "निकाल पहा →" : "See Results →")
+            : (language === "hi" ? "अगला →" : language === "mr" ? "पुढे →" : "Next →")}
+        </button>
+      </div>
+
+      {/* Voice error */}
+      {voiceError && (
+        <div style={{ marginTop: "12px", padding: "10px 14px", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: "8px", fontSize: "13px", color: "#C2410C" }}>
+          ⚠️ {voiceError}
+        </div>
+      )}
+
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
+      `}</style>
     </div>
   );
-};
+}
 
 export default AIQuestionEngine;

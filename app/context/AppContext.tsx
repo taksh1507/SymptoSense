@@ -1,19 +1,10 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { computeScore } from '@/lib/scoring';
-
-const QUESTIONS_LIST = [
-  { id: 'q_age' },
-  { id: 'q_start' },
-  { id: 'q_severity' },
-  { id: 'q_duration' },
-  { id: 'q_progression' },
-  { id: 'q_critical' },
-  { id: 'q_history' },
-  { id: 'q_activity' },
-];
+import { calculateRisk } from '@/lib/ai-engine/scoring/engine';
+import type { SurveyResult } from '@/lib/ai-engine/scoring/types';
+import type { FinalAssessmentPayload } from '@/components/ai-question-engine/types';
 
 // Dashboard-level screens only (triage flow)
 export type TriageScreen =
@@ -53,12 +44,14 @@ interface AppContextType extends AppState {
   goToNextQuestion: () => void;
   startTest: () => void;
   cancelTest: () => void;
+  handleAIComplete: (data: FinalAssessmentPayload) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const { data: session } = useSession();
+  const isSavingRef = useRef(false);
   const [state, setState] = useState<AppState>({
     triageScreen: 'dashboard',
     language: null,
@@ -104,14 +97,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
       const getRecommendation = (s: number, l: Language | null) => {
         if (s >= 20) {
-            if (l === 'Hindi') return 'तुरंत चिकित्सा सहायता लें।';
-            if (l === 'Marathi') return 'ताबडतोब वैद्यकीय मदत घ्या.';
-            return 'Seek emergency care immediately.';
+          if (l === 'Hindi') return 'तुरंत चिकित्सा सहायता लें।';
+          if (l === 'Marathi') return 'ताबडतोब वैद्यकीय मदत घ्या.';
+          return 'Seek emergency care immediately.';
         }
         if (s >= 10) {
-            if (l === 'Hindi') return '24 घंटे के भीतर अपने डॉक्टर से सलाह लें।';
-            if (l === 'Marathi') return '२४ तासांच्या आत डॉक्टरांचा सल्ला घ्या.';
-            return 'Consult your doctor within 24 hours.';
+          if (l === 'Hindi') return '24 घंटे के भीतर अपने डॉक्टर से सलाह लें।';
+          if (l === 'Marathi') return '२४ तासांच्या आत डॉक्टरांचा सल्ला घ्या.';
+          return 'Consult your doctor within 24 hours.';
         }
         if (l === 'Hindi') return 'घर पर लक्षणों की निगरानी करें।';
         if (l === 'Marathi') return 'घरीच लक्षणांचे निरीक्षण करा.';
@@ -163,35 +156,57 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const goToNextQuestion = () => {
+    // Legacy function kept for compatibility — AI engine handles the flow now
     setState((s) => {
       const next = s.currentQuestion + 1;
       if (next >= s.totalQuestions) {
-        // ── CALCULATE RISK SCORE (Refined) ──
-        const formattedAnswers = Object.entries(s.selectedAnswers).map(([idx, val]) => ({
-          questionId: QUESTIONS_LIST[Number(idx)]?.id || `q${idx}`,
-          answer: val,
-          timestamp: Date.now(),
-        }));
-
-        const result = computeScore(formattedAnswers);
-
-        return {
-          ...s,
-          triageScreen: 'loading',
-          riskScore: result.score,
-          riskLevel: result.urgency as RiskLevel,
-          narrative: result.narrative,
-        };
+        return { ...s, triageScreen: 'results' };
       }
       return { ...s, currentQuestion: next };
     });
+  };
+
+  // Called when AIQuestionEngine completes
+  const handleAIComplete = (data: FinalAssessmentPayload) => {
+    const primarySymptom = data.symptoms?.[0] || data.customSymptom || 'general';
+    const additionalSymptom = Object.values(data.aiAnswers || {})[0] || 'none';
+
+    const input: SurveyResult = {
+      symptom: primarySymptom,
+      severity: data.severity || 'mild',
+      duration: data.duration || '< 1 day',
+      additional: additionalSymptom,
+      history: data.medications?.filter(m => m !== 'none')[0] || 'none',
+    };
+
+    const result = calculateRisk(input);
+
+    setState((s) => ({
+      ...s,
+      triageScreen: 'loading',
+      riskScore: result.score,
+      riskLevel: result.urgency as RiskLevel,
+      narrative: result.narrative
+        ? { en: result.narrative.en, hi: result.narrative.hi, mr: result.narrative.hi }
+        : undefined,
+    }));
 
     setTimeout(() => {
       setState((s) => {
         if (s.triageScreen === 'loading') {
-          // Save to database (fire and forget)
-          const userId = (session?.user as any)?.id;
-          saveTestToDatabase(s.selectedAnswers, s.riskScore, s.riskLevel, userId);
+          if (!isSavingRef.current) {
+            isSavingRef.current = true;
+            const userId = (session?.user as any)?.id;
+            const answersRecord: Record<number, string> = {
+              0: data.age || 'adult',
+              1: data.symptoms?.join(',') || primarySymptom,
+              2: data.severity,
+              3: data.duration,
+              4: additionalSymptom,
+            };
+            saveTestToDatabase(answersRecord, s.riskScore, s.riskLevel, userId)
+              .finally(() => { isSavingRef.current = false; });
+          }
           return { ...s, triageScreen: 'results' };
         }
         return s;
@@ -223,6 +238,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         goToNextQuestion,
         startTest,
         cancelTest,
+        handleAIComplete,
       }}
     >
       {children}
