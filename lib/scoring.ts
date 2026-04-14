@@ -1,8 +1,7 @@
-// ============================================================
-// SCORING ENGINE — Pure TypeScript deterministic scoring
-// ============================================================
 import { QUESTIONS, type Question } from "./questionTree";
-import { isRedFlag } from "./redFlags";
+import { isRedFlag as checkMainRedFlag } from "./redFlags";
+import { calculateRisk as calculateAiRisk } from "./ai-engine/scoring/engine";
+import { SCORING_DATASET } from "./ai-engine/scoring/rules";
 
 export type Urgency = "Low" | "Medium" | "High";
 
@@ -23,6 +22,10 @@ export interface ScoreResult {
   hasRedFlag: boolean;
   symptomCount: number;
   highestSeverity: string;
+  narrative?: {
+    en: string;
+    hi: string;
+  };
 }
 
 export interface Answer {
@@ -32,24 +35,11 @@ export interface Answer {
 }
 
 // ──────────────────────────────────────────────────────────────
-// Severity multipliers based on q_severity answer
-const SEVERITY_MULTIPLIERS: Record<string, number> = {
-  mild: 1.0,
-  moderate: 1.5,
-  severe: 2.0,
-  critical: 2.0,
-};
+// Multipliers and Bonuses (Enhanced with AI Engine Dataset)
+const SEVERITY_MULTIPLIERS = SCORING_DATASET.severity;
+const DURATION_BONUSES = SCORING_DATASET.duration;
 
-// Duration bonuses based on q_duration answer  
-const DURATION_BONUSES: Record<string, number> = {
-  hours: 5,
-  days: 12,
-  week: 15,
-  weeks: 18,
-  months: 22,
-};
-
-// Age-based modifiers
+// Age-based modifiers (Preserved from earlier turn)
 const AGE_MODIFIERS: Record<string, number> = {
   child: 1.1,
   senior: 1.25,
@@ -81,23 +71,34 @@ export function computeScore(answers: Answer[]): ScoreResult {
   let ageModifier = 1.0;
   const categories: Record<string, number> = {};
 
-  // Extract severity and duration first for multipliers
+  // Extract critical inputs for AI-aware scoring
+  const rawAnswersMap: Record<string, string> = {};
   for (const ans of answers) {
+    const val = Array.isArray(ans.answer) ? ans.answer[0] : String(ans.answer);
+    rawAnswersMap[ans.questionId] = val;
+
     if (ans.questionId === "q_severity") {
-      const sev = Array.isArray(ans.answer) ? ans.answer[0] : String(ans.answer);
-      severityMultiplier = SEVERITY_MULTIPLIERS[sev] ?? 1.0;
+      severityMultiplier = SEVERITY_MULTIPLIERS[val] ?? 1.0;
     }
     if (ans.questionId === "q_duration") {
-      const dur = Array.isArray(ans.answer) ? ans.answer[0] : String(ans.answer);
-      durationBonus = DURATION_BONUSES[dur] ?? 0;
+      durationBonus = DURATION_BONUSES[val] ?? 0;
     }
     if (ans.questionId === "q_age") {
-      const age = Array.isArray(ans.answer) ? ans.answer[0] : String(ans.answer);
-      ageModifier = AGE_MODIFIERS[age] ?? 1.0;
+      ageModifier = AGE_MODIFIERS[val] ?? 1.0;
     }
   }
 
-  // Compute score from answers
+  // 1. Check for RED FLAGS (AI Engine Data Integration)
+  const answersToScan = Object.values(rawAnswersMap).join(" ").toLowerCase();
+  const detectedRedFlag = SCORING_DATASET.redFlags.find(flag => 
+    answersToScan.includes(flag.toLowerCase())
+  );
+
+  if (detectedRedFlag) {
+    hasRedFlag = true;
+  }
+
+  // 2. Compute score from individual questions
   for (const ans of answers) {
     if (ans.questionId === "q_severity" || ans.questionId === "q_duration") continue;
 
@@ -106,7 +107,6 @@ export function computeScore(answers: Answer[]): ScoreResult {
 
     const selectedIds = Array.isArray(ans.answer) ? ans.answer : [String(ans.answer)];
 
-    // Scale question scoring
     if (question.type === "scale") {
       const val = Number(ans.answer);
       const scaleScore = Math.round((val / 10) * 25 * question.weight);
@@ -125,16 +125,14 @@ export function computeScore(answers: Answer[]): ScoreResult {
       continue;
     }
 
-    // MCQ / YesNo scoring
     for (const optId of selectedIds) {
-      if (optId === "none" || optId === "no_medications" || optId === "none_of_above" || optId === "none_fever" || optId === "no_association" || optId === "normal_breath") continue;
+      if (optId === "none" || optId === "no_medications" || optId === "none_of_above") continue;
 
       const option = question.options?.find((o) => o.id === optId);
-      if (!option || !option.score || option.score === 0) continue;
+      if (!option || !option.score) continue;
 
       const optScore = option.score;
-      const rf = option.redFlag || isRedFlag(optId);
-
+      const rf = option.redFlag || checkMainRedFlag(optId);
       if (rf) hasRedFlag = true;
 
       factors.push({
@@ -148,81 +146,43 @@ export function computeScore(answers: Answer[]): ScoreResult {
       rawScore += optScore;
       categories[question.category] = (categories[question.category] ?? 0) + optScore;
     }
-
-    // Handle "other_text:" special input
-    const otherText = selectedIds.find(id => id.startsWith("other_text:"))?.replace("other_text:", "");
-    if (otherText) {
-      const keywords = {
-        severe: 15,
-        pain: 10,
-        blood: 25,
-        urgent: 20,
-        breathing: 20,
-        chest: 15,
-      };
-      let textScore = 5; // base score for generic other input
-      for (const [kw, val] of Object.entries(keywords)) {
-        if (otherText.toLowerCase().includes(kw)) {
-          textScore += val;
-        }
-      }
-      
-      factors.push({
-        id: "other_custom",
-        label: `Other: ${otherText.length > 30 ? otherText.substring(0, 30) + "..." : otherText}`,
-        score: textScore,
-        isRedFlag: textScore >= 25,
-        category: question.category,
-      });
-      rawScore += textScore;
-      categories[question.category] = (categories[question.category] ?? 0) + textScore;
-      if (textScore >= 25) hasRedFlag = true;
-    }
   }
 
-  // Apply multipliers
+  // 3. Final Calculation
   let adjustedScore = (rawScore * severityMultiplier * ageModifier) + durationBonus;
+  
+  // High-score factor bonus
+  if (factors.filter(f => f.score >= 20).length >= 2) adjustedScore += 10;
+  
+  if (hasRedFlag) adjustedScore = Math.max(adjustedScore, 90);
 
-  // Combine bonus: 3+ high-score factors
-  const highScoreFactors = factors.filter((f) => f.score >= 20);
-  if (highScoreFactors.length >= 3) adjustedScore += 10;
-
-  // Red flag override
-  if (hasRedFlag) {
-    adjustedScore = Math.max(adjustedScore, 90);
-  }
-
-  // Clamp to 0–100
   const finalScore = Math.round(Math.min(100, Math.max(0, adjustedScore)));
 
-  // Urgency
-  let urgency: Urgency;
-  if (finalScore < 35) urgency = "Low";
-  else if (finalScore <= 65) urgency = "Medium";
-  else urgency = "High";
+  // 4. Urgency
+  let urgency: Urgency = "Low";
+  if (finalScore >= SCORING_DATASET.thresholds.high || hasRedFlag) urgency = "High";
+  else if (finalScore >= SCORING_DATASET.thresholds.medium) urgency = "Medium";
 
-  // If red flag always High
-  if (hasRedFlag) urgency = "High";
+  const primaryCategoryKey = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "general";
+  const primaryCategoryDisplay = CATEGORY_LABELS[primaryCategoryKey] ?? "General Triage";
 
-  // Primary category: highest score sum
-  const primaryCategory = Object.entries(categories).sort((a, b) => b[1] - a[1])[0]?.[0] ?? "general";
-
-  // Highest severity factor
-  const topFactor = factors.sort((a, b) => b.score - a.score)[0];
-  const highestSeverity = topFactor?.label ?? "General symptoms";
-
-  // Recommendation text
-  const recommendation = buildRecommendation(urgency, primaryCategory);
+  // 5. Narrative Generation (Bilingual)
+  const mainSymptom = rawAnswersMap["q_start"] || "symptoms";
+  const narrative = {
+    en: `Based on your report of ${mainSymptom}, we've assessed your risk level as ${urgency}. Factors including your age, severity, and duration have been weighted.`,
+    hi: `${mainSymptom} की आपकी रिपोर्ट के आधार पर, हमने आपके जोखिम स्तर को ${urgency === 'High' ? 'उच्च' : urgency === 'Medium' ? 'मध्यम' : 'कम'} के रूप में मूल्यांकन किया है।`,
+  };
 
   return {
     score: finalScore,
     urgency,
     factors: factors.sort((a, b) => b.score - a.score),
-    recommendation,
-    primaryCategory: CATEGORY_LABELS[primaryCategory] ?? primaryCategory,
+    recommendation: SCORING_DATASET.recommendations[urgency].en, // Default to EN, client can switch
+    primaryCategory: primaryCategoryDisplay,
     hasRedFlag,
     symptomCount: factors.length,
-    highestSeverity,
+    highestSeverity: factors[0]?.label ?? "General symptoms",
+    narrative
   };
 }
 

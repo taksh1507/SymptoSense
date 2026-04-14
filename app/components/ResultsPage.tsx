@@ -2,14 +2,14 @@
 
 import { useApp } from '../context/AppContext';
 
-function GaugeChart({ score, max = 30 }: { score: number; max?: number }) {
+function GaugeChart({ score, max = 100 }: { score: number; max?: number }) {
   const pct = score / max;
   const r = 70;
   const circumference = Math.PI * r;
   const dashOffset = circumference * (1 - pct);
-  const color = pct >= 0.7 ? '#B91C1C' : pct >= 0.4 ? '#B45309' : '#15803D';
-  const label = pct >= 0.7 ? 'HIGH' : pct >= 0.4 ? 'MEDIUM' : 'LOW';
-  const emoji = pct >= 0.7 ? '🔴' : pct >= 0.4 ? '🟡' : '🟢';
+  const color = pct >= 0.7 ? '#B91C1C' : pct >= 0.35 ? '#B45309' : '#15803D';
+  const label = pct >= 0.7 ? 'HIGH' : pct >= 0.35 ? 'MEDIUM' : 'LOW';
+  const emoji = pct >= 0.7 ? '🔴' : pct >= 0.35 ? '🟡' : '🟢';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -23,7 +23,7 @@ function GaugeChart({ score, max = 30 }: { score: number; max?: number }) {
       </svg>
       <div style={{
         display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px',
-        background: pct >= 0.7 ? 'var(--red-light)' : pct >= 0.4 ? '#FFFBEB' : '#F0FDF4',
+        background: pct >= 0.7 ? 'var(--red-light)' : pct >= 0.35 ? '#FFFBEB' : '#F0FDF4',
         border: `1.5px solid ${color}33`, borderRadius: '999px', padding: '6px 20px',
       }}>
         <span style={{ fontSize: '18px' }}>{emoji}</span>
@@ -34,14 +34,27 @@ function GaugeChart({ score, max = 30 }: { score: number; max?: number }) {
 }
 
 export default function ResultsPage() {
-  const { riskScore, riskLevel, setTriageScreen, selectedAnswers } = useApp();
+  const { language, riskScore, riskLevel, narrative, setTriageScreen, selectedAnswers } = useApp();
 
   const getRecommendation = (score: number) => {
-    if (score >= 20) return { title: 'Seek Emergency Care', desc: 'Visit the nearest hospital casualty department immediately.', type: 'urgent' };
-    if (score >= 10) return { title: 'Consult Your Doctor', desc: 'Schedule an appointment within the next 24 hours.', type: 'moderate' };
-    return { title: 'Home Management', desc: 'Monitor symptoms and rest. Consult doctor if conditions worsen.', type: 'low' };
+    if (score >= 70) return { 
+        title: { en: 'Seek Emergency Care', hi: 'आपातकालीन देखभाल प्राप्त करें' }, 
+        desc: { en: 'Visit the nearest hospital casualty department immediately.', hi: 'तुरंत निकटतम अस्पताल के कैजुअल्टी विभाग में जाएँ।' }, 
+        type: 'urgent' 
+    };
+    if (score >= 35) return { 
+        title: { en: 'Consult Your Doctor', hi: 'अपने डॉक्टर से सलाह लें' }, 
+        desc: { en: 'Schedule an appointment within the next 24 hours.', hi: 'अगले 24 घंटों के भीतर अपॉइंटमेंट शेड्यूल करें।' }, 
+        type: 'moderate' 
+    };
+    return { 
+        title: { en: 'Home Management', hi: 'होम मैनेजमेंट' }, 
+        desc: { en: 'Monitor symptoms and rest. Consult doctor if conditions worsen.', hi: 'लक्षणों की निगरानी करें और आराम करें। यदि स्थिति बिगड़ती है तो डॉक्टर से परामर्श करें।' }, 
+        type: 'low' 
+    };
   };
 
+  const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'hi' : 'en';
   const rec = getRecommendation(riskScore);
   const detectedSymptoms = (selectedAnswers[1] || '').split(',').filter(Boolean);
 
@@ -51,10 +64,10 @@ export default function ResultsPage() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '28px' }}>
         <div>
           <h1 style={{ fontSize: '24px', fontWeight: '900', color: 'var(--text-1)', margin: 0, letterSpacing: '-0.5px' }}>
-            Assessment Result
+            {language === 'Hindi' ? 'मूल्यांकन परिणाम' : 'Assessment Result'}
           </h1>
           <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
-            Report generated on {new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+            {language === 'Hindi' ? 'रिपोर्ट जनरेट की गई:' : 'Report generated on'} {new Date().toLocaleDateString(langKey, { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
         <button
@@ -63,7 +76,7 @@ export default function ResultsPage() {
           style={{ gap: '8px' }}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>
-          Restart Triage
+          {language === 'Hindi' ? 'पुनः प्रारंभ' : 'Restart Triage'}
         </button>
       </div>
 
@@ -79,15 +92,15 @@ export default function ResultsPage() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{
-                  background: riskScore >= 20 ? 'rgba(185, 28, 28, 0.05)' : riskScore >= 10 ? '#FFFBEB' : '#F0FDF4',
-                  borderLeft: `4px solid ${riskScore >= 20 ? 'var(--red)' : riskScore >= 10 ? '#B45309' : '#15803D'}`,
+                  background: riskScore >= 70 ? 'rgba(185, 28, 28, 0.05)' : riskScore >= 35 ? '#FFFBEB' : '#F0FDF4',
+                  borderLeft: `4px solid ${riskScore >= 70 ? 'var(--red)' : riskScore >= 35 ? '#B45309' : '#15803D'}`,
                   padding: '16px 20px', borderRadius: '10px'
                 }}>
                   <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '6px' }}>
-                    {rec.title}
+                    {rec.title[langKey] || rec.title.en}
                   </h3>
                   <p style={{ fontSize: '14px', color: 'var(--text-3)', lineHeight: '1.6' }}>
-                    {rec.desc}
+                    {narrative?.[langKey] || rec.desc[langKey] || rec.desc.en}
                   </p>
                 </div>
               </div>
@@ -95,22 +108,22 @@ export default function ResultsPage() {
             
             <div className="code-block" style={{ marginTop: '24px', fontSize: '11px' }}>
               <span className="cm">// Logic Path: {riskLevel.toUpperCase()} RISK detected</span>{'\n'}
-              <span className="kw">risk_level</span> = {riskScore} / 30;{'\n'}
-              <span className="kw">recommendation</span> = {`"${rec.title}"`};
+              <span className="kw">risk_level</span> = {riskScore} / 100;{'\n'}
+              <span className="kw">recommendation</span> = {`"${rec.title.en}"`};
             </div>
           </div>
 
           {/* Recommendations Breakdown */}
           <div className="card" style={{ padding: '24px' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-               Next Steps
+               {language === 'Hindi' ? 'अगले कदम' : 'Next Steps'}
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               {[
-                { icon: '🏥', title: 'Hospital Visit', active: riskScore >= 20 },
-                { icon: '👨‍⚕️', title: 'Call Doctor', active: riskScore >= 10 },
-                { icon: '🩹', title: 'Home Care', active: true },
-                { icon: '💊', title: 'Medication', active: riskScore >= 10 },
+                { icon: '🏥', title: { en: 'Hospital Visit', hi: 'अस्पताल' }, active: riskScore >= 70 },
+                { icon: '👨‍⚕️', title: { en: 'Call Doctor', hi: 'डॉक्टर को बुलाएं' }, active: riskScore >= 35 },
+                { icon: '🩹', title: { en: 'Home Care', hi: 'घर पर देखभाल' }, active: true },
+                { icon: '💊', title: { en: 'Medication', hi: 'दवा' }, active: riskScore >= 35 },
               ].map((item, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: '12px',
@@ -122,7 +135,7 @@ export default function ResultsPage() {
                   boxShadow: item.active ? 'var(--shadow-sm)' : 'none'
                 }}>
                   <span style={{ fontSize: '24px' }}>{item.icon}</span>
-                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>{item.title}</span>
+                  <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>{item.title[langKey] || item.title.en}</span>
                 </div>
               ))}
             </div>
@@ -134,14 +147,16 @@ export default function ResultsPage() {
 
           {/* Symptoms Found */}
           <div className="card" style={{ padding: '24px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px' }}>Detected Markers</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px' }}>
+                {language === 'Hindi' ? 'पता लगाए गए लक्षण' : 'Detected Markers'}
+            </h3>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '16px' }}>
               {detectedSymptoms.length > 0 ? detectedSymptoms.map((tag) => (
                 <span key={tag} style={{
                   background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-border)',
                   padding: '5px 12px', borderRadius: '999px', fontSize: '12px', fontWeight: '700', textTransform: 'capitalize'
                 }}>{tag.replace('_', ' ')}</span>
-              )) : <span style={{ color: 'var(--text-4)' }}>No specific symptoms selected.</span>}
+              )) : <span style={{ color: 'var(--text-4)' }}>{language === 'Hindi' ? 'कोई लक्षण नहीं चुना गया।' : 'No specific symptoms selected.'}</span>}
             </div>
             <div className="code-block" style={{ fontSize: '10.5px' }}>
                SELECT * FROM triage_weights WHERE symptom IN ({detectedSymptoms.map(s => `'${s}'`).join(', ') || 'null'})
