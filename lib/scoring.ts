@@ -1,6 +1,5 @@
-import { QUESTIONS, type Question } from "./questionTree";
+import { QUESTIONS } from "./questionTree";
 import { isRedFlag as checkMainRedFlag } from "./redFlags";
-import { calculateRisk as calculateAiRisk } from "./ai-engine/scoring/engine";
 import { SCORING_DATASET } from "./ai-engine/scoring/rules";
 
 export type Urgency = "Low" | "Medium" | "High";
@@ -186,15 +185,6 @@ export function computeScore(answers: Answer[]): ScoreResult {
   };
 }
 
-function buildRecommendation(urgency: Urgency, category: string): string {
-  if (urgency === "High") {
-    return "Your symptoms suggest a potentially serious condition that requires immediate medical evaluation. Please seek emergency care or call emergency services.";
-  }
-  if (urgency === "Medium") {
-    return "Your symptoms indicate you should see a doctor within the next 24 hours. Avoid strenuous activity and monitor your condition closely.";
-  }
-  return "Your symptoms appear manageable at home. Rest, stay hydrated, and monitor for any worsening. Consult a doctor if symptoms persist beyond 3 days.";
-}
 
 // Recommendation panel content
 export interface RecommendationContent {

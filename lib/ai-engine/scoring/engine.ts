@@ -8,7 +8,6 @@ import { RiskAnalysis, SurveyResult, UrgencyLevel } from "./types";
 export function calculateRisk(input: SurveyResult): RiskAnalysis {
   const explanation: string[] = [];
   let score = 0;
-  let isRedFlag = false;
 
   // 1. Check for RED FLAGS (Highest Priority)
   const inputsToSearch = [
@@ -22,7 +21,6 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   );
 
   if (detectedRedFlag) {
-    isRedFlag = true;
     return {
       score: 100,
       urgency: "High",

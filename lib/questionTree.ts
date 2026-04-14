@@ -550,6 +550,6 @@ export function getNextQuestionId(
 }
 
 // Estimate total questions for the progress bar
-export function estimateTotalQuestions(startId = "q_start"): number {
+export function estimateTotalQuestions(): number {
   return 10; // Reasonable average for adaptive flow
 }
