@@ -1,5 +1,5 @@
 'use client';
-
+import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 interface PublicNavProps {
@@ -12,14 +12,20 @@ const HeartPulse = () => (
     <path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>
   </svg>
 );
-const ArrowRight = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+    <line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>
+  </svg>
+);
+const XIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
   </svg>
 );
 
 export default function PublicNav({ activeLink }: PublicNavProps) {
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const NAV_LINKS = [
     { key: 'home',         label: 'Home',         href: '/' },
@@ -28,59 +34,98 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
   ];
 
   return (
-    <nav style={{
-      position: 'sticky', top: 0, zIndex: 40,
-      background: 'rgba(255,255,255,0.95)',
-      backdropFilter: 'blur(12px)',
-      borderBottom: '1px solid var(--border-faint)',
-      padding: '0 48px',
-      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-      height: '62px',
-      fontFamily: 'var(--font)',
-    }}>
-      {/* Logo */}
-      <button
-        onClick={() => router.push('/')}
-        style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', padding: 0 }}
+    <>
+      <nav 
+        className="mobile-padding"
+        style={{
+          position: 'sticky', top: 0, zIndex: 40,
+          background: 'rgba(255,255,255,0.95)',
+          backdropFilter: 'blur(12px)',
+          borderBottom: '1px solid var(--border-faint)',
+          padding: '0 48px',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          height: '62px',
+          fontFamily: 'var(--font)',
+        }}
       >
-        <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-          <HeartPulse />
+        {/* Logo */}
+        <button
+          onClick={() => router.push('/')}
+          style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', padding: 0 }}
+        >
+          <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
+            <HeartPulse />
+          </div>
+          <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', letterSpacing: '-0.3px' }}>
+            Sympto<span style={{ color: 'var(--red)' }}>Sense</span>
+          </span>
+        </button>
+
+        {/* Desktop Nav links */}
+        <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
+          {NAV_LINKS.map((link) => {
+            const isActive = activeLink === link.key;
+            return (
+              <button
+                key={link.key}
+                onClick={() => router.push(link.href)}
+                style={{
+                  background: isActive ? 'var(--red-light)' : 'none',
+                  border: 'none', cursor: 'pointer', fontFamily: 'var(--font)',
+                  padding: '8px 14px', borderRadius: '8px',
+                  fontSize: '14px', fontWeight: isActive ? '600' : '500',
+                  color: isActive ? 'var(--red)' : 'var(--text-3)',
+                  transition: 'all 0.15s',
+                }}
+              >
+                {link.label}
+              </button>
+            );
+          })}
         </div>
-        <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', letterSpacing: '-0.3px' }}>
-          Sympto<span style={{ color: 'var(--red)' }}>Sense</span>
-        </span>
-      </button>
 
-      {/* Nav links */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-        {NAV_LINKS.map((link) => {
-          const isActive = activeLink === link.key;
-          return (
-            <button
-              key={link.key}
-              onClick={() => router.push(link.href)}
-              style={{
-                background: isActive ? 'var(--red-light)' : 'none',
-                border: 'none', cursor: 'pointer', fontFamily: 'var(--font)',
-                padding: '8px 14px', borderRadius: '8px',
-                fontSize: '14px', fontWeight: isActive ? '600' : '500',
-                color: isActive ? 'var(--red)' : 'var(--text-3)',
-                transition: 'all 0.15s',
-              }}
-              onMouseEnter={(e) => { if (!isActive) { e.currentTarget.style.color = 'var(--red)'; e.currentTarget.style.background = 'var(--red-light)'; } }}
-              onMouseLeave={(e) => { if (!isActive) { e.currentTarget.style.color = 'var(--text-3)'; e.currentTarget.style.background = 'none'; } }}
-            >
-              {link.label}
-            </button>
-          );
-        })}
-      </div>
+        {/* Desktop CTA buttons */}
+        <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <button className="btn btn-outline" onClick={() => router.push('/login')} style={{ padding: '8px 17px' }}>Sign in</button>
+          <button className="btn btn-primary" onClick={() => router.push('/signup')} style={{ padding: '8px 17px' }}>Get started</button>
+        </div>
 
-      {/* CTA buttons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-        <button className="btn btn-outline" onClick={() => router.push('/login')} style={{ padding: '8px 17px' }}>Sign in</button>
-        <button className="btn btn-primary" onClick={() => router.push('/signup')} style={{ padding: '8px 17px', gap: '6px' }}>Get started <ArrowRight /></button>
-      </div>
-    </nav>
+        {/* Mobile Burger Toggle */}
+        <button 
+          className="show-mobile"
+          onClick={() => setIsOpen(true)}
+          style={{ background: 'none', border: 'none', color: 'var(--text-1)', cursor: 'pointer', padding: '8px' }}
+        >
+          <MenuIcon />
+        </button>
+      </nav>
+
+      {/* Mobile Menu Overlay */}
+      {isOpen && (
+        <div className="anim-fadein" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)' }} onClick={() => setIsOpen(false)}>
+           <div className="anim-modalin" style={{ width: '280px', height: '100%', background: 'white', marginLeft: 'auto', display: 'flex', flexDirection: 'column', padding: '24px' }} onClick={e => e.stopPropagation()}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
+                <span style={{ fontWeight: '800', color: 'var(--text-1)' }}>Menu</span>
+                <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-4)' }}><XIcon /></button>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
+                {NAV_LINKS.map(link => (
+                  <button 
+                    key={link.key} 
+                    onClick={() => { router.push(link.href); setIsOpen(false); }}
+                    style={{ textAlign: 'left', padding: '12px 16px', borderRadius: '10px', background: activeLink === link.key ? 'var(--red-light)' : 'none', border: 'none', color: activeLink === link.key ? 'var(--red)' : 'var(--text-2)', fontWeight: '600', fontSize: '15px' }}
+                  >
+                    {link.label}
+                  </button>
+                ))}
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-faint)', paddingTop: '24px' }}>
+                <button className="btn btn-primary" onClick={() => router.push('/signup')}>Get Started Free</button>
+                <button className="btn btn-outline" onClick={() => router.push('/login')}>Sign In</button>
+              </div>
+           </div>
+        </div>
+      )}
+    </>
   );
 }
