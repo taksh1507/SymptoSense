@@ -49,6 +49,14 @@ const DURATION_BONUSES: Record<string, number> = {
   months: 22,
 };
 
+// Age-based modifiers
+const AGE_MODIFIERS: Record<string, number> = {
+  child: 1.1,
+  senior: 1.25,
+  adult: 1.0,
+  teen: 1.0,
+};
+
 // Category label map
 const CATEGORY_LABELS: Record<string, string> = {
   cardiac: "Cardiac / Cardiovascular",
@@ -70,6 +78,7 @@ export function computeScore(answers: Answer[]): ScoreResult {
   let hasRedFlag = false;
   let severityMultiplier = 1.0;
   let durationBonus = 0;
+  let ageModifier = 1.0;
   const categories: Record<string, number> = {};
 
   // Extract severity and duration first for multipliers
@@ -81,6 +90,10 @@ export function computeScore(answers: Answer[]): ScoreResult {
     if (ans.questionId === "q_duration") {
       const dur = Array.isArray(ans.answer) ? ans.answer[0] : String(ans.answer);
       durationBonus = DURATION_BONUSES[dur] ?? 0;
+    }
+    if (ans.questionId === "q_age") {
+      const age = Array.isArray(ans.answer) ? ans.answer[0] : String(ans.answer);
+      ageModifier = AGE_MODIFIERS[age] ?? 1.0;
     }
   }
 
@@ -135,10 +148,40 @@ export function computeScore(answers: Answer[]): ScoreResult {
       rawScore += optScore;
       categories[question.category] = (categories[question.category] ?? 0) + optScore;
     }
+
+    // Handle "other_text:" special input
+    const otherText = selectedIds.find(id => id.startsWith("other_text:"))?.replace("other_text:", "");
+    if (otherText) {
+      const keywords = {
+        severe: 15,
+        pain: 10,
+        blood: 25,
+        urgent: 20,
+        breathing: 20,
+        chest: 15,
+      };
+      let textScore = 5; // base score for generic other input
+      for (const [kw, val] of Object.entries(keywords)) {
+        if (otherText.toLowerCase().includes(kw)) {
+          textScore += val;
+        }
+      }
+      
+      factors.push({
+        id: "other_custom",
+        label: `Other: ${otherText.length > 30 ? otherText.substring(0, 30) + "..." : otherText}`,
+        score: textScore,
+        isRedFlag: textScore >= 25,
+        category: question.category,
+      });
+      rawScore += textScore;
+      categories[question.category] = (categories[question.category] ?? 0) + textScore;
+      if (textScore >= 25) hasRedFlag = true;
+    }
   }
 
   // Apply multipliers
-  let adjustedScore = rawScore * severityMultiplier + durationBonus;
+  let adjustedScore = (rawScore * severityMultiplier * ageModifier) + durationBonus;
 
   // Combine bonus: 3+ high-score factors
   const highScoreFactors = factors.filter((f) => f.score >= 20);

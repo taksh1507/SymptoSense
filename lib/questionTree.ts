@@ -26,6 +26,8 @@ export interface Question {
   category: string;
   weight: number; // base importance weight 1-3
   isTerminal?: boolean; // ends the flow
+  allowOther?: boolean; // allow free-text input if "Other" is selected
+  otherPlaceholder?: string;
 }
 
 // ============================================================
@@ -33,6 +35,39 @@ export interface Question {
 // ============================================================
 
 export const QUESTIONS: Record<string, Question> = {
+  // ── Profile ────────────────────────────────────────────────
+  q_age: {
+    id: "q_age",
+    text: "How old are you?",
+    subtext: "Age helps us tailor our health analysis",
+    type: "mcq",
+    category: "profile",
+    weight: 1,
+    nextQuestionId: "q_gender",
+    options: [
+      { id: "child", label: "0-12 (Child)", emoji: "👶" },
+      { id: "teen",  label: "13-19 (Teen)", emoji: "👦" },
+      { id: "adult", label: "20-60 (Adult)", emoji: "👨" },
+      { id: "senior", label: "60+ (Senior)", emoji: "👴" },
+    ],
+  },
+
+  q_gender: {
+    id: "q_gender",
+    text: "What is your gender?",
+    subtext: "This helps us provide more accurate health guidance",
+    type: "mcq",
+    category: "profile",
+    weight: 1,
+    nextQuestionId: "q_start",
+    options: [
+      { id: "male",   label: "Male",   emoji: "👨" },
+      { id: "female", label: "Female", emoji: "👩" },
+      { id: "nonbinary", label: "Non-binary", emoji: "👤" },
+      { id: "prefer_not_to_say", label: "Prefer not to say", emoji: "🤐" },
+    ],
+  },
+
   // ── Entry ──────────────────────────────────────────────────
   q_start: {
     id: "q_start",
@@ -42,6 +77,7 @@ export const QUESTIONS: Record<string, Question> = {
     multiSelect: true,
     category: "triage",
     weight: 3,
+    nextQuestionId: "q_duration",
     options: [
       { id: "chest_pain",        label: "Chest pain or tightness",  emoji: "💔", nextQuestionId: "q_chest_1",       redFlag: true, score: 35 },
       { id: "headache",          label: "Headache or head pressure", emoji: "🤕", nextQuestionId: "q_head_1",        score: 15 },
@@ -53,7 +89,10 @@ export const QUESTIONS: Record<string, Question> = {
       { id: "skin_rash",         label: "Skin rash or swelling",     emoji: "🔴", nextQuestionId: "q_skin_1",       score: 15 },
       { id: "joint_pain",        label: "Joint or muscle pain",      emoji: "🦴", nextQuestionId: "q_pain_scale",   score: 15 },
       { id: "anxiety_stress",    label: "Anxiety or mental distress",emoji: "😰", nextQuestionId: "q_mental_1",    score: 20 },
+      { id: "something_else",    label: "Something else...",         emoji: "🔍", score: 10 },
     ],
+    allowOther: true,
+    otherPlaceholder: "Please describe your symptom briefly...",
   },
 
   // ── Chest / Cardiac ─────────────────────────────────────────
@@ -468,6 +507,8 @@ export const QUESTIONS: Record<string, Question> = {
 // QUESTION ORDER — default linear flow (adaptive overrides)
 // ============================================================
 export const DEFAULT_QUESTION_IDS = [
+  "q_age",
+  "q_gender",
   "q_start",
   "q_duration",
   "q_severity",

@@ -76,7 +76,10 @@ export function QuestionShell({ sessionId }: QuestionShellProps) {
       answerIds = textValue.trim() ? [textValue] : ["_skipped"];
     } else {
       if (selected.length === 0) return;
-      answerIds = selected;
+      answerIds = [...selected];
+      if (textValue.trim()) {
+        answerIds.push(`other_text:${textValue.trim()}`);
+      }
     }
     const { nextId, hasRedFlag } = advance(answerIds);
     if (hasRedFlag) setShowRedFlag(true);
@@ -85,6 +88,9 @@ export function QuestionShell({ sessionId }: QuestionShellProps) {
   const canProceed = () => {
     if (currentQuestion.type === "scale") return scaleValue !== null;
     if (currentQuestion.type === "text") return true;
+    if (currentQuestion.allowOther && selected.some(id => !currentQuestion.options?.find(o => o.id === id)?.nextQuestionId)) {
+      return selected.length > 0 && textValue.trim() !== "";
+    }
     return selected.length > 0;
   };
 
@@ -157,12 +163,27 @@ export function QuestionShell({ sessionId }: QuestionShellProps) {
               category={currentQuestion.category}
             >
               {currentQuestion.type === "mcq" && currentQuestion.options && (
-                <MCQWidget
-                  options={currentQuestion.options}
-                  selected={selected}
-                  onSelect={setSelected}
-                  multiSelect={currentQuestion.multiSelect}
-                />
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  <MCQWidget
+                    options={currentQuestion.options}
+                    selected={selected}
+                    onSelect={setSelected}
+                    multiSelect={currentQuestion.multiSelect}
+                  />
+                  {currentQuestion.allowOther && selected.some(id => !currentQuestion.options?.find(o => o.id === id)?.nextQuestionId) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                    >
+                      <TextInputWidget
+                        value={textValue}
+                        onChange={setTextValue}
+                        placeholder={currentQuestion.otherPlaceholder || "Tell us more..."}
+                      />
+                    </motion.div>
+                  )}
+                </div>
               )}
               {currentQuestion.type === "yesno" && (
                 <YesNoWidget selected={selected} onSelect={setSelected} />
