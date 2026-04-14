@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 import { useSession } from 'next-auth/react';
 import { useApp } from '../context/AppContext';
 
@@ -170,7 +171,7 @@ export default function Dashboard() {
           </p>
         </div>
         {userImage ? (
-          <img src={userImage} alt={userName} style={{ width: '38px', height: '38px', borderRadius: '50%', objectFit: 'cover' }} />
+          <Image src={userImage} alt={userName} width={38} height={38} style={{ borderRadius: '50%', objectFit: 'cover' }} unoptimized />
         ) : (
           <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '12px', boxShadow: '0 2px 6px rgb(185 28 28 / 0.3)' }}>{initials}</div>
         )}

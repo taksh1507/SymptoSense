@@ -1,5 +1,6 @@
 'use client';
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useRouter, usePathname } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import { useApp } from '../context/AppContext';
@@ -77,7 +78,7 @@ function NavLink({ id, icon, label, active, onClick }: {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { triageScreen, cancelTest, setTriageScreen } = useApp();
+  const { triageScreen, cancelTest } = useApp();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
@@ -187,7 +188,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div style={{ padding: '10px 10px', borderTop: '1px solid #F1F5F9', flexShrink: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', marginBottom: '6px', borderRadius: '10px', background: '#F8FAFC', border: '1px solid #E2E8F0' }}>
           {userImage ? (
-            <img src={userImage} alt={userName} style={{ width: '32px', height: '32px', borderRadius: '50%', objectFit: 'cover' }} />
+            <Image src={userImage} alt={userName} width={32} height={32} style={{ borderRadius: '50%', objectFit: 'cover' }} unoptimized />
           ) : (
             <div style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #FC8181, #E53E3E)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px', flexShrink: 0 }}>{initials}</div>
           )}
@@ -247,7 +248,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           </div>
           <div style={{ marginLeft: 'auto' }}>
             {userImage ? (
-              <img src={userImage} alt={userName} style={{ width: '30px', height: '30px', borderRadius: '50%', objectFit: 'cover' }} />
+              <Image src={userImage} alt={userName} width={30} height={30} style={{ borderRadius: '50%', objectFit: 'cover' }} unoptimized />
             ) : (
               <div style={{ width: '30px', height: '30px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '11px' }}>{initials}</div>
             )}

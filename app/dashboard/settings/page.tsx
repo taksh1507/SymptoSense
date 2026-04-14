@@ -1,12 +1,11 @@
 'use client';
 
 import { useSession, signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import AppShell from '@/app/components/AppShell';
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const router = useRouter();
 
   const userName = session?.user?.name || 'User';
   const userEmail = session?.user?.email || '';
@@ -26,7 +25,7 @@ export default function SettingsPage() {
           <h2 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '20px' }}>Profile</h2>
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
             {userImage ? (
-              <img src={userImage} alt={userName} style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} />
+              <Image src={userImage} alt={userName} width={56} height={56} style={{ borderRadius: '50%', objectFit: 'cover' }} unoptimized />
             ) : (
               <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '18px' }}>{initials}</div>
             )}

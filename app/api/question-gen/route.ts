@@ -29,6 +29,7 @@ export async function POST(req: Request) {
       CONTEXT:
       - Initial Symptom: ${initialSymptom}
       - Previous Answers: ${previousAnswersStr}
+      - Preferred Language: ${language}
       - Step: ${context.currentStep}
       
       RULES:

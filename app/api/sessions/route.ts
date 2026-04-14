@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
 import { createTestSession, updateTestSessionAnswers, completeTestSession, getTestSession, getUserSessions } from "@/lib/db/sessions";
 
 export async function POST(req: NextRequest) {
