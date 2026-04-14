@@ -1,22 +1,23 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, use } from "react";
 import { useTestSession } from "@/hooks/useTestSession";
 import { QuestionShell } from "@/components/questions/QuestionShell";
 
 interface TestPageProps {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 }
 
 export default function TestPage({ params }: TestPageProps) {
+  const resolvedParams = use(params);
   const { sessionId, setSessionId, resetFlow } = useTestSession();
 
   useEffect(() => {
-    if (params.sessionId !== sessionId) {
-      setSessionId(params.sessionId);
+    if (resolvedParams.sessionId !== sessionId) {
+      setSessionId(resolvedParams.sessionId);
       resetFlow();
     }
-  }, [params.sessionId]);
+  }, [resolvedParams.sessionId]);
 
-  return <QuestionShell sessionId={params.sessionId} />;
+  return <QuestionShell sessionId={resolvedParams.sessionId} />;
 }

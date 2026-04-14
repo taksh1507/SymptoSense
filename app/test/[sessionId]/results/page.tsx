@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, use } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import Link from "next/link";
@@ -13,10 +13,11 @@ import { Download, RotateCcw, ArrowLeft } from "lucide-react";
 import { Activity } from "lucide-react";
 
 interface ResultsPageProps {
-  params: { sessionId: string };
+  params: Promise<{ sessionId: string }>;
 }
 
 export default function ResultsPage({ params }: ResultsPageProps) {
+  const resolvedParams = use(params);
   const router = useRouter();
   const { scoreResult, personName, setShowLanguageModal, resetFlow } = useTestSession();
 
@@ -38,7 +39,7 @@ export default function ResultsPage({ params }: ResultsPageProps) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `SymptoSense-Report-${params.sessionId}.txt`;
+    a.download = `SymptoSense-Report-${resolvedParams.sessionId}.txt`;
     a.click();
     URL.revokeObjectURL(url);
   };

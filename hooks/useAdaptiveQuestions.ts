@@ -6,7 +6,7 @@ import { QUESTIONS, getNextQuestionId } from "@/lib/questionTree";
 import { isRedFlag } from "@/lib/redFlags";
 
 interface UseAdaptiveQuestionsReturn {
-  currentQuestion: ReturnType<typeof QUESTIONS[string]> | undefined;
+  currentQuestion: typeof QUESTIONS[string] | undefined;
   advance: (selectedOptionIds: string[]) => { nextId: string | null; hasRedFlag: boolean };
   goBack: () => void;
   questionNumber: number;
