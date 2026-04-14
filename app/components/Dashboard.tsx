@@ -139,20 +139,27 @@ export default function Dashboard() {
   const userImage = session?.user?.image || null;
   const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
+  const { language } = useApp();
+  const langKey = language === 'Hindi' || language === 'Marathi' ? 'hi' : 'en';
+
   const lastReport = reports[0];
   const lastScore = lastReport?.score ?? null;
   const lastUrgency = lastReport?.urgency ?? null;
-  const lastDate = lastReport ? new Date(lastReport.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const lastDate = lastReport ? new Date(lastReport.createdAt).toLocaleDateString(langKey, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   // Build chart data from real reports (last 7)
   const chartData = reports.slice(0, 7).reverse().map((r) => ({
-    m: new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short' }),
+    m: new Date(r.createdAt).toLocaleDateString(langKey, { month: 'short' }),
     v: r.score ?? 0,
   }));
   const peakScore = reports.length > 0 ? Math.max(...reports.map((r) => r.score ?? 0)) : 0;
 
   const greetingHour = new Date().getHours();
-  const greeting = greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening';
+  const greetings = {
+    en: greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening',
+    hi: greetingHour < 12 ? 'सुप्रभात' : greetingHour < 17 ? 'नमस्कार' : 'शुभ संध्या'
+  };
+  const greeting = greetings[langKey];
 
   const urgencyColor = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#B45309' : '#15803D';
   const urgencyDot = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#F59E0B' : '#22C55E';
@@ -167,7 +174,7 @@ export default function Dashboard() {
             {greeting}, {userName}
           </h1>
           <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginTop: '4px' }}>
-            {new Date().toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            {new Date().toLocaleDateString(langKey, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
         {userImage ? (
@@ -182,7 +189,11 @@ export default function Dashboard() {
         <div className="alert-high" style={{ marginBottom: '22px' }}>
           <AlertTriangle />
           <span>
-            <strong>High Risk Detected.</strong> Your last triage score was {lastScore} — please seek medical attention.
+            {langKey === 'hi' ? (
+              <><strong>उच्च जोखिम पाया गया।</strong> आपका पिछला मूल्यांकन स्कोर {lastScore} था — कृपया चिकित्सा सहायता लें।</>
+            ) : (
+              <><strong>High Risk Detected.</strong> Your last triage score was {lastScore} — please seek medical attention.</>
+            )}
           </span>
         </div>
       )}
@@ -192,14 +203,14 @@ export default function Dashboard() {
         <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
           <div>
             <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '4px' }}>
-              Ready to assess your symptoms?
+              {langKey === 'hi' ? 'अपने लक्षणों का आकलन करने के लिए तैयार हैं?' : 'Ready to assess your symptoms?'}
             </div>
             <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginBottom: '10px' }}>
-              Complete 8 targeted questions for an AI-powered triage result.
+              {langKey === 'hi' ? 'एआई-पावर्ड ट्राइएज परिणाम के लिए 8 लक्षित प्रश्न पूरे करें।' : 'Complete 8 targeted questions for an AI-powered triage result.'}
             </div>
           </div>
           <button id="start-test-btn" className="btn btn-primary" onClick={startTest} style={{ padding: '11px 22px', fontSize: '14px', flexShrink: 0 }}>
-            <PlayCircle /> Start Test
+            <PlayCircle /> {langKey === 'hi' ? 'परीक्षण शुरू करें' : 'Start Test'}
           </button>
         </div>
       </div>
@@ -209,18 +220,18 @@ export default function Dashboard() {
         {[
           {
             icon: <UserIcon />, iconColor: '#6366F1', iconBg: '#EEF2FF',
-            label: 'Active Profile', value: userName,
-            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: '999px' }}>Primary</span>,
+            label: langKey === 'hi' ? 'सक्रिय प्रोफ़ाइल' : 'Active Profile', value: userName,
+            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: '999px' }}>{langKey === 'hi' ? 'प्राथमिक' : 'Primary'}</span>,
           },
           {
             icon: <ClockIcon />, iconColor: 'var(--red)', iconBg: 'var(--red-light)',
-            label: 'Last Test', value: lastDate ?? 'No tests yet',
-            tag: lastUrgency ? <span className={`badge badge-${lastUrgency.toLowerCase()}`}>{lastUrgency} Risk · {lastScore}</span> : <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>—</span>,
+            label: langKey === 'hi' ? 'पिछला परीक्षण' : 'Last Test', value: lastDate ?? (langKey === 'hi' ? 'अभी तक कोई परीक्षण नहीं' : 'No tests yet'),
+            tag: lastUrgency ? <span className={`badge badge-${lastUrgency.toLowerCase()}`}>{langKey === 'hi' ? (lastUrgency === 'High' ? 'उच्च' : lastUrgency === 'Medium' ? 'मध्यम' : 'कम') : lastUrgency} {langKey === 'hi' ? 'जोखिम' : 'Risk'} · {lastScore}</span> : <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>—</span>,
           },
           {
             icon: <CalendarIcon />, iconColor: '#B45309', iconBg: '#FFFBEB',
-            label: 'Total Tests', value: `${reports.length} test${reports.length !== 1 ? 's' : ''}`,
-            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 9px', borderRadius: '999px' }}>{reports.length === 0 ? 'Start your first' : 'View history'}</span>,
+            label: langKey === 'hi' ? 'कुल परीक्षण' : 'Total Tests', value: `${reports.length} ${langKey === 'hi' ? 'परीक्षण' : (reports.length !== 1 ? 'tests' : 'test')}`,
+            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 9px', borderRadius: '999px' }}>{reports.length === 0 ? (langKey === 'hi' ? 'अपना पहला शुरू करें' : 'Start your first') : (langKey === 'hi' ? 'इतिहास देखें' : 'View history')}</span>,
           },
         ].map((c, i) => (
           <div key={i} className="card card-lift" style={{ padding: '18px 20px' }}>
@@ -245,9 +256,13 @@ export default function Dashboard() {
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
                 <span style={{ color: 'var(--text-3)' }}><TrendIcon /></span>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>Risk Score History</span>
+                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>
+                  {langKey === 'hi' ? 'जोखिम स्कोर इतिहास' : 'Risk Score History'}
+                </span>
               </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)', marginTop: '2px' }}>Last {chartData.length} tests</div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)', marginTop: '2px' }}>
+                {langKey === 'hi' ? `पिछले ${chartData.length} परीक्षण` : `Last ${chartData.length} tests`}
+              </div>
             </div>
             {peakScore > 0 && (
               <div style={{ fontSize: '11px', fontWeight: '700', background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-border)', padding: '3px 10px', borderRadius: '6px' }}>
@@ -262,15 +277,19 @@ export default function Dashboard() {
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
               <span style={{ color: 'var(--text-3)' }}><ListIcon /></span>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>Recent Reports</span>
+              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>
+                {langKey === 'hi' ? 'हालिया रिपोर्ट' : 'Recent Reports'}
+              </span>
             </div>
           </div>
 
           {loadingReports ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>Loading...</div>
+            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>
+              {langKey === 'hi' ? 'लोड हो रहा है...' : 'Loading...'}
+            </div>
           ) : reports.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>
-              No tests yet. Start your first assessment!
+              {langKey === 'hi' ? 'अभी तक कोई परीक्षण नहीं हुआ।' : 'No tests yet. Start your first assessment!'}
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -297,7 +316,9 @@ export default function Dashboard() {
 
       {/* ── Footer ── */}
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)' }}>SymptoSense · {reports.length} total assessments</span>
+        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)' }}>
+          SymptoSense · {reports.length} {langKey === 'hi' ? 'कुल मूल्यांकन' : 'total assessments'}
+        </span>
         <span style={{ fontSize: '11px', color: 'var(--text-4)', background: 'var(--border-faint)', padding: '3px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
           Next.js · PostgreSQL
         </span>

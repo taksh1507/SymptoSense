@@ -7,9 +7,20 @@ function GaugeChart({ score, max = 100 }: { score: number; max?: number }) {
   const r = 70;
   const circumference = Math.PI * r;
   const dashOffset = circumference * (1 - pct);
-  const color = pct >= 0.7 ? '#B91C1C' : pct >= 0.35 ? '#B45309' : '#15803D';
-  const label = pct >= 0.7 ? 'HIGH' : pct >= 0.35 ? 'MEDIUM' : 'LOW';
+  const colors = { high: '#B91C1C', med: '#B45309', low: '#15803D' };
+  const labels = {
+    en: { high: 'HIGH', med: 'MEDIUM', low: 'LOW', risk: 'RISK' },
+    hi: { high: 'उच्च', med: 'मध्यम', low: 'कम', risk: 'जोखिम' }
+  };
+  
+  const status = pct >= 0.7 ? 'high' : pct >= 0.35 ? 'med' : 'low';
+  const color = colors[status];
   const emoji = pct >= 0.7 ? '🔴' : pct >= 0.35 ? '🟡' : '🟢';
+  
+  const { language } = useApp();
+  const langKey = language === 'Hindi' || language === 'Marathi' ? 'hi' : 'en';
+  const displayLabel = labels[langKey][status];
+  const riskLabel = labels[langKey]['risk'];
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -27,7 +38,8 @@ function GaugeChart({ score, max = 100 }: { score: number; max?: number }) {
         border: `1.5px solid ${color}33`, borderRadius: '999px', padding: '6px 20px',
       }}>
         <span style={{ fontSize: '18px' }}>{emoji}</span>
-        <span style={{ fontSize: '15px', fontWeight: '800', color }}>{label} RISK</span>
+        <span style={{ fontSize: '18px' }}>{emoji}</span>
+        <span style={{ fontSize: '15px', fontWeight: '800', color }}>{displayLabel} {riskLabel}</span>
       </div>
     </div>
   );
@@ -165,16 +177,20 @@ export default function ResultsPage() {
 
           {/* Link to Past Reports */}
           <div className="card" style={{ padding: '24px', flex: 1 }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px' }}>Your History</h3>
+            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px' }}>
+              {language === 'Hindi' || language === 'Marathi' ? 'आपका इतिहास' : 'Your History'}
+            </h3>
             <p style={{ fontSize: '13px', color: 'var(--text-3)', marginBottom: '16px', lineHeight: '1.6' }}>
-              This assessment has been saved to your account. View all your past reports to track your health trends over time.
+              {language === 'Hindi' || language === 'Marathi' 
+                ? 'यह मूल्यांकन आपके खाते में सहेज लिया गया है। समय के साथ अपने स्वास्थ्य के रुझानों को ट्रैक करने के लिए अपनी पिछली सभी रिपोर्ट देखें।'
+                : 'This assessment has been saved to your account. View all your past reports to track your health trends over time.'}
             </p>
             <button
               onClick={() => window.location.href = '/dashboard/reports'}
               className="btn btn-primary"
               style={{ width: '100%', padding: '11px' }}
             >
-              View Past Reports →
+              {language === 'Hindi' || language === 'Marathi' ? 'पुरानी रिपोर्ट देखें →' : 'View Past Reports →'}
             </button>
           </div>
         </div>
@@ -186,7 +202,9 @@ export default function ResultsPage() {
         background: 'var(--text-1)', borderRadius: '12px', textAlign: 'center',
       }}>
         <p style={{ fontSize: '11px', color: 'rgba(255,255,255,0.6)', fontFamily: 'JetBrains Mono, monospace', margin: 0 }}>
-          ⚠️ DISCLAIMER: THIS IS A DECISION SUPPORT TOOL. IN CASE OF EMERGENCY, CONTACT MEDICAL PROFESSIONALS IMMEDIATELY.
+          {language === 'Hindi' || language === 'Marathi' 
+            ? '⚠️ अस्वीकरण: यह एक निर्णय समर्थन उपकरण है। आपात स्थिति के मामले में, तुरंत चिकित्सा पेशेवरों से संपर्क करें।'
+            : '⚠️ DISCLAIMER: THIS IS A DECISION SUPPORT TOOL. IN CASE OF EMERGENCY, CONTACT MEDICAL PROFESSIONALS IMMEDIATELY.'}
         </p>
       </div>
     </div>

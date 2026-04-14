@@ -78,11 +78,13 @@ function NavLink({ id, icon, label, active, onClick }: {
 }
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
-  const { triageScreen, cancelTest } = useApp();
+  const { language, triageScreen, cancelTest } = useApp();
   const { data: session } = useSession();
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const langKey = language === 'Hindi' || language === 'Marathi' ? 'hi' : 'en';
 
   const isTestActive = triageScreen === 'questions' || triageScreen === 'loading';
 
@@ -152,21 +154,21 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <NavLink
           id="nav-home"
           icon={<Icons.Home />}
-          label="Home"
+          label={langKey === 'hi' ? 'मुख्य पृष्ठ' : 'Home'}
           active={pathname === '/dashboard'}
           onClick={handleHome}
         />
         <NavLink
           id="nav-reports"
           icon={<Icons.FileText />}
-          label="Past Reports"
+          label={langKey === 'hi' ? 'पिछली रिपोर्ट' : 'Past Reports'}
           active={pathname === '/dashboard/reports'}
           onClick={() => { router.push('/dashboard/reports'); setIsMobileMenuOpen(false); }}
         />
         <NavLink
           id="nav-settings"
           icon={<Icons.Settings />}
-          label="Settings"
+          label={langKey === 'hi' ? 'सेटिंग्स' : 'Settings'}
           active={pathname === '/dashboard/settings'}
           onClick={() => { router.push('/dashboard/settings'); setIsMobileMenuOpen(false); }}
         />
@@ -175,10 +177,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           <div style={{ marginTop: '12px', padding: '12px 13px', borderRadius: '10px', background: '#FFF5F5', border: '1.5px solid #FEB2B2' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>
               <span style={{ color: '#E53E3E' }}><Icons.Activity /></span>
-              <span style={{ fontSize: '12px', fontWeight: '700', color: '#C53030' }}>Test in Progress</span>
+              <span style={{ fontSize: '12px', fontWeight: '700', color: '#C53030' }}>
+                {langKey === 'hi' ? 'परीक्षण प्रगति पर है' : 'Test in Progress'}
+              </span>
             </div>
             <button onClick={() => { cancelTest(); setIsMobileMenuOpen(false); }} style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '11.5px', color: '#E53E3E', background: 'none', border: 'none', cursor: 'pointer', fontWeight: '500' }}>
-              <Icons.X /> Cancel test
+              <Icons.X /> {langKey === 'hi' ? 'परीक्षण रद्द करें' : 'Cancel test'}
             </button>
           </div>
         )}
@@ -197,7 +201,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <div style={{ fontSize: '11px', color: '#A0AEC0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{userEmail}</div>
           </div>
         </div>
-        <NavLink id="nav-mobile-logout" icon={<Icons.LogOut />} label="Log out" onClick={handleLogout} />
+        <NavLink id="nav-mobile-logout" icon={<Icons.LogOut />} label={langKey === 'hi' ? 'लॉग आउट' : 'Log out'} onClick={handleLogout} />
       </div>
     </>
   );
