@@ -268,15 +268,29 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel,
           disabled={isLoading}
           style={{
             width: "52px", height: "52px", borderRadius: "50%", flexShrink: 0,
-            background: isRecording ? "#EF4444" : "var(--bg)",
-            border: `2px solid ${isRecording ? "#EF4444" : "var(--border)"}`,
+            background: isRecording ? "#EF4444" : "var(--red)",
+            border: "none",
             cursor: isLoading ? "not-allowed" : "pointer",
             display: "flex", alignItems: "center", justifyContent: "center",
-            fontSize: "20px", transition: "all 0.2s",
+            transition: "all 0.2s",
+            boxShadow: isRecording ? "0 0 0 4px rgba(239,68,68,0.25)" : "0 2px 8px rgba(185,28,28,0.35)",
           }}
           title={isRecording ? "Stop recording" : "Speak your answer"}
         >
-          {isRecording ? "⏹️" : "🎤"}
+          {isRecording ? (
+            /* Stop square */
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+              <rect x="4" y="4" width="16" height="16" rx="2"/>
+            </svg>
+          ) : (
+            /* WhatsApp-style mic */
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="2" width="6" height="11" rx="3"/>
+              <path d="M5 10a7 7 0 0 0 14 0"/>
+              <line x1="12" y1="19" x2="12" y2="22"/>
+              <line x1="8" y1="22" x2="16" y2="22"/>
+            </svg>
+          )}
         </button>
 
         {/* Replay */}

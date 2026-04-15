@@ -275,9 +275,21 @@ export default function HowItWorksPage() {
       </section>
 
       {/* Footer */}
-      <footer className="mobile-padding mobile-column" style={{ padding: '24px 48px', background: '#1A202C', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px' }}>
-        <span style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>Sympto<span style={{ color: '#FC8181' }}>Sense</span> <span style={{ color: '#4A5568', fontWeight: '400' }}>· v1.0.4</span></span>
-        <span style={{ fontSize: '12px', color: '#4A5568', textAlign: 'center' }}>⚠️ Decision support only — not a medical diagnosis</span>
+      <footer style={{ background: '#1A202C', padding: '24px 48px 20px' }}>
+        <div className="mobile-padding mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', marginBottom: '16px' }}>
+          <span style={{ fontSize: '13px', fontWeight: '700', color: 'white' }}>Sympto<span style={{ color: '#FC8181' }}>Sense</span> <span style={{ color: '#4A5568', fontWeight: '400' }}>· v1.0.4</span></span>
+        </div>
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: '12px',
+          background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.35)',
+          borderRadius: '10px', padding: '12px 18px',
+        }}>
+          <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠️</span>
+          <p style={{ fontSize: '12.5px', color: '#FCD34D', fontWeight: '600', margin: 0, lineHeight: 1.6 }}>
+            <strong style={{ color: '#FDE68A', fontWeight: '800' }}>Medical Disclaimer: </strong>
+            SymptoSense is a decision support tool and is <strong style={{ color: '#FDE68A' }}>not a replacement</strong> for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional.
+          </p>
+        </div>
       </footer>
     </div>
   );

@@ -300,12 +300,19 @@ export default function LandingPage() {
                 Sympto<span style={{ color: 'var(--red)' }}>Sense</span>
             </span>
             </div>
-            <div style={{ fontSize: '13px', color: 'rgba(255,255,255,0.5)', fontFamily: 'JetBrains Mono, monospace' }}>
-                Next.js / Flask / PostgreSQL · v1.0.4
-            </div>
         </div>
-        <div style={{ maxWidth: '1100px', margin: '20px auto 0', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)', fontSize: '12px', color: 'rgba(255,255,255,0.4)', textAlign: 'center' }}>
-            ⚠️ SymptoSense is a decision support tool and is not a replacement for professional medical advice, diagnosis, or treatment.
+        <div style={{ maxWidth: '1100px', margin: '20px auto 0', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '12px',
+            background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.35)',
+            borderRadius: '10px', padding: '12px 18px',
+          }}>
+            <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠️</span>
+            <p style={{ fontSize: '12.5px', color: '#FCD34D', fontWeight: '600', margin: 0, lineHeight: 1.6 }}>
+              <strong style={{ color: '#FDE68A', fontWeight: '800' }}>Medical Disclaimer: </strong>
+              SymptoSense is a decision support tool and is <strong style={{ color: '#FDE68A' }}>not a replacement</strong> for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional.
+            </p>
+          </div>
         </div>
       </footer>
 

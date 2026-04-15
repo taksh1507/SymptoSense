@@ -356,9 +356,19 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
           {/* ── Disclaimer + Footer ── */}
           <div style={{ padding: '20px 0', borderTop: '1px solid var(--border-faint)', textAlign: 'center' }}>
-            <p style={{ fontSize: '12.5px', color: 'var(--text-4)', lineHeight: '1.6', maxWidth: '560px', margin: '0 auto 16px' }}>
-              This report reflects your health status at the time of assessment and may change with new symptoms. It is not a medical diagnosis — always consult a qualified healthcare professional.
-            </p>
+            <div style={{
+              display: 'inline-flex', alignItems: 'flex-start', gap: '10px',
+              background: 'var(--red-light)', border: '1.5px solid var(--red-border)',
+              borderLeft: '4px solid var(--red)',
+              borderRadius: 'var(--radius)', padding: '12px 18px',
+              maxWidth: '580px', margin: '0 auto 16px', textAlign: 'left',
+            }}>
+              <span style={{ fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
+              <p style={{ fontSize: '12.5px', color: 'var(--red-text)', lineHeight: '1.6', margin: 0, fontWeight: '600' }}>
+                <strong style={{ fontWeight: '800', color: 'var(--red)' }}>Disclaimer: </strong>
+                This report reflects your health status at the time of assessment and may change with new symptoms. It is not a medical diagnosis — always consult a qualified healthcare professional.
+              </p>
+            </div>
             <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
               <button onClick={() => router.push('/dashboard/reports')} className="btn btn-outline" style={{ fontSize: '13px' }}>
                 ← All Reports

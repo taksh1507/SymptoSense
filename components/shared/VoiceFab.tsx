@@ -1,9 +1,23 @@
 "use client";
 
 import { useState } from "react";
-import { Mic, MicOff, X } from "lucide-react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { motion, AnimatePresence } from "framer-motion";
+
+const MicIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="9" y="2" width="6" height="11" rx="3"/>
+    <path d="M5 10a7 7 0 0 0 14 0"/>
+    <line x1="12" y1="19" x2="12" y2="22"/>
+    <line x1="8" y1="22" x2="16" y2="22"/>
+  </svg>
+);
+
+const StopIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+    <rect x="4" y="4" width="16" height="16" rx="2"/>
+  </svg>
+);
 
 interface VoiceFabProps {
   onTranscript?: (text: string) => void;
@@ -104,7 +118,7 @@ export function VoiceFab({ onTranscript }: VoiceFabProps) {
         }}
         aria-label={isListening ? "Stop listening" : "Start voice input"}
       >
-        {isListening ? <MicOff size={22} color="#fff" /> : <Mic size={22} color="#fff" />}
+        {isListening ? <StopIcon /> : <MicIcon />}
       </motion.button>
     </div>
   );

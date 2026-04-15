@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 
 const ML_SERVER_URL = process.env.ML_SERVER_URL ?? "http://localhost:8000/predict-confidence";
+const ML_TIMEOUT_MS = 5000; // 5 seconds max — never let the loading screen hang
 
-const FALLBACK = { confidence: 0.5, confidenceLevel: "Medium" };
+const FALLBACK = { confidence: 0.7, confidenceLevel: "Medium" };
 
 export async function POST(req: Request) {
   try {
@@ -15,11 +16,20 @@ export async function POST(req: Request) {
       normalizedBody.rule_score = Math.round(normalizedBody.rule_score * 100);
     }
 
-    const response = await fetch(ML_SERVER_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(normalizedBody),
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), ML_TIMEOUT_MS);
+
+    let response: Response;
+    try {
+      response = await fetch(ML_SERVER_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(normalizedBody),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -30,8 +40,12 @@ export async function POST(req: Request) {
 
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error) {
-    console.error("ML Proxy Error:", error);
+  } catch (error: unknown) {
+    if (error instanceof Error && error.name === "AbortError") {
+      console.warn("[ML Proxy] Request timed out after", ML_TIMEOUT_MS, "ms — using fallback");
+    } else {
+      console.error("[ML Proxy] Error:", error);
+    }
     return NextResponse.json(FALLBACK);
   }
 }

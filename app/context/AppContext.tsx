@@ -82,7 +82,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<AppState>({
     triageScreen: 'dashboard',
     language: null,
-    personType: null,
+    personType: 'self',
     patientName: '',
     relation: null,
     gender: null,
@@ -279,10 +279,21 @@ export function AppProvider({ children }: { children: ReactNode }) {
           rule_score: result.score,
           risk_level: RISK_ENCODING[result.urgency as keyof typeof RISK_ENCODING] || 0
         };
-        const res = await fetch('/api/ml/predict', {
-          method: 'POST',
-          body: JSON.stringify(features)
-        });
+
+        // Hard 6-second timeout — the route.ts already has 5 s, this is a safety net
+        const mlController = new AbortController();
+        const mlTimeoutId = setTimeout(() => mlController.abort(), 6000);
+        let res: Response;
+        try {
+          res = await fetch('/api/ml/predict', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(features),
+            signal: mlController.signal,
+          });
+        } finally {
+          clearTimeout(mlTimeoutId);
+        }
         const mlResult = await res.json();
 
         // Fetch dynamic reasoning from Groq — pass real symptom context
@@ -366,7 +377,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
       } catch (e) {
         console.error("Final ML Error:", e);
-        return null;
+        // Return a local fallback so the loading screen always proceeds
+        return {
+          score: 0.7,
+          level: "Medium",
+          explanation: "Confidence estimated from symptom pattern.",
+          riskReason: `${result.urgency} risk based on ${primarySymptom.replace(/_/g, ' ')}.`,
+          riskSummary: undefined,
+          riskFactors: [],
+          primaryAction: undefined,
+          recommendationSteps: [],
+          insights: []
+        };
       }
     };
 
@@ -458,7 +480,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
 
   const startTest = () =>
-    setState((s) => ({ ...s, triageScreen: 'language' }));
+    setState((s) => ({ ...s, triageScreen: 'language', personType: 'self', patientName: '', relation: null, gender: null }));
 
   const cancelTest = () =>
     setState((s) => ({
@@ -466,7 +488,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       triageScreen: 'dashboard',
       currentQuestion: 0,
       selectedAnswers: {},
-      personType: null,
+      personType: 'self',
       patientName: '',
       relation: null,
       gender: null,

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useApp } from '../context/AppContext';
 
@@ -12,6 +13,8 @@ interface Report {
   urgency: string;
   primaryCategory: string;
   answers: string;
+  isSelf: boolean;
+  personName: string;
 }
 
 // ── SVG icons (consistent 16px) ──
@@ -114,15 +117,33 @@ function RiskChart({ data }: { data: { m: string; v: number }[] }) {
 }
 
 // ── Risk helpers ──
+type ChartFilter = 'all' | 'self' | 'family';
+
+const ChevronDown = () => (
+  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+    <polyline points="6 9 12 15 18 9"/>
+  </svg>
+);
 
 export default function Dashboard() {
   const { startTest } = useApp();
   const { data: session } = useSession();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const [reports, setReports] = useState<Report[]>([]);
   const [loadingReports, setLoadingReports] = useState(true);
+  const [chartFilter, setChartFilter] = useState<ChartFilter>('all');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
 
   useEffect(() => { setMounted(true); }, []);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    if (!dropdownOpen) return;
+    const handler = () => setDropdownOpen(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [dropdownOpen]);
 
   // Fetch real reports from DB
   useEffect(() => {
@@ -148,11 +169,22 @@ export default function Dashboard() {
   const lastDate = lastReport ? new Date(lastReport.createdAt).toLocaleDateString(langKey, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
 
   // Build chart data from real reports (last 7)
-  const chartData = reports.slice(0, 7).reverse().map((r) => ({
-    m: new Date(r.createdAt).toLocaleDateString(langKey, { month: 'short' }),
+  const filteredReports = reports.filter(r =>
+    chartFilter === 'all' ? true :
+    chartFilter === 'self' ? r.isSelf :
+    !r.isSelf
+  );
+  const chartData = filteredReports.slice(0, 7).reverse().map((r) => ({
+    m: new Date(r.createdAt).toLocaleDateString(langKey, { month: 'short', day: 'numeric' }),
     v: r.score ?? 0,
   }));
-  const peakScore = reports.length > 0 ? Math.max(...reports.map((r) => r.score ?? 0)) : 0;
+  const peakScore = filteredReports.length > 0 ? Math.max(...filteredReports.map((r) => r.score ?? 0)) : 0;
+
+  const filterLabel = {
+    all:    langKey === 'hi' ? 'सभी' : langKey === 'mr' ? 'सर्व' : 'All',
+    self:   langKey === 'hi' ? 'मेरे लिए' : langKey === 'mr' ? 'स्वतःसाठी' : 'Myself',
+    family: langKey === 'hi' ? 'किसी और के लिए' : langKey === 'mr' ? 'दुसऱ्यासाठी' : 'Someone Else',
+  };
 
   const greetingHour = new Date().getHours();
   const greetings = {
@@ -268,11 +300,60 @@ export default function Dashboard() {
                 {langKey === 'hi' ? `पिछले ${chartData.length} परीक्षण` : langKey === 'mr' ? `शेवटच्या ${chartData.length} चाचण्या` : `Last ${chartData.length} tests`}
               </div>
             </div>
-            {peakScore > 0 && (
-              <div style={{ fontSize: '11px', fontWeight: '700', background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-border)', padding: '3px 10px', borderRadius: '6px' }}>
-                Peak: {peakScore}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {/* ── Filter dropdown ── */}
+              <div style={{ position: 'relative' }}>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setDropdownOpen(o => !o); }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '5px',
+                    padding: '5px 10px', borderRadius: 'var(--radius-sm)',
+                    border: '1.5px solid var(--border)', background: 'var(--surface)',
+                    fontSize: '12px', fontWeight: '600', color: 'var(--text-2)',
+                    cursor: 'pointer', fontFamily: 'var(--font)',
+                    transition: 'border-color 0.15s',
+                  }}
+                >
+                  {filterLabel[chartFilter]}
+                  <ChevronDown />
+                </button>
+                {dropdownOpen && (
+                  <div
+                    style={{
+                      position: 'absolute', top: 'calc(100% + 4px)', right: 0,
+                      background: 'var(--surface)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)',
+                      zIndex: 20, minWidth: '140px', overflow: 'hidden',
+                    }}
+                  >
+                    {(['all', 'self', 'family'] as ChartFilter[]).map((opt) => (
+                      <button
+                        key={opt}
+                        onClick={() => { setChartFilter(opt); setDropdownOpen(false); }}
+                        style={{
+                          display: 'flex', alignItems: 'center', gap: '8px',
+                          width: '100%', padding: '9px 14px', border: 'none',
+                          background: chartFilter === opt ? 'var(--red-light)' : 'transparent',
+                          color: chartFilter === opt ? 'var(--red)' : 'var(--text-2)',
+                          fontSize: '13px', fontWeight: chartFilter === opt ? '700' : '500',
+                          cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left',
+                        }}
+                      >
+                        <span style={{ fontSize: '14px' }}>
+                          {opt === 'all' ? '👥' : opt === 'self' ? '🧑' : '👨‍👩‍👧'}
+                        </span>
+                        {filterLabel[opt]}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+              {peakScore > 0 && (
+                <div style={{ fontSize: '11px', fontWeight: '700', background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-border)', padding: '3px 10px', borderRadius: '6px' }}>
+                  Peak: {peakScore}
+                </div>
+              )}
+            </div>
           </div>
           {mounted && <RiskChart data={chartData} />}
         </div>
@@ -298,7 +379,18 @@ export default function Dashboard() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               {reports.slice(0, 5).map((r, i) => (
-                <div key={r.id} style={{ display: 'flex', alignItems: 'center', padding: '10px 8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer', borderBottom: i < Math.min(reports.length, 5) - 1 ? '1px solid var(--border-faint)' : 'none' }}>
+                <div
+                  key={r.id}
+                  onClick={() => router.push(`/dashboard/reports/${r.id}`)}
+                  style={{
+                    display: 'flex', alignItems: 'center', padding: '10px 8px',
+                    borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                    borderBottom: i < Math.min(reports.length, 5) - 1 ? '1px solid var(--border-faint)' : 'none',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--red-light)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                >
                   <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: urgencyDot(r.urgency), marginRight: '12px', flexShrink: 0 }} />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 'var(--text-sm)', fontWeight: '600', color: 'var(--text-1)' }}>
@@ -322,9 +414,6 @@ export default function Dashboard() {
       <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)' }}>
           SymptoSense · {reports.length} {langKey === 'hi' ? 'कुल मूल्यांकन' : langKey === 'mr' ? 'एकूण मूल्यांकन' : 'total assessments'}
-        </span>
-        <span style={{ fontSize: '11px', color: 'var(--text-4)', background: 'var(--border-faint)', padding: '3px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
-          Next.js · PostgreSQL
         </span>
       </div>
       </div>

@@ -80,7 +80,7 @@ export default function PersonModal() {
     <div className="modal-overlay" onClick={cancelTest}>
       <div
         className="card modal-in"
-        style={{ width: '100%', maxWidth: '440px', padding: '28px', margin: '16px', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)' }}
+        style={{ width: '100%', maxWidth: '440px', padding: '28px', margin: '16px', boxShadow: '0 25px 50px -12px rgb(0 0 0 / 0.25)', maxHeight: '90vh', overflowY: 'auto' }}
         onClick={(e) => e.stopPropagation()}
       >
         <h2 style={{ fontSize: '17px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '20px' }}>

@@ -5,25 +5,25 @@ import { useApp } from '../context/AppContext';
 
 const STEPS = {
   en: [
-    { label: 'Processing your symptom inputs',       icon: '🩺' },
-    { label: 'Running risk weight analysis',          icon: '⚖️' },
-    { label: 'Calculating confidence score',          icon: '🤖' },
-    { label: 'Generating clinical reasoning',         icon: '💡' },
-    { label: 'Preparing your personalised report',   icon: '📋' },
+    { label: 'Processing your symptom inputs',      icon: '🩺' },
+    { label: 'Running risk weight analysis',         icon: '⚖️' },
+    { label: 'Calculating confidence score',         icon: '🤖' },
+    { label: 'Generating clinical reasoning',        icon: '💡' },
+    { label: 'Preparing your personalised report',  icon: '📋' },
   ],
   hi: [
-    { label: 'आपके लक्षण इनपुट प्रोसेस हो रहे हैं',    icon: '🩺' },
-    { label: 'जोखिम भार विश्लेषण चल रहा है',            icon: '⚖️' },
-    { label: 'विश्वास स्कोर की गणना हो रही है',          icon: '🤖' },
-    { label: 'नैदानिक तर्क तैयार किया जा रहा है',        icon: '💡' },
-    { label: 'आपकी व्यक्तिगत रिपोर्ट तैयार हो रही है',  icon: '📋' },
+    { label: 'आपके लक्षण इनपुट प्रोसेस हो रहे हैं',   icon: '🩺' },
+    { label: 'जोखिम भार विश्लेषण चल रहा है',           icon: '⚖️' },
+    { label: 'विश्वास स्कोर की गणना हो रही है',         icon: '🤖' },
+    { label: 'नैदानिक तर्क तैयार किया जा रहा है',       icon: '💡' },
+    { label: 'आपकी व्यक्तिगत रिपोर्ट तैयार हो रही है', icon: '📋' },
   ],
   mr: [
-    { label: 'तुमचे लक्षण इनपुट प्रक्रिया होत आहे',      icon: '🩺' },
-    { label: 'जोखीम वजन विश्लेषण चालू आहे',              icon: '⚖️' },
-    { label: 'विश्वास स्कोर मोजला जात आहे',               icon: '🤖' },
-    { label: 'नैदानिक तर्क तयार केला जात आहे',           icon: '💡' },
-    { label: 'तुमचा वैयक्तिक अहवाल तयार होत आहे',        icon: '📋' },
+    { label: 'तुमचे लक्षण इनपुट प्रक्रिया होत आहे',     icon: '🩺' },
+    { label: 'जोखीम वजन विश्लेषण चालू आहे',             icon: '⚖️' },
+    { label: 'विश्वास स्कोर मोजला जात आहे',              icon: '🤖' },
+    { label: 'नैदानिक तर्क तयार केला जात आहे',          icon: '💡' },
+    { label: 'तुमचा वैयक्तिक अहवाल तयार होत आहे',       icon: '📋' },
   ],
 };
 
@@ -32,6 +32,13 @@ const TITLES = {
   hi: { main: 'आपके लक्षणों का विश्लेषण हो रहा है', sub: 'हमारा AI ट्राइएज इंजन आपका जोखिम प्रोफ़ाइल बना रहा है' },
   mr: { main: 'तुमच्या लक्षणांचे विश्लेषण होत आहे', sub: 'आमचे AI ट्राइएज इंजन तुमचे जोखीम प्रोफाइल तयार करत आहे' },
 };
+
+const HeartPulseIcon = () => (
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+    <path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>
+  </svg>
+);
 
 export default function LoadingScreen() {
   const { language } = useApp();
@@ -43,16 +50,24 @@ export default function LoadingScreen() {
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [dots, setDots] = useState('');
 
-  // Animate steps sequentially — each step takes ~500ms
+  // Animate steps sequentially — cap completedSteps at steps.length to prevent >100%
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveStep(prev => {
         if (prev < steps.length - 1) {
-          setCompletedSteps(c => [...c, prev]);
+          setCompletedSteps(c => {
+            // Guard: never add duplicates or exceed total
+            if (c.includes(prev) || c.length >= steps.length) return c;
+            return [...c, prev];
+          });
           return prev + 1;
         }
+        // Last step — mark it complete and stop
+        setCompletedSteps(c => {
+          if (c.includes(prev) || c.length >= steps.length) return c;
+          return [...c, prev];
+        });
         clearInterval(interval);
-        setCompletedSteps(c => [...c, prev]);
         return prev;
       });
     }, 480);
@@ -65,71 +80,79 @@ export default function LoadingScreen() {
     return () => clearInterval(t);
   }, []);
 
+  // Cap at steps.length so percentage never exceeds 100%
+  const doneCount = Math.min(completedSteps.length, steps.length);
+  const pct = Math.round((doneCount / steps.length) * 100);
+
   return (
     <div style={{
       minHeight: '100%',
-      background: 'linear-gradient(160deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'column', gap: '32px', padding: '48px 24px',
+      background: 'var(--bg)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'column',
+      gap: '28px',
+      padding: '48px 24px',
       fontFamily: 'var(--font)',
     }}>
 
       {/* ── Central icon with pulse rings ── */}
       <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        {[120, 96, 76].map((size, i) => (
+        {[100, 78].map((size, i) => (
           <div key={i} style={{
             position: 'absolute',
             width: size, height: size, borderRadius: '50%',
-            border: `1.5px solid rgba(99,102,241,${0.35 - i * 0.1})`,
-            animation: `pulse-ring 2s ease-out infinite`,
-            animationDelay: `${i * 0.4}s`,
+            border: `1.5px solid rgba(185,28,28,${0.2 - i * 0.07})`,
+            animation: 'ls-pulse-ring 2s ease-out infinite',
+            animationDelay: `${i * 0.45}s`,
           }} />
         ))}
         <div style={{
-          width: '64px', height: '64px', borderRadius: '50%',
-          background: 'linear-gradient(135deg, #6366f1, #4f46e5)',
+          width: '60px', height: '60px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #FC8181, #B91C1C)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '28px',
-          boxShadow: '0 0 40px rgba(99,102,241,0.5), 0 0 80px rgba(99,102,241,0.2)',
+          boxShadow: '0 4px 24px rgba(185,28,28,0.35), 0 0 0 6px rgba(185,28,28,0.08)',
           zIndex: 1,
         }}>
-          🫀
+          <HeartPulseIcon />
         </div>
       </div>
 
       {/* ── Title ── */}
-      <div style={{ textAlign: 'center', maxWidth: '400px' }}>
-        <h2 style={{ fontSize: '22px', fontWeight: '800', color: 'white', margin: '0 0 8px', letterSpacing: '-0.3px' }}>
+      <div style={{ textAlign: 'center', maxWidth: '420px' }}>
+        <h2 style={{
+          fontSize: '22px', fontWeight: '800',
+          color: 'var(--text-1)', margin: '0 0 8px',
+          letterSpacing: '-0.4px', lineHeight: 1.2,
+        }}>
           {title.main}{dots}
         </h2>
-        <p style={{ fontSize: '14px', color: 'rgba(255,255,255,0.45)', margin: 0, lineHeight: '1.5' }}>
+        <p style={{ fontSize: '14px', color: 'var(--text-3)', margin: 0, lineHeight: 1.6 }}>
           {title.sub}
         </p>
       </div>
 
       {/* ── Progress bar ── */}
-      <div style={{ width: '100%', maxWidth: '380px' }}>
-        <div style={{ height: '4px', background: 'rgba(255,255,255,0.08)', borderRadius: '999px', overflow: 'hidden' }}>
-          <div style={{
-            height: '100%',
-            width: `${Math.round(((completedSteps.length) / steps.length) * 100)}%`,
-            background: 'linear-gradient(90deg, #6366f1, #818cf8)',
-            borderRadius: '999px',
-            transition: 'width 0.5s ease',
-          }} />
+      <div style={{ width: '100%', maxWidth: '400px' }}>
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{ width: `${pct}%` }}
+          />
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px' }}>
-          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-            {completedSteps.length}/{steps.length}
+          <span style={{ fontSize: '11px', color: 'var(--text-4)', fontWeight: '500' }}>
+            {doneCount}/{steps.length} steps
           </span>
-          <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.3)' }}>
-            {Math.round((completedSteps.length / steps.length) * 100)}%
+          <span style={{ fontSize: '11px', color: 'var(--red)', fontWeight: '700' }}>
+            {pct}%
           </span>
         </div>
       </div>
 
       {/* ── Step list ── */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '380px' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', maxWidth: '400px' }}>
         {steps.map((step, i) => {
           const isDone    = completedSteps.includes(i);
           const isActive  = activeStep === i && !isDone;
@@ -138,27 +161,31 @@ export default function LoadingScreen() {
           return (
             <div key={i} style={{
               display: 'flex', alignItems: 'center', gap: '12px',
-              padding: '11px 16px', borderRadius: '12px',
+              padding: '12px 16px', borderRadius: 'var(--radius-md)',
               background: isDone
-                ? 'rgba(99,102,241,0.12)'
+                ? 'var(--red-light)'
                 : isActive
-                ? 'rgba(255,255,255,0.07)'
-                : 'rgba(255,255,255,0.03)',
-              border: `1px solid ${isDone ? 'rgba(99,102,241,0.3)' : isActive ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.05)'}`,
+                ? 'var(--surface)'
+                : 'var(--surface)',
+              border: `1.5px solid ${
+                isDone    ? 'var(--red-border)'
+                : isActive ? 'var(--red)'
+                : 'var(--border)'
+              }`,
+              boxShadow: isActive ? '0 2px 8px rgba(185,28,28,0.12)' : 'var(--shadow-xs)',
               transition: 'all 0.3s ease',
-              opacity: isPending ? 0.4 : 1,
+              opacity: isPending ? 0.5 : 1,
             }}>
-              {/* Status indicator */}
+              {/* Status dot */}
               <div style={{
                 width: '22px', height: '22px', borderRadius: '50%', flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: isDone
-                  ? '#6366f1'
+                  ? 'var(--red)'
                   : isActive
-                  ? 'rgba(255,255,255,0.1)'
-                  : 'rgba(255,255,255,0.05)',
-                border: isActive ? '2px solid rgba(99,102,241,0.6)' : 'none',
-                fontSize: '11px',
+                  ? 'var(--red-light)'
+                  : 'var(--border-faint)',
+                border: isActive ? '2px solid var(--red-border)' : 'none',
               }}>
                 {isDone ? (
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
@@ -167,19 +194,27 @@ export default function LoadingScreen() {
                 ) : isActive ? (
                   <div style={{
                     width: '8px', height: '8px', borderRadius: '50%',
-                    background: '#818cf8',
-                    animation: 'pulse-dot 1s ease-in-out infinite',
+                    background: 'var(--red)',
+                    animation: 'ls-pulse-dot 1s ease-in-out infinite',
                   }} />
                 ) : (
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)' }} />
+                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--border)' }} />
                 )}
               </div>
 
-              <span style={{ fontSize: '13px', color: isDone ? 'rgba(255,255,255,0.85)' : isActive ? 'white' : 'rgba(255,255,255,0.4)', fontWeight: isActive ? '600' : '400', flex: 1 }}>
+              <span style={{
+                fontSize: '13px', flex: 1,
+                color: isDone
+                  ? 'var(--red-text)'
+                  : isActive
+                  ? 'var(--text-1)'
+                  : 'var(--text-4)',
+                fontWeight: isDone ? '600' : isActive ? '700' : '400',
+              }}>
                 {step.label}
               </span>
 
-              <span style={{ fontSize: '16px', opacity: isDone ? 1 : isActive ? 0.7 : 0.2 }}>
+              <span style={{ fontSize: '16px', opacity: isPending ? 0.25 : 1 }}>
                 {step.icon}
               </span>
             </div>
@@ -187,29 +222,16 @@ export default function LoadingScreen() {
         })}
       </div>
 
-      {/* ── Tech badge ── */}
-      <div style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.07)',
-        borderRadius: '8px', padding: '8px 16px',
-      }}>
-        <span style={{ fontSize: '11px', color: 'rgba(255,255,255,0.25)', fontFamily: 'JetBrains Mono, monospace' }}>
-          Next.js · Groq AI · Neon PostgreSQL
-        </span>
-      </div>
-
       <style>{`
-        @keyframes pulse-ring {
-          0%   { transform: scale(0.9); opacity: 0.8; }
-          70%  { transform: scale(1.15); opacity: 0; }
-          100% { transform: scale(1.15); opacity: 0; }
+        @keyframes ls-pulse-ring {
+          0%   { transform: scale(0.92); opacity: 0.7; }
+          70%  { transform: scale(1.18); opacity: 0; }
+          100% { transform: scale(1.18); opacity: 0; }
         }
-        @keyframes pulse-dot {
+        @keyframes ls-pulse-dot {
           0%, 100% { opacity: 0.4; transform: scale(0.8); }
           50%       { opacity: 1;   transform: scale(1.2); }
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
       `}</style>
     </div>
   );
