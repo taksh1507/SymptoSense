@@ -47,64 +47,66 @@ export default function ReportsPage() {
 
   return (
     <AppShell>
-      <div className="mobile-padding" style={{ padding: '28px 32px', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
-        <div style={{ marginBottom: '28px' }}>
-          <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', letterSpacing: '-0.5px' }}>{t.title[langKey]}</h1>
-          <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
-            {reports.length} {t.summary[langKey]}
-          </p>
-        </div>
-
-        {loading ? (
-          <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-4)' }}>{t.loading[langKey]}</div>
-        ) : reports.length === 0 ? (
-          <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
-            <div style={{ fontSize: '40px', marginBottom: '16px' }}>📋</div>
-            <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '8px' }}>{t.noReports[langKey]}</div>
-            <div style={{ fontSize: '14px', color: 'var(--text-3)' }}>{t.noReportsDesc[langKey]}</div>
+      <div className="page-container mobile-padding">
+        <div className="content-wrapper">
+          <div style={{ marginBottom: '28px' }}>
+            <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', letterSpacing: '-0.5px' }}>{t.title[langKey]}</h1>
+            <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
+              {reports.length} {t.summary[langKey]}
+            </p>
           </div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {reports.map((r) => (
-              <div
-                key={r.id}
-                className="card card-lift"
-                onClick={() => router.push(`/dashboard/reports/${r.id}`)}
-                style={{ padding: '20px 24px', cursor: 'pointer' }}
-              >
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-                      <span style={{
-                        fontSize: '12px', fontWeight: '700', padding: '3px 10px', borderRadius: '999px',
-                        background: urgencyBg(r.urgency), color: urgencyColor(r.urgency),
-                        border: `1px solid ${urgencyBorder(r.urgency)}`,
-                      }}>
-                        {r.urgency} Risk
-                      </span>
-                      <span style={{ fontSize: '13px', color: 'var(--text-4)' }}>
-                        {new Date(r.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
-                      </span>
+
+          {loading ? (
+            <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-4)' }}>{t.loading[langKey]}</div>
+          ) : reports.length === 0 ? (
+            <div className="card" style={{ padding: '60px', textAlign: 'center' }}>
+              <div style={{ fontSize: '40px', marginBottom: '16px' }}>📋</div>
+              <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '8px' }}>{t.noReports[langKey]}</div>
+              <div style={{ fontSize: '14px', color: 'var(--text-3)' }}>{t.noReportsDesc[langKey]}</div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {reports.map((r) => (
+                <div
+                  key={r.id}
+                  className="card card-lift"
+                  onClick={() => router.push(`/dashboard/reports/${r.id}`)}
+                  style={{ padding: '20px 24px', cursor: 'pointer' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <span style={{
+                          fontSize: '12px', fontWeight: '700', padding: '3px 10px', borderRadius: '999px',
+                          background: urgencyBg(r.urgency), color: urgencyColor(r.urgency),
+                          border: `1px solid ${urgencyBorder(r.urgency)}`,
+                        }}>
+                          {r.urgency} Risk
+                        </span>
+                        <span style={{ fontSize: '13px', color: 'var(--text-4)' }}>
+                          {new Date(r.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '14px', color: 'var(--text-2)', marginBottom: '6px' }}>
+                        <strong>{language === 'Hindi' ? 'श्रेणी' : language === 'Marathi' ? 'वर्ग' : 'Category'}:</strong> {r.primaryCategory || (language === 'Hindi' ? 'सामान्य' : language === 'Marathi' ? 'सामान्य' : 'General')}
+                      </div>
+                      <div style={{ fontSize: '13px', color: 'var(--text-3)', lineHeight: '1.5' }}>
+                        {r.recommendation}
+                      </div>
                     </div>
-                    <div style={{ fontSize: '14px', color: 'var(--text-2)', marginBottom: '6px' }}>
-                      <strong>{language === 'Hindi' ? 'श्रेणी' : language === 'Marathi' ? 'वर्ग' : 'Category'}:</strong> {r.primaryCategory || (language === 'Hindi' ? 'सामान्य' : language === 'Marathi' ? 'सामान्य' : 'General')}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
+                      <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '28px', fontWeight: '900', color: urgencyColor(r.urgency), lineHeight: 1 }}>{r.score}</div>
+                        <div style={{ fontSize: '11px', color: 'var(--text-4)', marginTop: '2px' }}>/ 100</div>
+                      </div>
+                      <span style={{ color: 'var(--text-4)', fontSize: '18px' }}>›</span>
                     </div>
-                    <div style={{ fontSize: '13px', color: 'var(--text-3)', lineHeight: '1.5' }}>
-                      {r.recommendation}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexShrink: 0 }}>
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: '28px', fontWeight: '900', color: urgencyColor(r.urgency), lineHeight: 1 }}>{r.score}</div>
-                      <div style={{ fontSize: '11px', color: 'var(--text-4)', marginTop: '2px' }}>/ 100</div>
-                    </div>
-                    <span style={{ color: 'var(--text-4)', fontSize: '18px' }}>›</span>
                   </div>
                 </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </AppShell>
   );

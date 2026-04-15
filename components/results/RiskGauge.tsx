@@ -7,15 +7,16 @@ import type { Urgency } from "@/lib/scoring";
 interface RiskGaugeProps {
   score: number;
   urgency: Urgency;
+  explanation?: string;
 }
 
 const urgencyColors: Record<Urgency, string> = {
-  Low: "#2ED573",
-  Medium: "#FFA502",
-  High: "#FF4757",
+  Low: "#15803D",
+  Medium: "#B45309",
+  High: "#B91C1C",
 };
 
-export function RiskGauge({ score, urgency }: RiskGaugeProps) {
+export function RiskGauge({ score, urgency, explanation }: RiskGaugeProps) {
   const [displayed, setDisplayed] = useState(0);
   const color = urgencyColors[urgency];
   const size = 220;
@@ -32,11 +33,12 @@ export function RiskGauge({ score, urgency }: RiskGaugeProps) {
   // Animate score counter
   useEffect(() => {
     let start = 0;
-    const step = score / 60; // ~1s at 60fps
+    const target = score;
+    const step = target / 60; // ~1s at 60fps
     const interval = setInterval(() => {
       start += step;
-      if (start >= score) {
-        setDisplayed(score);
+      if (start >= target) {
+        setDisplayed(target);
         clearInterval(interval);
       } else {
         setDisplayed(Math.round(start));
@@ -73,10 +75,11 @@ export function RiskGauge({ score, urgency }: RiskGaugeProps) {
         display: "flex",
         flexDirection: "column",
         alignItems: "center",
-        padding: "28px",
-        background: "#0F1829",
-        borderRadius: "20px",
-        border: "1px solid rgba(255,255,255,0.07)",
+        padding: "24px",
+        background: "var(--surface)",
+        borderRadius: "var(--radius-lg)",
+        border: "1px solid var(--border)",
+        boxShadow: "var(--shadow-sm)",
       }}
     >
       <svg width={size} height={size} style={{ overflow: "visible" }}>
@@ -94,7 +97,7 @@ export function RiskGauge({ score, urgency }: RiskGaugeProps) {
         <path
           d={bgPath}
           fill="none"
-          stroke="rgba(255,255,255,0.06)"
+          stroke="var(--border-faint)"
           strokeWidth={strokeWidth}
           strokeLinecap="round"
         />
@@ -120,10 +123,10 @@ export function RiskGauge({ score, urgency }: RiskGaugeProps) {
           y={cy - 8}
           textAnchor="middle"
           dominantBaseline="middle"
-          fill="#fff"
+          fill="var(--text-1)"
           fontSize="44"
           fontWeight="900"
-          fontFamily="DM Sans, sans-serif"
+          fontFamily="var(--font)"
           letterSpacing="-2"
         >
           {displayed}
@@ -132,9 +135,9 @@ export function RiskGauge({ score, urgency }: RiskGaugeProps) {
           x={cx}
           y={cy + 26}
           textAnchor="middle"
-          fill="rgba(255,255,255,0.35)"
+          fill="var(--text-3)"
           fontSize="13"
-          fontFamily="DM Sans, sans-serif"
+          fontFamily="var(--font)"
           fontWeight="500"
         >
           out of 100
@@ -143,16 +146,23 @@ export function RiskGauge({ score, urgency }: RiskGaugeProps) {
 
       <div
         style={{
-          marginTop: 4,
+          marginTop: 8,
           fontSize: 14,
-          fontWeight: 600,
-          color: "rgba(255,255,255,0.45)",
+          fontWeight: 800,
+          color: "var(--text-1)",
           letterSpacing: "0.5px",
           textAlign: "center",
+          textTransform: "uppercase"
         }}
       >
-        Overall Risk Score
+        Overall Risk: {urgency}
       </div>
+
+      {explanation && (
+        <div style={{ marginTop: 12, padding: "10px 14px", background: "var(--bg)", borderRadius: "8px", fontSize: "12px", fontWeight: "500", color: "var(--text-2)", lineHeight: 1.5, textAlign: "center", maxWidth: 220, border: '1px solid var(--border)' }}>
+          {explanation}
+        </div>
+      )}
     </motion.div>
   );
 }

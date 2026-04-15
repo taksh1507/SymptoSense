@@ -18,7 +18,7 @@ export interface RiskAnalysis {
   explanation: string[];
   recommendation: { en: string; hi: string };
   isRedFlag: boolean;
-  narrative?: { en: string; hi: string };
+  narrative?: { en: string; hi: string; mr: string };
 }
 
 /**
@@ -37,4 +37,47 @@ export interface ScoringRules {
     high: number;
   };
   recommendations: Record<UrgencyLevel, { en: string; hi: string }>;
+}
+
+// ── Shared result types (used by AppContext, sessions, useTestSession) ──
+
+export type Urgency = UrgencyLevel; // alias for backwards compatibility
+
+export interface Factor {
+  id: string;
+  label: string;
+  score: number;
+  isRedFlag: boolean;
+  category: string;
+}
+
+export interface Answer {
+  questionId: string;
+  answer: string | string[] | number;
+  timestamp: number;
+}
+
+export interface ScoreResult {
+  score: number;
+  urgency: Urgency;
+  factors: Factor[];
+  recommendation: string;
+  primaryCategory: string;
+  hasRedFlag: boolean;
+  symptomCount: number;
+  highestSeverity: string;
+  confidenceScore?: number;
+  confidenceLevel?: string;
+  confidenceExplanation?: string;
+  riskReasoning?: string;
+  riskSummary?: string;
+  riskFactors?: string[];
+  primaryAction?: string;
+  recommendationSteps?: string[];
+  keyInsights?: string[];
+  narrative?: {
+    en: string;
+    hi: string;
+    mr: string;
+  };
 }

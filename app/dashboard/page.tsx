@@ -14,7 +14,7 @@ import { AIQuestionEngine } from '@/components/ai-question-engine/AIQuestionEngi
 
 export default function DashboardRoute() {
   const { data: session, status } = useSession();
-  const { triageScreen, language, handleAIComplete, setTriageScreen } = useApp();
+  const { triageScreen, language, gender, handleAIComplete, setTriageScreen } = useApp();
   const router = useRouter();
 
   useEffect(() => {
@@ -38,12 +38,15 @@ export default function DashboardRoute() {
         </>
       )}
       {triageScreen === 'questions' && (
-        <div style={{ padding: '28px 32px', minHeight: '100vh', background: 'var(--bg)', display: 'flex', alignItems: 'flex-start', justifyContent: 'center' }}>
-          <AIQuestionEngine
-            defaultLanguage={aiLang}
-            onComplete={handleAIComplete}
-            onCancel={() => setTriageScreen('dashboard')}
-          />
+        <div className="page-container mobile-padding">
+          <div className="content-wrapper" style={{ maxWidth: '600px' }}>
+            <AIQuestionEngine
+              defaultLanguage={aiLang}
+              onComplete={handleAIComplete}
+              onCancel={() => setTriageScreen('dashboard')}
+              gender={gender ?? undefined}
+            />
+          </div>
         </div>
       )}
       {triageScreen === 'loading'   && <LoadingScreen />}

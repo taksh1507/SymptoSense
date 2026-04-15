@@ -17,12 +17,12 @@ import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext } 
 
 export interface QuestionEngineAPI {
   currentQuestion: QuestionStep | null;
-  currentStep: number;           // 0-10 (display)
-  totalSteps: number;            // 11
+  currentStep: number;
+  totalSteps: number;
   progress: number;
   stage: FlowStage;
-  selectedOptions: string[];     // supports multiselect
-  customInput: string;           // "other" text field value
+  selectedOptions: string[];
+  customInput: string;
   customInputError: string | null;
   showCustomInput: boolean;
   language: Language;
@@ -34,6 +34,8 @@ export interface QuestionEngineAPI {
   voiceError: string | null;
   isMuted: boolean;
   toggleMute: () => void;
+  genderMismatch: { symptom: string; gender: string } | null; // non-null = show warning popup
+  dismissMismatch: () => void;
   handleOptionToggle: (value: string) => void;
   handleCustomInputChange: (text: string) => void;
   handleNext: () => void;
@@ -46,6 +48,7 @@ export function useQuestionEngine({
   defaultLanguage = "en",
   onComplete,
   onCancel,
+  gender,
 }: EngineProps): QuestionEngineAPI {
   const [stage, setStage] = useState<FlowStage>("q1_age");
   const [currentStep, setCurrentStep] = useState(0);
@@ -59,12 +62,40 @@ export function useQuestionEngine({
   const [isComplete, setIsComplete] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
+  const [genderMismatch, setGenderMismatch] = useState<{ symptom: string; gender: string } | null>(null);
+
+  // Gender-symptom mismatch lookup tables
+  const FEMALE_ONLY: string[] = [
+    'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
+    'pelvic_pain', 'pregnancy_symptoms', 'menstruation', 'period', 'ovarian',
+  ];
+  const MALE_ONLY: string[] = [
+    'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
+    'erectile', 'penile',
+  ];
+
+  const checkGenderMismatch = useCallback((selectedSymptoms: string[], custom?: string): { symptom: string; gender: string } | null => {
+    if (!gender || gender === 'Other' || gender === 'Prefer not to say') return null;
+    const tokens = [...selectedSymptoms, custom || ''].join(' ').toLowerCase();
+    if (gender === 'Male') {
+      const hit = FEMALE_ONLY.find(s => tokens.includes(s));
+      if (hit) return { symptom: hit.replace(/_/g, ' '), gender: 'Male' };
+    }
+    if (gender === 'Female') {
+      const hit = MALE_ONLY.find(s => tokens.includes(s));
+      if (hit) return { symptom: hit.replace(/_/g, ' '), gender: 'Female' };
+    }
+    return null;
+  }, [gender]);
+
+  const dismissMismatch = useCallback(() => setGenderMismatch(null), []);
 
   // Accumulated answers
   const [age, setAge] = useState("");
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [customSymptom, setCustomSymptom] = useState<string | undefined>();
   const [aiAnswers, setAiAnswers] = useState<AnswerMap>({});
+  const [previousQuestions, setPreviousQuestions] = useState<{ question: string; answer: string; category?: string }[]>([]);
   const [currentAiStep, setCurrentAiStep] = useState(0);
   const [duration, setDuration] = useState("");
   const [severity, setSeverity] = useState("");
@@ -108,15 +139,21 @@ export function useQuestionEngine({
   }, []);
 
   // Load an AI question
-  const loadAIQuestion = useCallback(async (aiStep: number, currentAiAnswers: AnswerMap) => {
+  const loadAIQuestion = useCallback(async (
+    aiStep: number,
+    currentAiAnswers: AnswerMap,
+    prevQuestions: { question: string; answer: string; category?: string }[]
+  ) => {
     setIsLoading(true);
     const context: QuestionContext = {
       age,
       symptoms,
       customSymptom,
       aiAnswers: currentAiAnswers,
+      previousQuestions: prevQuestions,
       currentAiStep: aiStep,
       language,
+      gender,
     };
     const q = await fetchAIQuestion(context);
     setCurrentQuestion(q);
@@ -132,14 +169,21 @@ export function useQuestionEngine({
     loadStaticQuestion("q1_age");
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // TTS on question change
+  // TTS on question change — reads question then each option as one utterance
   const lastSpokenRef = useRef<string>("");
   useEffect(() => {
     if (!currentQuestion || isComplete || isLoading) return;
-    const text = currentQuestion.question[language];
-    if (text === lastSpokenRef.current) return;
-    lastSpokenRef.current = text;
-    speak(text, language);
+    const questionText = currentQuestion.question[language];
+    if (questionText === lastSpokenRef.current) return;
+    lastSpokenRef.current = questionText;
+
+    // Build a single string: question + numbered options separated by pauses
+    const optionLabels = currentQuestion.options.map(
+      (opt, i) => `${i + 1}. ${opt.speech?.[language] ?? opt.label[language]}`
+    );
+    const fullText = [questionText, ...optionLabels].join(". ");
+
+    speak(fullText, language);
     return () => stop();
   }, [currentQuestion, language, isComplete, isLoading, speak, stop]);
 
@@ -218,12 +262,20 @@ export function useQuestionEngine({
     } else if (stage === "q2_symptoms") {
       if (selectedOptions.length === 0 && !customInput.trim()) return;
       const finalSymptoms = selectedOptions.filter((v) => v !== "other");
+
+      // Check for gender-symptom mismatch before proceeding
+      const mismatch = checkGenderMismatch(finalSymptoms, customInput.trim() || undefined);
+      if (mismatch) {
+        setGenderMismatch(mismatch);
+        return; // block progression — popup will show
+      }
+
       setSymptoms(finalSymptoms);
       if (customInput.trim()) setCustomSymptom(customInput.trim());
       setCurrentStep(2);
       setStage("ai_questions");
       setCurrentAiStep(0);
-      await loadAIQuestion(0, {});
+      await loadAIQuestion(0, {}, []);
 
     } else if (stage === "ai_questions") {
       if (selectedOptions.length === 0) return;
@@ -232,16 +284,30 @@ export function useQuestionEngine({
       const updatedAiAnswers = { ...aiAnswers, [key]: value };
       setAiAnswers(updatedAiAnswers);
 
+      // Record the full question text + answer for context
+      const answerLabel = currentQuestion.options
+        .filter(o => selectedOptions.includes(o.value))
+        .map(o => o.label.en)
+        .join(", ") || value;
+      const updatedPrevQuestions = [
+        ...previousQuestions,
+        {
+          question: currentQuestion.question.en,
+          answer: answerLabel,
+          category: currentQuestion.category,
+        },
+      ];
+      setPreviousQuestions(updatedPrevQuestions);
+
       const nextAiStep = currentAiStep + 1;
       if (nextAiStep >= AI_QUESTION_COUNT) {
-        // Move to Q9
         setCurrentStep(8);
         setStage("q9_duration");
         loadStaticQuestion("q9_duration");
       } else {
         setCurrentAiStep(nextAiStep);
         setCurrentStep(2 + nextAiStep);
-        await loadAIQuestion(nextAiStep, updatedAiAnswers);
+        await loadAIQuestion(nextAiStep, updatedAiAnswers, updatedPrevQuestions);
       }
 
     } else if (stage === "q9_duration") {
@@ -318,7 +384,11 @@ export function useQuestionEngine({
   const replayQuestion = useCallback(() => {
     if (!currentQuestion) return;
     lastSpokenRef.current = "";
-    speak(currentQuestion.question[language], language);
+    const questionText = currentQuestion.question[language];
+    const optionLabels = currentQuestion.options.map(
+      (opt, i) => `${i + 1}. ${opt.speech?.[language] ?? opt.label[language]}`
+    );
+    speak([questionText, ...optionLabels].join(". "), language);
   }, [currentQuestion, language, speak]);
 
   const reset = useCallback(() => {
@@ -334,6 +404,7 @@ export function useQuestionEngine({
     setCustomSymptom(undefined);
     setAiAnswers({});
     setCurrentAiStep(0);
+    setPreviousQuestions([]);
     setDuration("");
     setSeverity("");
     setMedications([]);
@@ -373,6 +444,8 @@ export function useQuestionEngine({
     voiceError: localError || sttError,
     isMuted,
     toggleMute,
+    genderMismatch,
+    dismissMismatch,
     handleOptionToggle,
     handleCustomInputChange,
     handleNext,

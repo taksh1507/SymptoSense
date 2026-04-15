@@ -6,38 +6,64 @@ import { ScoringRules } from "./types";
 export const SCORING_DATASET: ScoringRules = {
   // Base scores for primary symptoms
   symptoms: {
-    fever: 15,
-    headache: 10,
+    // Cardiac / Respiratory
+    chest_pain: 40,
+    breathlessness: 35,
+    shortness_of_breath: 35,
+    palpitations: 25,
+    // Neurological
+    dizziness: 18,
+    headache: 12,
+    sudden_severe_headache: 40,
+    // Infection / Fever
+    fever: 18,
     cough: 12,
-    fatigue: 8,
+    // GI
     nausea: 10,
-    dizziness: 15,
+    stomach_pain: 14,
+    vomiting: 14,
+    // General
+    fatigue: 10,
+    // Dermatological / Other
+    rash: 10,
+    piles: 18,          // haemorrhoids — moderate base, severity drives it up
+    bleeding: 22,
+    pain: 14,
   },
 
-  // Weight for intensity
+  // Weight for intensity — severe must be able to push unknown symptoms to High
   severity: {
     mild: 0,
-    moderate: 15,
-    severe: 35, // High weight to push towards threshold
+    moderate: 18,
+    severe: 40,    // was 35 — ensures severe + moderate-base symptom crosses High threshold
+    critical: 50,  // new level for "cannot get out of bed"
   },
 
   // Weight for longevity
   duration: {
     "< 1 day": 0,
     "1-3 days": 10,
+    "4-7 days": 18,
+    "> 1 week": 25,
     "> 3 days": 20,
-    // Mapping for values from Engine (if normalized)
+    // Normalised aliases
     "<1d": 0,
     "1-3d": 10,
     ">3d": 20,
   },
 
-  // Medical history multipliers / fixed additions
+  // Medical history — comorbidities that increase vulnerability
   medicalHistory: {
     diabetes: 15,
     hypertension: 15,
     heart_disease: 25,
     asthma: 15,
+    blood_thinners: 20,  // was missing — blood thinners significantly raise bleeding risk
+    blood_thinner: 20,
+    cancer: 20,
+    immunocompromised: 20,
+    kidney_disease: 15,
+    liver_disease: 15,
     none: 0,
   },
 
@@ -45,15 +71,16 @@ export const SCORING_DATASET: ScoringRules = {
   additionalSymptoms: {
     chills: 10,
     sweating: 8,
-    vomiting: 12,
-    breathlessness: 20,
+    vomiting: 14,
+    breathlessness: 22,
+    bleeding: 20,
+    blood_in_stool: 25,
+    rectal_bleeding: 25,
     none: 0,
   },
 
   /**
-   * RED FLAGS - Highest Priority
-   * If any of these are found in the symptom or additional fields, 
-   * urgency is set to HIGH immediately.
+   * RED FLAGS — immediate HIGH urgency override
    */
   redFlags: [
     "chest pain",
@@ -62,22 +89,21 @@ export const SCORING_DATASET: ScoringRules = {
     "severe bleeding",
     "confusion",
     "shortness of breath",
-    "saans", // breath (Hinglish)
-    "dhakan", // chest (Hinglish)
-    "chakkar", // extreme dizziness (Hinglish)
-    "behosh", // unconscious (Hinglish)
-    "सीने में दर्द", // chest pain (Hindi)
-    "सांस लेने में तकलीफ", // breathing difficulty (Hindi)
-    "बेहोश", // unconscious (Hindi)
+    "saans",
+    "dhakan",
+    "chakkar",
+    "behosh",
+    "सीने में दर्द",
+    "सांस लेने में तकलीफ",
+    "बेहोश",
   ],
 
-  // Urgency thresholds
+  // Urgency thresholds — adjusted so severe symptoms reach High more naturally
   thresholds: {
-    medium: 31,
-    high: 61,
+    medium: 28,   // was 31 — easier to reach Medium
+    high: 55,     // was 61 — severe + moderate-base symptom now reaches High
   },
 
-  // Standardized recommendations
   recommendations: {
     Low: {
       en: "Monitor your symptoms closely at home. Ensure you are getting plenty of rest and staying hydrated. If symptoms persist or worsen, consult a healthcare professional.",

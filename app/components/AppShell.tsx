@@ -281,7 +281,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* ── Main content area ── */}
-        <main className="mobile-main" style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', background: 'var(--bg)' }}>
+        <main className="mobile-main" style={{ 
+          flex: 1, 
+          overflowY: 'auto', 
+          overflowX: 'hidden', 
+          background: 'var(--bg)',
+          display: 'flex',
+          flexDirection: 'column'
+        }}>
           {children}
         </main>
       </div>

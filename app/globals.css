@@ -317,10 +317,44 @@ html, body {
 /* ═══════════════════════════════════════════════
    LANDING PAGE SPECIFICS
    ═══════════════════════════════════════════════ */
-.feature-card {
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
 .feature-card:hover {
   box-shadow: var(--shadow-lg);
   transform: translateY(-2px);
+}
+
+/* ═══════════════════════════════════════════════
+   GLOBAL LAYOUT UTILITIES (LAPTOP OPTIMIZED)
+   ═══════════════════════════════════════════════ */
+.page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100%;
+  width: 100%;
+  padding: 40px 24px;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+.content-wrapper {
+  width: 100%;
+  max-width: 1240px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  animation: fadeUp 0.4s ease-out;
+}
+
+/* Balanced card height system */
+.flex-row-balanced {
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  gap: 24px;
+}
+
+@media (max-width: 1024px) {
+  .content-wrapper {
+    max-width: 100%;
+  }
 }

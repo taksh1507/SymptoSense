@@ -4,9 +4,9 @@ import { createTestSession, updateTestSessionAnswers, completeTestSession, getTe
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { personName = "Myself", isSelf = true, language = "en", userId } = body;
+    const { personName = "Myself", isSelf = true, language = "en", userId, relation = null, gender = null } = body;
 
-    const session = await createTestSession({ userId, personName, isSelf, language });
+    const session = await createTestSession({ userId, personName, isSelf, relation, gender, language });
     return NextResponse.json({ sessionId: session.id });
   } catch (e) {
     console.error(e);
@@ -29,8 +29,8 @@ export async function PATCH(req: NextRequest) {
 
     return NextResponse.json({ success: true });
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ error: "Failed to update session" }, { status: 500 });
+    console.error('[PATCH /api/sessions] Error:', e);
+    return NextResponse.json({ error: "Failed to update session", detail: String(e) }, { status: 500 });
   }
 }
 

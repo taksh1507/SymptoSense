@@ -142,18 +142,7 @@ export function RecommendationPanel({ urgency, primaryCategory }: Recommendation
               </div>
             </div>
 
-            {/* Disclaimer */}
-            <p
-              style={{
-                fontSize: 11,
-                color: "rgba(255,255,255,0.3)",
-                lineHeight: 1.6,
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-                paddingTop: 14,
-              }}
-            >
-              ⚠️ {content.disclaimer}
-            </p>
+
           </motion.div>
         </AnimatePresence>
       </div>

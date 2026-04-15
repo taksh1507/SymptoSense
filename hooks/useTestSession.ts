@@ -18,7 +18,7 @@ interface TestSessionState {
   // User / Session identity
   userId: string | null;
   sessionId: string | null;
-  language: "en" | "hi";
+  language: "en" | "hi" | "mr";
   personName: string;
   isSelf: boolean;
 
@@ -41,7 +41,7 @@ interface TestSessionState {
   isLoadingResults: boolean;
 
   // Actions
-  setLanguage: (lang: "en" | "hi") => void;
+  setLanguage: (lang: "en" | "hi" | "mr") => void;
   setPersonName: (name: string) => void;
   setIsSelf: (isSelf: boolean) => void;
   setSessionId: (id: string) => void;

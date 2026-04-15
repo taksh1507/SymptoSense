@@ -166,7 +166,8 @@ export default function Dashboard() {
   const urgencyDot = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#F59E0B' : '#22C55E';
 
   return (
-    <div className="mobile-padding" style={{ padding: '28px 32px', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
+    <div className="page-container mobile-padding">
+      <div className="content-wrapper">
 
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
@@ -325,6 +326,7 @@ export default function Dashboard() {
         <span style={{ fontSize: '11px', color: 'var(--text-4)', background: 'var(--border-faint)', padding: '3px 10px', borderRadius: '6px', border: '1px solid var(--border)' }}>
           Next.js · PostgreSQL
         </span>
+      </div>
       </div>
     </div>
   );

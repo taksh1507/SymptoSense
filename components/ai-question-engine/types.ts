@@ -27,8 +27,10 @@ export interface QuestionContext {
   symptoms: string[];
   customSymptom?: string;
   aiAnswers: AnswerMap;
+  previousQuestions: { question: string; answer: string; category?: string }[];
   currentAiStep: number; // 0-5 (6 AI questions max)
   language: Language;
+  gender?: string; // Male | Female | Other | Prefer not to say — used for clinical relevance checks
 }
 
 export type AnswerMap = Record<string, string>;
@@ -48,7 +50,9 @@ export interface FinalAssessmentPayload {
 export interface EngineProps {
   defaultLanguage?: Language;
   onComplete: (data: FinalAssessmentPayload) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
+  initialSymptom?: string;
+  gender?: string; // passed from AppContext so question-gen can apply clinical relevance checks
 }
 
 // ── Risk Engine Types ──────────────────────────────────────
@@ -61,5 +65,5 @@ export interface RiskAnalysis {
   explanation: string[];
   recommendation: { en: string; hi: string };
   isRedFlag: boolean;
-  narrative?: { en: string; hi: string };
+  narrative?: { en: string; hi: string; mr: string };
 }

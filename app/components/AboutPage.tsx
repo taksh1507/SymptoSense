@@ -32,16 +32,17 @@ const Users = () => (
 );
 
 const TECH_STACK = [
-  { layer: 'Frontend', tech: 'Next.js 16 (App Router)', detail: 'React server & client components, Tailwind CSS, TypeScript', color: '#1D4ED8', bg: '#EFF6FF' },
-  { layer: 'Backend API', tech: 'Flask 3 (Python)', detail: 'REST API endpoints: /api/triage/start, /api/triage/calculate, /api/auth', color: '#15803D', bg: '#F0FDF4' },
-  { layer: 'Database', tech: 'PostgreSQL 15', detail: 'Tables: users, user_reports, user_preferences — indexed by user_id', color: '#7C3AED', bg: '#F5F3FF' },
-  { layer: 'Auth', tech: 'JWT / Session tokens', detail: 'Stateless authentication, bcrypt password hashing', color: '#B45309', bg: '#FFFBEB' },
+  { layer: 'Frontend', tech: 'Next.js 15 (App Router)', detail: 'React server & client components, Tailwind CSS v4, TypeScript', color: '#1D4ED8', bg: '#EFF6FF' },
+  { layer: 'Backend API', tech: 'Next.js API Routes', detail: 'Edge-compatible route handlers: /api/question-gen, /api/sessions, /api/explanation', color: '#15803D', bg: '#F0FDF4' },
+  { layer: 'Database', tech: 'Neon PostgreSQL + Prisma', detail: 'Models: User, Account, Session, TestSession — managed via Prisma ORM', color: '#7C3AED', bg: '#F5F3FF' },
+  { layer: 'Auth', tech: 'NextAuth v4', detail: 'Google OAuth + email/password credentials, JWT sessions, bcrypt password hashing', color: '#B45309', bg: '#FFFBEB' },
+  { layer: 'AI', tech: 'Groq (Llama 3.3 70B) + Sarvam AI', detail: 'Dynamic question generation, clinical reasoning, multilingual TTS/STT/translation', color: '#7C3AED', bg: '#F5F3FF' },
 ];
 
 const VALUES = [
   { icon: <Shield />, color: '#E53E3E', bg: '#FFF5F5', title: 'Safety First', desc: 'SymptoSense is a decision-support tool. It never replaces professional medical advice. Every result page includes prominent safety disclaimers.' },
   { icon: <Heart />, color: '#E53E3E', bg: '#FFF5F5', title: 'Patient-Centered', desc: 'Designed for real people across India — supports English, Hindi, and Marathi so language is never a barrier to understanding your health.' },
-  { icon: <Code2 />, color: '#1D4ED8', bg: '#EFF6FF', title: 'Open Stack', desc: 'Built on proven open-source tools — Flask, PostgreSQL, Next.js. No proprietary black boxes. The scoring algorithm is fully transparent.' },
+  { icon: <Code2 />, color: '#1D4ED8', bg: '#EFF6FF', title: 'Open Stack', desc: 'Built on proven open-source tools — Next.js, Prisma, PostgreSQL, NextAuth. No proprietary black boxes. The scoring algorithm is fully transparent.' },
   { icon: <Users />, color: '#15803D', bg: '#F0FDF4', title: 'Family-Aware', desc: "Run assessments for yourself or any family member. Each report is attributed and stored separately in the user's PostgreSQL record." },
 ];
 

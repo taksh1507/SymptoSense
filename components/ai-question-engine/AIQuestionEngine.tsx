@@ -60,14 +60,14 @@ function OptionButton({
 }
 
 // ── Main Component ────────────────────────────────────────────
-export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel }: EngineProps) {
-  const engine = useQuestionEngine({ defaultLanguage, onComplete, onCancel });
+export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel, initialSymptom, gender }: EngineProps) {
+  const engine = useQuestionEngine({ defaultLanguage, onComplete, onCancel, initialSymptom, gender });
 
   const {
     currentQuestion, currentStep, totalSteps, progress, stage,
     selectedOptions, customInput, customInputError, showCustomInput,
     language, toggleLanguage, isSpeaking, isRecording, isLoading, isComplete,
-    voiceError, isMuted, toggleMute,
+    voiceError, isMuted, toggleMute, genderMismatch, dismissMismatch,
     handleOptionToggle, handleCustomInputChange, handleNext, handleVoiceToggle,
     replayQuestion,
   } = engine;
@@ -100,6 +100,56 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel 
     );
   }
 
+  // ── Gender-symptom mismatch warning popup ────────────────────
+  if (genderMismatch) {
+    const symptomDisplay = genderMismatch.symptom.charAt(0).toUpperCase() + genderMismatch.symptom.slice(1);
+    const genderDisplay = genderMismatch.gender;
+    return (
+      <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
+        <div className="card" style={{ padding: "36px 32px", borderRadius: "20px", border: "2px solid #FCA5A5", background: "#FFF5F5", textAlign: "center" }}>
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+          <h2 style={{ fontSize: "20px", fontWeight: 900, color: "#B91C1C", marginBottom: "12px", letterSpacing: "-0.3px" }}>
+            {language === "hi" ? "लक्षण और लिंग में असंगति" : language === "mr" ? "लक्षण आणि लिंग विसंगती" : "Symptom–Gender Mismatch"}
+          </h2>
+          <p style={{ fontSize: "14px", color: "#7F1D1D", lineHeight: "1.65", marginBottom: "8px" }}>
+            {language === "hi"
+              ? `"${symptomDisplay}" ${genderDisplay === "Male" ? "पुरुषों" : "महिलाओं"} के लिए शारीरिक रूप से संभव नहीं है।`
+              : language === "mr"
+              ? `"${symptomDisplay}" हे ${genderDisplay === "Male" ? "पुरुषांसाठी" : "महिलांसाठी"} शारीरिकदृष्ट्या शक्य नाही.`
+              : `"${symptomDisplay}" is not anatomically possible for a ${genderDisplay} patient.`}
+          </p>
+          <p style={{ fontSize: "13px", color: "#991B1B", lineHeight: "1.6", marginBottom: "28px" }}>
+            {language === "hi"
+              ? "कृपया अपना लिंग या लक्षण सही करें। गलत जानकारी से जोखिम मूल्यांकन प्रभावित हो सकता है।"
+              : language === "mr"
+              ? "कृपया तुमचे लिंग किंवा लक्षण दुरुस्त करा. चुकीची माहिती जोखीम मूल्यांकनावर परिणाम करू शकते."
+              : "Please correct your gender or symptom selection. Inaccurate data may affect your risk assessment."}
+          </p>
+          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
+            {/* Go back and fix symptoms */}
+            <button
+              onClick={dismissMismatch}
+              className="btn btn-primary"
+              style={{ padding: "12px 24px", fontSize: "14px" }}
+            >
+              {language === "hi" ? "← लक्षण ठीक करें" : language === "mr" ? "← लक्षण दुरुस्त करा" : "← Fix Symptoms"}
+            </button>
+            {/* Cancel triage entirely */}
+            {onCancel && (
+              <button
+                onClick={onCancel}
+                className="btn btn-outline"
+                style={{ padding: "12px 24px", fontSize: "14px" }}
+              >
+                {language === "hi" ? "मूल्यांकन रद्द करें" : language === "mr" ? "मूल्यांकन रद्द करा" : "Cancel Assessment"}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
       {/* Header */}
@@ -119,9 +169,11 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel 
             🌐 {language === "en" ? "EN" : language === "hi" ? "HI" : "MR"}
           </button>
           {/* Cancel */}
-          <button onClick={onCancel} style={{ background: "none", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px", color: "var(--text-3)", fontFamily: "inherit" }}>
-            ✕ {language === "hi" ? "रद्द" : language === "mr" ? "रद्द" : "Cancel"}
-          </button>
+          {onCancel && (
+            <button onClick={onCancel} style={{ background: "none", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px", color: "var(--text-3)", fontFamily: "inherit" }}>
+              ✕ {language === "hi" ? "रद्द" : language === "mr" ? "रद्द" : "Cancel"}
+            </button>
+          )}
         </div>
       </div>
 

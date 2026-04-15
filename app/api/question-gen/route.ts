@@ -12,51 +12,118 @@ export async function POST(req: Request) {
     }
 
     const context: QuestionContext = await req.json();
-    const { age, symptoms, customSymptom, aiAnswers, currentAiStep, language } = context;
+    const { age, symptoms, customSymptom, aiAnswers, previousQuestions, currentAiStep, language, gender } = context;
 
     const symptomsStr = [
       ...(symptoms || []),
       ...(customSymptom ? [customSymptom] : []),
     ].join(", ") || "general symptoms";
 
-    const previousAnswersStr = Object.entries(aiAnswers || {})
-      .map(([key, val]) => `${key}: ${val}`)
-      .join("; ") || "none yet";
-
     const langName = language === "hi" ? "Hindi (Devanagari script)"
       : language === "mr" ? "Marathi (Devanagari script)"
       : "English";
 
-    const systemMessage = `You are a medical triage assistant. You ONLY respond with valid JSON. No explanations, no markdown, no extra text — just the JSON object.`;
+    // ── Gender-symptom clinical mismatch detection ────────────────
+    // Detects anatomically impossible combinations and injects a note
+    // so Groq avoids generating irrelevant or misleading follow-up questions.
+    const FEMALE_ONLY_SYMPTOMS = [
+      'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
+      'pelvic_pain', 'pregnancy_symptoms', 'menstruation', 'period', 'ovarian',
+    ];
+    const MALE_ONLY_SYMPTOMS = [
+      'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
+      'erectile', 'penile',
+    ];
 
-    const userMessage = `Generate ONE medical follow-up question for a patient with these details:
+    const allSymptomTokens = [symptomsStr, ...(Object.values(aiAnswers || {}))].join(' ').toLowerCase();
+
+    let genderClinicalNote = '';
+
+    if (gender === 'Male') {
+      const mismatch = FEMALE_ONLY_SYMPTOMS.find(s => allSymptomTokens.includes(s));
+      if (mismatch) {
+        genderClinicalNote = `⚠️ CLINICAL NOTE: The patient is recorded as Male, but the symptom "${mismatch}" is anatomically specific to females. Do NOT generate follow-up questions about this symptom. Focus on other reported symptoms instead.`;
+      }
+    } else if (gender === 'Female') {
+      const mismatch = MALE_ONLY_SYMPTOMS.find(s => allSymptomTokens.includes(s));
+      if (mismatch) {
+        genderClinicalNote = `⚠️ CLINICAL NOTE: The patient is recorded as Female, but the symptom "${mismatch}" is anatomically specific to males. Do NOT generate follow-up questions about this symptom. Focus on other reported symptoms instead.`;
+      }
+    }
+
+    // Build a rich Q&A history string so Groq knows exactly what was asked and answered
+    const historyStr = previousQuestions && previousQuestions.length > 0
+      ? previousQuestions.map((p, i) =>
+          `Q${i + 1}: "${p.question}" → Patient answered: "${p.answer}"`
+        ).join("\n")
+      : "No previous questions yet.";
+
+    // Derive which categories are already covered from history
+    const ALL_CATEGORIES = [
+      "symptom_location",
+      "symptom_triggers",
+      "associated_symptoms",
+      "body_system_review",
+      "lifestyle_environmental",
+      "episode_history",
+      "clinical_red_flags",
+    ];
+    const coveredCategories = previousQuestions
+      ?.map(p => p.category)
+      .filter(Boolean) as string[];
+    const remainingCategories = ALL_CATEGORIES.filter(c => !coveredCategories.includes(c));
+
+    const systemMessage = `You are a medical triage assistant generating adaptive follow-up questions. You ONLY respond with valid JSON. No explanations, no markdown, no extra text.`;
+
+    const userMessage = `Generate ONE medical follow-up question for this patient.
+
+PATIENT PROFILE:
 - Age group: ${age || "adult"}
 - Reported symptoms: ${symptomsStr}
-- Previous answers: ${previousAnswersStr}
-- Question number: ${currentAiStep + 1} of 6
-- Language: ${langName}
+- Gender: ${gender || "not specified"}
+- Question ${currentAiStep + 1} of 6
+${genderClinicalNote ? `\n${genderClinicalNote}\n` : ''}
 
-Rules:
-- Ask about: onset, location, associated symptoms, triggers, or daily impact
-- Do NOT diagnose or give risk scores
-- Do NOT repeat already-answered topics
-- Use "mcq" type with 3-4 options
-- All text must appear in English (en), Hindi (hi), and Marathi (mr)
+CONVERSATION HISTORY (questions already asked — DO NOT repeat these topics):
+${historyStr}
 
-Respond with ONLY this JSON structure:
+CATEGORIES STILL AVAILABLE (pick ONE from this list):
+${remainingCategories.length > 0 ? remainingCategories.join(", ") : ALL_CATEGORIES.join(", ")}
+
+CATEGORY DEFINITIONS:
+- symptom_location: WHERE exactly is the symptom felt? (body part, side, radiation)
+- symptom_triggers: WHAT makes it better or worse? (movement, food, posture, stress)
+- associated_symptoms: Any OTHER symptoms accompanying the main one?
+- body_system_review: Related body system check (breathing, digestion, urination, vision)
+- lifestyle_environmental: Recent changes in sleep, diet, stress, travel, or environment
+- episode_history: Has this happened before? Was it diagnosed or treated?
+- clinical_red_flags: Sudden onset, loss of consciousness, numbness, vision/speech changes
+
+STRICT RULES:
+- Pick the category most clinically relevant to "${symptomsStr}"
+- NEVER ask about duration, severity, age, or medications/drugs/treatments — these are asked separately
+- NEVER ask about: current medications, prescribed drugs, over-the-counter medicine, supplements, dosage, treatment history
+- NEVER repeat a question topic already in the conversation history above
+- Use "mcq" type with exactly 3-4 options
+- Include the chosen category as "category" field in your response
+- All text in English (en), Hindi (hi), and Marathi (mr)
+- Language for display: ${langName}
+
+Respond with ONLY this JSON:
 {
   "id": "ai_q${currentAiStep + 1}",
   "key": "ai_q${currentAiStep + 1}",
   "type": "mcq",
+  "category": "<chosen_category_from_list>",
   "question": {
-    "en": "English question?",
-    "hi": "हिंदी प्रश्न?",
-    "mr": "मराठी प्रश्न?"
+    "en": "...",
+    "hi": "...",
+    "mr": "..."
   },
   "options": [
-    { "label": { "en": "Option A", "hi": "विकल्प अ", "mr": "पर्याय अ" }, "value": "option_a", "emoji": "🔵" },
-    { "label": { "en": "Option B", "hi": "विकल्प ब", "mr": "पर्याय ब" }, "value": "option_b", "emoji": "🟢" },
-    { "label": { "en": "Option C", "hi": "विकल्प स", "mr": "पर्याय क" }, "value": "option_c", "emoji": "🟡" }
+    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_a", "emoji": "🔵" },
+    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_b", "emoji": "🟢" },
+    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_c", "emoji": "🟡" }
   ]
 }`;
 
@@ -72,8 +139,8 @@ Respond with ONLY this JSON structure:
           { role: "system", content: systemMessage },
           { role: "user", content: userMessage },
         ],
-        temperature: 0.7,
-        max_tokens: 1024,
+        temperature: 0.8,
+        max_tokens: 600,
         response_format: { type: "json_object" },
       }),
     });

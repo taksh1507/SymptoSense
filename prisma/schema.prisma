@@ -64,6 +64,8 @@ model TestSession {
   userId          String?
   personName      String   @default("Myself")
   isSelf          Boolean  @default(true)
+  relation        String?  // e.g. Parent, Child, Spouse, Sibling, Friend, Other
+  gender          String?  // e.g. Male, Female, Other, Prefer not to say
   language        String   @default("en")
   answers         String   // JSON string of Answer[]
   score           Int?
@@ -71,6 +73,15 @@ model TestSession {
   factors         String?  // JSON string of Factor[]
   primaryCategory String?
   recommendation  String?
+  confidenceScore      Float?
+  confidenceLevel      String?
+  confidenceExplanation String?
+  riskReasoning        String?
+  riskSummary          String?  // Groq narrative for "Why this risk level?"
+  riskFactors          String?  // JSON string of string[] — bullet factors
+  primaryAction        String?  // Groq primary action line
+  recommendationSteps  String?  // JSON string of string[] — action steps
+  keyInsights          String?  // JSON string of string[]
   completed       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
