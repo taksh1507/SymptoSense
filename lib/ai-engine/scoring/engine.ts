@@ -80,7 +80,9 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
     }
   }
 
-  // 7. Urgency Classification
+  // 7. Urgency Classification — cap score at 100 before classifying
+  score = Math.min(100, Math.max(0, score));
+
   let urgency: UrgencyLevel = "Low";
   if (score >= SCORING_DATASET.thresholds.high) {
     urgency = "High";
