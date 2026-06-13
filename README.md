@@ -146,6 +146,26 @@ python server.py
 ```
 The ML server will run on `http://localhost:8000`. You can access the automatic documentation at `http://localhost:8000/docs`.
 
+### 4. Deploying to Production (Render + Vercel)
+
+To ensure the machine learning model is accessible by the deployed frontend:
+
+#### A. Deploy the FastAPI ML Service to Render
+1. Ensure the `render.yaml` file in the project root is committed to your repository.
+2. Go to your [Render Dashboard](https://dashboard.render.com/) and click **New** → **Blueprint**.
+3. Select this repository. Render will automatically detect the `render.yaml` configuration and provision the service.
+4. Once deployment succeeds, note down the provided Render service URL (e.g., `https://symptosense-ml-service.onrender.com`).
+
+#### B. Deploy Next.js to Vercel
+1. Since Vercel is a serverless platform, the local SQLite database file (`dev.db`) is ephemeral. To persist user accounts and history, update the database provider in `prisma/schema.prisma` from `"sqlite"` to `"postgresql"`.
+2. Connect your repository to Vercel and create a new project.
+3. Configure the following **Environment Variables** in Vercel:
+   - `DATABASE_URL`: A hosted PostgreSQL database URL (from Supabase, Neon, etc.).
+   - `NEXTAUTH_SECRET`: A secure random cryptographic secret.
+   - `GROQ_API_KEY`: Your Groq API key.
+   - `SARVAM_API_KEY`: Your Sarvam AI API key.
+   - `ML_SERVER_URL`: Point to your deployed Render ML service endpoint (e.g., `https://symptosense-ml-service.onrender.com/predict-confidence`).
+
 ---
 
 ## 📂 Project Directory Structure
