@@ -13,7 +13,7 @@ export const prisma =
         // Append connection pool params to avoid timeout under load
         url: process.env.DATABASE_URL
           ? `${process.env.DATABASE_URL}${process.env.DATABASE_URL.includes('?') ? '&' : '?'}connection_limit=5&pool_timeout=20`
-          : undefined,
+          : "file:./dev.db",
       },
     },
   });

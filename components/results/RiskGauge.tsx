@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import type { Urgency } from "@/lib/scoring";
+import type { Urgency } from "@/lib/ai-engine/scoring/types";
 
 interface RiskGaugeProps {
   score: number;

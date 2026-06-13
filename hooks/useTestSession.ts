@@ -2,7 +2,7 @@
 
 import { create } from "zustand";
 import { persist, createJSONStorage } from "zustand/middleware";
-import type { Answer, ScoreResult } from "@/lib/scoring";
+import type { Answer, ScoreResult } from "@/lib/ai-engine/scoring/types";
 
 export interface PastSession {
   sessionId: string;

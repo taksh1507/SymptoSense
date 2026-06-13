@@ -7,7 +7,7 @@ import { useTestSession } from "@/hooks/useTestSession";
 
 export function LanguageModal() {
   const { setLanguage, language, setShowLanguageModal, setShowPersonModal } = useTestSession();
-  const [selected, setSelected] = useState<"en" | "hi">(language);
+  const [selected, setSelected] = useState<"en" | "hi" | "mr">(language);
 
   const handleContinue = () => {
     setLanguage(selected);
@@ -18,6 +18,7 @@ export function LanguageModal() {
   const langs = [
     { id: "en" as const, flag: "🇬🇧", name: "English", native: "English" },
     { id: "hi" as const, flag: "🇮🇳", name: "Hindi", native: "हिन्दी" },
+    { id: "mr" as const, flag: "🇮🇳", name: "Marathi", native: "मराठी" },
   ];
 
   return (
@@ -62,7 +63,7 @@ export function LanguageModal() {
             </p>
 
             {/* Language cards */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginBottom: "24px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "10px", marginBottom: "24px" }}>
               {langs.map((lang) => {
                 const isSel = selected === lang.id;
                 return (
