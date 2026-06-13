@@ -149,8 +149,9 @@ export default function ResultsPage() {
           <div className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
             <div style={{ background: riskBg, padding: '24px 28px', borderBottom: '1px solid var(--border-faint)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-1)', margin: 0 }}>
-                  {language === 'Hindi' ? 'अभी क्या करें?' : language === 'Marathi' ? 'आता काय करावे?' : 'What you should do now'}
+                <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span>💊</span>
+                  {language === 'Hindi' ? 'एआई उपचार और सलाह' : language === 'Marathi' ? 'एआय उपचार आणि सल्ला' : 'AI Remedies & Recommendations'}
                 </h3>
                 <span style={{ background: riskColor, color: 'white', padding: '3px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: '800' }}>
                   {riskLevel.toUpperCase()}
