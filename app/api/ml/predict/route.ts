@@ -1,6 +1,16 @@
 import { NextResponse } from "next/server";
 
-const ML_SERVER_URL = process.env.ML_SERVER_URL ?? "http://localhost:8000/predict-confidence";
+const getMlUrl = () => {
+  if (process.env.ML_SERVER_URL) {
+    return process.env.ML_SERVER_URL;
+  }
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}/api/predict-confidence`;
+  }
+  return "http://localhost:8000/predict-confidence";
+};
+
+const ML_SERVER_URL = getMlUrl();
 const ML_TIMEOUT_MS = 5000; // 5 seconds max — never let the loading screen hang
 
 const FALLBACK = { confidence: 0.7, confidenceLevel: "Medium" };
