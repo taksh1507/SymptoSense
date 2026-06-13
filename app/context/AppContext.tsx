@@ -280,9 +280,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
           risk_level: RISK_ENCODING[result.urgency as keyof typeof RISK_ENCODING] || 0
         };
 
-        // Hard 6-second timeout — the route.ts already has 5 s, this is a safety net
+        // Hard 12-second timeout to handle Vercel serverless cold starts
         const mlController = new AbortController();
-        const mlTimeoutId = setTimeout(() => mlController.abort(), 6000);
+        const mlTimeoutId = setTimeout(() => mlController.abort(), 12000);
         let res: Response;
         try {
           res = await fetch('/api/ml/predict', {

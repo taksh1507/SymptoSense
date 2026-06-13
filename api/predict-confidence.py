@@ -44,6 +44,7 @@ class PredictionInput(BaseModel):
     multi_symptom_density: float = Field(0.0, ge=0, le=1)
 
 @app.post("/api/predict-confidence")
+@app.post("/")
 def predict_confidence(input_data: PredictionInput):
     if model is None:
         logger.warning("Model not loaded — returning fallback confidence")
@@ -76,5 +77,6 @@ def predict_confidence(input_data: PredictionInput):
         }
 
 @app.get("/api/health")
+@app.get("/health")
 def health():
     return {"status": "healthy", "model_loaded": model is not None}

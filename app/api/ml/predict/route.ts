@@ -11,7 +11,7 @@ const getMlUrl = () => {
 };
 
 const ML_SERVER_URL = getMlUrl();
-const ML_TIMEOUT_MS = 5000; // 5 seconds max — never let the loading screen hang
+const ML_TIMEOUT_MS = 10000; // 10 seconds max to handle Vercel cold starts
 
 const FALLBACK = { confidence: 0.7, confidenceLevel: "Medium" };
 
