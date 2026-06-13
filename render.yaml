@@ -1,9 +1,0 @@
-services:
-  - type: web
-    name: symptosense-ml-service
-    runtime: python
-    buildCommand: pip install -r ml-service/requirements.txt
-    startCommand: cd ml-service && uvicorn server:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: PYTHON_VERSION
-        value: 3.10.0

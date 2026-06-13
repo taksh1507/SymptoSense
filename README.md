@@ -146,25 +146,23 @@ python server.py
 ```
 The ML server will run on `http://localhost:8000`. You can access the automatic documentation at `http://localhost:8000/docs`.
 
-### 4. Deploying to Production (Render + Vercel)
+### 4. Deploying to Production (Vercel Mono-repo)
 
-To ensure the machine learning model is accessible by the deployed frontend:
+SymptoSense is configured as a **unified mono-repo** that deploys Next.js alongside the Python FastAPI ML service entirely on **Vercel** with no external hosting needed.
 
-#### A. Deploy the FastAPI ML Service to Render
-1. Ensure the `render.yaml` file in the project root is committed to your repository.
-2. Go to your [Render Dashboard](https://dashboard.render.com/) and click **New** → **Blueprint**.
-3. Select this repository. Render will automatically detect the `render.yaml` configuration and provision the service.
-4. Once deployment succeeds, note down the provided Render service URL (e.g., `https://symptosense-ml-service.onrender.com`).
+#### A. Configure Database for PostgreSQL
+Since Vercel is a serverless platform, the local SQLite database file (`dev.db`) is ephemeral. To persist user accounts and history:
+1. Update the database provider in `prisma/schema.prisma` from `"sqlite"` to `"postgresql"`.
 
-#### B. Deploy Next.js to Vercel
-1. Since Vercel is a serverless platform, the local SQLite database file (`dev.db`) is ephemeral. To persist user accounts and history, update the database provider in `prisma/schema.prisma` from `"sqlite"` to `"postgresql"`.
-2. Connect your repository to Vercel and create a new project.
+#### B. Deploy to Vercel
+1. Connect your repository to Vercel and create a new project.
+2. Vercel automatically detects the Next.js app and builds the Python files inside `/api` as **Python Serverless Functions**.
 3. Configure the following **Environment Variables** in Vercel:
    - `DATABASE_URL`: A hosted PostgreSQL database URL (from Supabase, Neon, etc.).
    - `NEXTAUTH_SECRET`: A secure random cryptographic secret.
    - `GROQ_API_KEY`: Your Groq API key.
    - `SARVAM_API_KEY`: Your Sarvam AI API key.
-   - `ML_SERVER_URL`: Point to your deployed Render ML service endpoint (e.g., `https://symptosense-ml-service.onrender.com/predict-confidence`).
+   *(Note: `ML_SERVER_URL` is dynamically resolved in production using Vercel's native `process.env.VERCEL_URL`—no manual setup is required!)*
 
 ---
 
@@ -172,19 +170,22 @@ To ensure the machine learning model is accessible by the deployed frontend:
 
 ```
 SymptoSense/
+├── api/                      # Vercel Python Serverless Functions
+│   ├── predict-confidence.py # Python FastAPI endpoint
+│   ├── requirements.txt      # Python dependencies for serverless runtime
+│   └── confidence_model.joblib # Copied ML model file for bundling
 ├── app/                      # Next.js App Router Pages & Layouts
-│   ├── api/                  # API routes (ML Proxy, Groq Explanation, Sarvam AI)
+│   ├── api/                  # Node.js API routes (ML Proxy, Groq, Sarvam AI)
 │   ├── auth/                 # Sign-up & Login pages
 │   ├── components/           # Main application screens (Dashboard, Results, etc.)
 │   └── context/              # React Context for state management (AppContext)
 ├── components/               # Reusable UI widgets and component panels
 │   ├── ai-question-engine/   # Voice-enabled, dynamic QA logic
-│   ├── dashboard/            # Profile dropdown, sidebar, and history charts
-│   └── questions/            # UI widgets for various question types
+│   └── dashboard/            # Profile dropdown, sidebar, and history charts
 ├── lib/                      # Business logic, engines, and utilities
 │   ├── ai-engine/            # Triage scoring algorithm & clinical rules
 │   └── db/                   # Prisma database adapters
-├── ml-service/               # FastAPI ML Model Service
+├── ml-service/               # FastAPI ML Model Service (for local development/training)
 │   ├── server.py             # FastAPI entrypoint
 │   ├── train_model.py        # Model training script
 │   ├── generate_dataset.py   # Synthetic data generation engine
