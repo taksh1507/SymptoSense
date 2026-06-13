@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Info, HelpCircle } from "lucide-react";
+import { HelpCircle } from "lucide-react";
 
 interface ConfidenceMeterProps {
   score: number; // 0-100

@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useSpeech } from "@/hooks/useSpeech";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,9 +24,8 @@ interface VoiceFabProps {
 
 export function VoiceFab({ onTranscript }: VoiceFabProps) {
   const { state, transcript, startListening, stopListening, isSupported } = useSpeech();
-  const [dismissed, setDismissed] = useState(false);
 
-  if (!isSupported || dismissed) return null;
+  if (!isSupported) return null;
 
   const isListening = state === "listening";
 

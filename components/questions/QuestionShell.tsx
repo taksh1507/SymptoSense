@@ -62,7 +62,7 @@ export function QuestionShell({ sessionId }: QuestionShellProps) {
         router.push(`/test/${sessionId}/results`);
       });
     }
-  }, [isComplete, hasStartedComputing]);
+  }, [isComplete, hasStartedComputing, addPastSession, answers, computeAndStore, personName, router, sessionId]);
 
   if (!currentQuestion) return null;
   if (isLoadingResults) return <LoadingOverlay />;
@@ -81,7 +81,7 @@ export function QuestionShell({ sessionId }: QuestionShellProps) {
         answerIds.push(`other_text:${textValue.trim()}`);
       }
     }
-    const { nextId, hasRedFlag } = advance(answerIds);
+    const { hasRedFlag } = advance(answerIds);
     if (hasRedFlag) setShowRedFlag(true);
   };
 

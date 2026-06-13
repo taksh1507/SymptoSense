@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Activity, Plus, Clock, ChevronRight } from "lucide-react";
+import { Activity, Plus, Clock } from "lucide-react";
 import { useTestSession } from "@/hooks/useTestSession";
 import { PastReportCard } from "./PastReportCard";
 import { ProfileDropdown } from "./ProfileDropdown";
 
 export function Sidebar() {
-  const { pastSessions, setShowLanguageModal, setShowAuthGate } = useTestSession();
+  const { pastSessions, setShowLanguageModal } = useTestSession();
 
   const handleNewTest = () => {
     // Will trigger auth gate or language modal
