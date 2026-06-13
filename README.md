@@ -99,6 +99,56 @@ To ensure the ML model doesn't just memorize the rule score, training implements
 
 ---
 
+## 📊 Clinical Triage Algorithm & Scoring Weights
+
+SymptoSense uses a deterministic, rule-weighted clinical triage algorithm to calculate a patient's risk score (0–100) and classify their urgency level. 
+
+### 1. Emergency Red Flags (Auto-Override to 100)
+If the assessment primary/additional symptoms or severity strings contain any of the following critical indicators, the algorithm immediately overrides the score to **100** and assigns **High** urgency:
+* **Cardiorespiratory**: "chest pain", "difficulty breathing", "shortness of breath", "palpitations"
+* **Neurological**: "unconsciousness", "confusion", "dizziness"
+* **Acute**: "severe bleeding", "bleeding"
+* *Multi-lingual overrides included (Hindi & Marathi terms like "behosh", "chakkar", "सीने में दर्द", etc.)*
+
+### 2. Base Symptom Scores
+If no red flags are triggered, the algorithm assigns points based on the primary symptom reported:
+* **High-Risk (35–40 pts)**: Chest Pain (40), Breathlessness / Shortness of breath (35), Sudden Severe Headache (40)
+* **Moderate-Risk (18–25 pts)**: Bleeding (22), Palpitations (25), Dizziness (18), Fever (18), Piles (18)
+* **Low-Risk (10–14 pts)**: Headache (12), Cough (12), Stomach Pain (14), Vomiting (14), Nausea (10), Fatigue (10), Rash (10), Pain (14)
+
+### 3. Severity Adjustments
+* **Critical**: +50 pts (e.g., cannot get out of bed)
+* **Severe**: +40 pts
+* **Moderate**: +18 pts
+* **Mild**: +0 pts
+
+### 4. Duration Adjustments
+* **> 1 week**: +25 pts
+* **4-7 days**: +18 pts
+* **1-3 days**: +10 pts
+* **< 1 day**: +0 pts
+
+### 5. Comorbidities & Medical History
+* **Heart Disease**: +25 pts
+* **Blood Thinners**: +20 pts
+* **Diabetes / Hypertension / Asthma / Kidney Disease / Liver Disease**: +15 pts
+
+### 6. Secondary Accompanying Symptoms
+* **Blood in stool / Rectal Bleeding**: +25 pts
+* **Breathlessness**: +22 pts
+* **Bleeding**: +20 pts
+* **Vomiting**: +14 pts
+* **Chills**: +10 pts
+* **Sweating**: +8 pts
+
+### 7. Urgency Thresholds
+The total score is capped at **100** and classified into risk levels:
+* **🔴 High Urgency**: Score $\ge 55$
+* **🟡 Medium Urgency**: Score $28\text{--}54$
+* **🟢 Low Urgency**: Score $< 28$
+
+---
+
 ## 🚀 Installation & Setup
 
 ### 1. Set Up Environment Variables
