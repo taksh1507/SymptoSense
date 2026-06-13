@@ -196,24 +196,6 @@ python server.py
 ```
 The ML server will run on `http://localhost:8000`. You can access the automatic documentation at `http://localhost:8000/docs`.
 
-### 4. Deploying to Production (Vercel Mono-repo)
-
-SymptoSense is configured as a **unified mono-repo** that deploys Next.js alongside the Python FastAPI ML service entirely on **Vercel** with no external hosting needed.
-
-#### A. Configure Database for PostgreSQL
-Since Vercel is a serverless platform, the local SQLite database file (`dev.db`) is ephemeral. To persist user accounts and history:
-1. Update the database provider in `prisma/schema.prisma` from `"sqlite"` to `"postgresql"`.
-
-#### B. Deploy to Vercel
-1. Connect your repository to Vercel and create a new project.
-2. Vercel automatically detects the Next.js app and builds the Python files inside `/api` as **Python Serverless Functions**.
-3. Configure the following **Environment Variables** in Vercel:
-   - `DATABASE_URL`: A hosted PostgreSQL database URL (from Supabase, Neon, etc.).
-   - `NEXTAUTH_SECRET`: A secure random cryptographic secret.
-   - `GROQ_API_KEY`: Your Groq API key.
-   - `SARVAM_API_KEY`: Your Sarvam AI API key.
-   *(Note: `ML_SERVER_URL` is dynamically resolved in production using Vercel's native `process.env.VERCEL_URL`—no manual setup is required!)*
-
 ---
 
 ## 📂 Project Directory Structure
