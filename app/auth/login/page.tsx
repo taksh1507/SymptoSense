@@ -78,7 +78,7 @@ export default function LoginPage() {
               AI-powered health assessment. Understand your risk level in minutes.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {['8-question adaptive triage engine', 'Risk scoring with weighted symptoms', 'PostgreSQL-backed report history', 'Multilingual: EN · हिन्दी · मराठी'].map((f) => (
+              {['8-question adaptive triage engine', 'Risk scoring with weighted symptoms', 'Saved report history on your account', 'Multilingual: EN · हिन्दी · मराठी'].map((f) => (
                 <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                   <div style={{ width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0, marginTop: '1px', background: 'rgba(185,28,28,0.25)', border: '1px solid rgba(185,28,28,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red-muted)' }}>
                     <CheckIcon />
@@ -126,17 +126,17 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '7px' }}>Email address</label>
+              <label htmlFor="login-email" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '7px' }}>Email address</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }}><MailIcon /></span>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" style={{ paddingLeft: '40px' }} placeholder="you@example.com" required />
+                <input id="login-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" style={{ paddingLeft: '40px' }} placeholder="you@example.com" required autoComplete="email" />
               </div>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '7px' }}>Password</label>
+              <label htmlFor="login-password" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '7px' }}>Password</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)', pointerEvents: 'none' }}><LockIcon /></span>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" style={{ paddingLeft: '40px' }} placeholder="••••••••" required />
+                <input id="login-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" style={{ paddingLeft: '40px' }} placeholder="••••••••" required autoComplete="current-password" />
               </div>
             </div>
 

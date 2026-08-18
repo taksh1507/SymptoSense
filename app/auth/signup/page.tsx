@@ -41,13 +41,24 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  const strength = (() => {
+    let s = 0;
+    if (password.length >= 8) s++;
+    if (/[A-Za-z]/.test(password) && /\d/.test(password)) s++;
+    if (/[^A-Za-z0-9]/.test(password) || password.length >= 12) s++;
+    return s; // 0-3
+  })();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!name.trim()) { setError('Please enter your full name.'); return; }
     if (password.length < 8) { setError('Password must be at least 8 characters.'); return; }
+    if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
 
     const registerRes = await fetch('/api/auth/register', {
@@ -99,7 +110,7 @@ export default function SignupPage() {
               Join the future of<br />smart healthcare
             </h1>
             <p style={{ fontSize: '14.5px', color: '#9CA3AF', lineHeight: '1.7', marginBottom: '40px' }}>
-              Create an account to track your health history, securely stored in our PostgreSQL database.
+              Create an account to track your health history, securely stored and private to you.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
               {[
@@ -157,24 +168,45 @@ export default function SignupPage() {
 
           <form onSubmit={handleSignup} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Full Name</label>
+              <label htmlFor="signup-name" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Full Name</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }}><UserIcon /></span>
-                <input type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="Rahul Sharma" />
+                <input id="signup-name" type="text" value={name} onChange={(e) => setName(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="Rahul Sharma" autoComplete="name" />
               </div>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Email address</label>
+              <label htmlFor="signup-email" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Email address</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }}><MailIcon /></span>
-                <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="name@example.com" required />
+                <input id="signup-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="name@example.com" required autoComplete="email" />
               </div>
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Password</label>
+              <label htmlFor="signup-password" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Password</label>
               <div style={{ position: 'relative' }}>
                 <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }}><LockIcon /></span>
-                <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="Min. 8 characters" required minLength={8} />
+                <input id="signup-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="Min. 8 characters" required minLength={8} autoComplete="new-password" />
+              </div>
+              {password.length > 0 && (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
+                  <div style={{ flex: 1, height: '4px', borderRadius: '999px', background: 'var(--border)' }}>
+                    <div style={{
+                      width: `${(strength / 3) * 100}%`, height: '4px', borderRadius: '999px',
+                      background: strength === 0 ? 'var(--red)' : strength === 1 ? '#F59E0B' : strength === 2 ? '#84CC16' : '#15803D',
+                      transition: 'width 0.2s ease',
+                    }} />
+                  </div>
+                  <span style={{ fontSize: '11px', fontWeight: '700', color: strength === 0 ? 'var(--red)' : strength === 1 ? '#F59E0B' : strength === 2 ? '#84CC16' : '#15803D', whiteSpace: 'nowrap' }}>
+                    {strength <= 1 ? 'Weak' : strength === 2 ? 'Good' : 'Strong'}
+                  </span>
+                </div>
+              )}
+            </div>
+            <div>
+              <label htmlFor="signup-confirm" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>Confirm password</label>
+              <div style={{ position: 'relative' }}>
+                <span style={{ position: 'absolute', left: '14px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-4)' }}><LockIcon /></span>
+                <input id="signup-confirm" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} className="input" style={{ paddingLeft: '42px' }} placeholder="Repeat your password" required autoComplete="new-password" />
               </div>
             </div>
 

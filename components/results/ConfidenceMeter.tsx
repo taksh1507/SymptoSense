@@ -14,10 +14,12 @@ const levelColors: Record<string, string> = {
   Low: "#B91C1C",
   Medium: "#B45309",
   High: "#15803D",
+  unavailable: "#6B7280",
 };
 
 export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterProps) {
   const [displayed, setDisplayed] = useState(0);
+  const unavailable = (level || "") === "unavailable";
   const color = levelColors[level] || "#22c55e";
   const size = 220;
   const strokeWidth = 12;
@@ -30,6 +32,10 @@ export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterPr
   const arcLength = (ANGLE / 360) * circumference;
 
   useEffect(() => {
+    if (unavailable) {
+      setDisplayed(0);
+      return;
+    }
     let start = 0;
     const target = score;
     const step = target / 60;
@@ -43,7 +49,7 @@ export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterPr
       }
     }, 1000 / 60);
     return () => clearInterval(interval);
-  }, [score]);
+  }, [score, unavailable]);
 
   const offset = arcLength - (displayed / 100) * arcLength;
   const startAngle = -225 * (Math.PI / 180);
@@ -102,28 +108,30 @@ export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterPr
           strokeLinecap="round"
         />
 
-        <path
-          d={bgPath}
-          fill="none"
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeLinecap="round"
-          strokeDasharray={`${arcLength}`}
-          strokeDashoffset={offset}
-          filter="url(#confGlow)"
-          style={{ transition: "stroke-dashoffset 0.05s linear" }}
-        />
+        {!unavailable && (
+          <path
+            d={bgPath}
+            fill="none"
+            stroke={color}
+            strokeWidth={strokeWidth}
+            strokeLinecap="round"
+            strokeDasharray={`${arcLength}`}
+            strokeDashoffset={offset}
+            filter="url(#confGlow)"
+            style={{ transition: "stroke-dashoffset 0.05s linear" }}
+          />
+        )}
 
         <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle" fill="var(--text-1)" fontSize="44" fontWeight="900" fontFamily="var(--font)" letterSpacing="-2">
-          {displayed}%
+          {unavailable ? "N/A" : `${displayed}%`}
         </text>
         <text x={cx} y={cy + 26} textAnchor="middle" fill="var(--text-3)" fontSize="14" fontFamily="var(--font)" fontWeight="700">
-          {(level || 'Medium').toUpperCase()}
+          {unavailable ? 'UNAVAILABLE' : (level || 'Medium').toUpperCase()}
         </text>
       </svg>
 
       <div style={{ marginTop: 8, fontSize: 14, fontWeight: 800, color: "var(--text-1)", letterSpacing: "0.5px", textAlign: "center", textTransform: "uppercase" }}>
-        Prediction Quality: {level || 'Medium'}
+        {unavailable ? 'Prediction Confidence' : `Prediction Quality: ${level || 'Medium'}`}
       </div>
       
       {explanation && (

@@ -134,6 +134,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {isMobileMenuOpen && (
             <button 
               onClick={() => setIsMobileMenuOpen(false)}
+              aria-label="Close navigation menu"
               style={{ marginLeft: 'auto', background: 'none', border: 'none', color: '#A0AEC0', cursor: 'pointer' }}
             >
               <Icons.X />
@@ -172,6 +173,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           active={pathname === '/dashboard/settings'}
           onClick={() => { router.push('/dashboard/settings'); setIsMobileMenuOpen(false); }}
         />
+        <NavLink
+          id="nav-model-health"
+          icon={<Icons.Activity />}
+          label="Model Health"
+          active={pathname === '/dashboard/model-health'}
+          onClick={() => { router.push('/dashboard/model-health'); setIsMobileMenuOpen(false); }}
+        />
 
         {isTestActive && (
           <div style={{ marginTop: '12px', padding: '12px 13px', borderRadius: '10px', background: '#FFF5F5', border: '1.5px solid #FEB2B2' }}>
@@ -194,6 +202,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           {(['English', 'Hindi', 'Marathi'] as Language[]).map((l) => (
             <button
               key={l}
+              aria-pressed={language === l}
               onClick={() => setLanguage(l)}
               style={{
                 flex: 1, padding: '7px 4px', fontSize: '11px', fontWeight: '700', borderRadius: '7px',
@@ -243,6 +252,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       {isMobileMenuOpen && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100 }} onClick={() => setIsMobileMenuOpen(false)}>
           <div 
+            role="dialog"
+            aria-modal="true"
+            aria-label="Navigation menu"
             style={{ width: '260px', height: '100%', background: 'white', boxShadow: 'var(--shadow-lg)', display: 'flex', flexDirection: 'column' }} 
             onClick={(e) => e.stopPropagation()}
           >
@@ -261,6 +273,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         }}>
           <button 
             onClick={() => setIsMobileMenuOpen(true)}
+            aria-label="Open navigation menu"
+            aria-haspopup="dialog"
             style={{ background: 'none', border: 'none', color: '#1A202C', cursor: 'pointer', padding: '8px 0', marginRight: '16px' }}
           >
             <Icons.Menu />

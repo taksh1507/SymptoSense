@@ -1,4 +1,4 @@
-import type { QuestionStep, Language } from "@/components/ai-question-engine/types";
+import type { QuestionStep } from "@/components/ai-question-engine/types";
 
 /**
  * SYNONYM MAPPING
@@ -64,8 +64,7 @@ const SYNONYM_MAP: Record<string, string> = {
  */
 export function matchVoiceToOption(
   transcript: string,
-  step: QuestionStep,
-  language: Language
+  step: QuestionStep
 ): string | null {
   if (!transcript) return null;
 

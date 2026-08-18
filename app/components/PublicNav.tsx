@@ -37,6 +37,7 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
     <>
       <nav 
         className="mobile-padding"
+        aria-label="Main navigation"
         style={{
           position: 'sticky', top: 0, zIndex: 40,
           background: 'rgba(255,255,255,0.95)',
@@ -51,6 +52,7 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
         {/* Logo */}
         <button
           onClick={() => router.push('/')}
+          aria-label="SymptoSense home"
           style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', padding: 0 }}
         >
           <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
@@ -94,6 +96,8 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
         <button 
           className="show-mobile"
           onClick={() => setIsOpen(true)}
+          aria-label="Open navigation menu"
+          aria-haspopup="dialog"
           style={{ background: 'none', border: 'none', color: 'var(--text-1)', cursor: 'pointer', padding: '8px' }}
         >
           <MenuIcon />
@@ -102,11 +106,11 @@ export default function PublicNav({ activeLink }: PublicNavProps) {
 
       {/* Mobile Menu Overlay */}
       {isOpen && (
-        <div className="anim-fadein" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)' }} onClick={() => setIsOpen(false)}>
+        <div className="anim-fadein" role="dialog" aria-modal="true" aria-label="Navigation menu" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)' }} onClick={() => setIsOpen(false)}>
            <div className="anim-modalin" style={{ width: '280px', height: '100%', background: 'white', marginLeft: 'auto', display: 'flex', flexDirection: 'column', padding: '24px' }} onClick={e => e.stopPropagation()}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
                 <span style={{ fontWeight: '800', color: 'var(--text-1)' }}>Menu</span>
-                <button onClick={() => setIsOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--text-4)' }}><XIcon /></button>
+                <button onClick={() => setIsOpen(false)} aria-label="Close navigation menu" style={{ background: 'none', border: 'none', color: 'var(--text-4)' }}><XIcon /></button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
                 {NAV_LINKS.map(link => (

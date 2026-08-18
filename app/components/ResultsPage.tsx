@@ -4,6 +4,8 @@ import { useApp } from '../context/AppContext';
 import { RiskGauge } from '@/components/results/RiskGauge';
 import { ConfidenceMeter } from '@/components/results/ConfidenceMeter';
 import { generateRiskExplanation, generateRecommendations } from '@/lib/report/reasoningEngine';
+import { COLOR_THRESHOLDS } from '@/lib/ai-engine/scoring/thresholds';
+import { Phone } from 'lucide-react';
 import type { Urgency } from '@/lib/ai-engine/scoring/types';
 
 export default function ResultsPage() {
@@ -34,8 +36,8 @@ export default function ResultsPage() {
   const displayPrimary   = primaryAction || localRecommendations?.primaryAction || '';
   const displaySteps     = recommendationSteps.length > 0 ? recommendationSteps : (localRecommendations?.steps || []);
 
-  const riskColor = riskScore >= 70 ? 'var(--red)' : riskScore >= 35 ? '#B45309' : '#15803D';
-  const riskBg   = riskScore >= 70 ? 'var(--red-light)' : riskScore >= 35 ? '#FFFBEB' : '#F0FDF4';
+  const riskColor = riskScore >= COLOR_THRESHOLDS.high ? 'var(--red)' : riskScore >= COLOR_THRESHOLDS.medium ? '#B45309' : '#15803D';
+  const riskBg   = riskScore >= COLOR_THRESHOLDS.high ? 'var(--red-light)' : riskScore >= COLOR_THRESHOLDS.medium ? '#FFFBEB' : '#F0FDF4';
 
   return (
     <div className="mobile-padding" style={{
@@ -157,12 +159,27 @@ export default function ResultsPage() {
                   {riskLevel.toUpperCase()}
                 </span>
               </div>
+              {riskLevel === 'High' && (
+                <a
+                  href="tel:108"
+                  style={{
+                    display: 'inline-flex', alignItems: 'center', gap: '10px',
+                    marginTop: '14px', padding: '13px 22px',
+                    background: 'var(--red)', color: 'white', borderRadius: '12px',
+                    fontSize: '14px', fontWeight: '800', textDecoration: 'none',
+                    boxShadow: '0 8px 20px -4px rgba(185, 28, 28, 0.45)',
+                  }}
+                >
+                  <Phone size={18} strokeWidth={2.5} />
+                  {language === 'Hindi' ? 'आपातकालीन नंबर कॉल करें (108)' : language === 'Marathi' ? 'आपत्कालीन क्रमांकांवर कॉल करा (108)' : 'Call Emergency Services (108)'}
+                </a>
+              )}
               {displayPrimary && (
                 <p style={{ fontSize: '16px', fontWeight: '700', color: riskColor, margin: 0 }}>
                   {displayPrimary}
                 </p>
               )}
-              {mlScore < 60 && (
+              {mlLevel !== 'unavailable' && mlScore < 60 && (
                 <p style={{ marginTop: '12px', fontSize: '12px', color: '#B45309', fontWeight: '600', padding: '8px 14px', background: '#FEF3C7', borderRadius: '8px', display: 'inline-block' }}>
                   Notice: More precise inputs may refine this recommendation.
                 </p>

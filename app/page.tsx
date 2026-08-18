@@ -56,7 +56,7 @@ const CheckCircle = () => (
 const FEATURES = [
   { icon: <Zap />, color: '#B91C1C', bg: '#FEF2F2', title: 'Instant Triage', desc: 'Our AI engine analyzes 8 key symptom indicators and returns a calibrated risk score in seconds.' },
   { icon: <ShieldCheck />, color: '#1D4ED8', bg: '#EFF6FF', title: 'Risk Score Engine', desc: 'Weighted scoring model (Mild=1, Moderate=2, Severe=3) combined with duration and symptom-specific multipliers.' },
-  { icon: <Database />, color: '#15803D', bg: '#F0FDF4', title: 'PostgreSQL History', desc: 'Every test is persisted to a secure PostgreSQL database, giving you a full audit trail of your health assessments.' },
+  { icon: <Database />, color: '#15803D', bg: '#F0FDF4', title: 'Secure Health History', desc: 'Every assessment is persisted securely to your account, giving you a full audit trail of your health checks.' },
   { icon: <Globe />, color: '#7C3AED', bg: '#F5F3FF', title: 'Multilingual', desc: 'Native support for English, Hindi (हिन्दी), and Marathi (मराठी) — language preference saved per account.' },
   { icon: <ClipboardList />, color: '#B45309', bg: '#FFFBEB', title: 'Detailed Reports', desc: 'Past test results with date, risk level, score, and symptoms. Queryable from the dashboard at any time.' },
   { icon: <HeartPulse />, color: '#C2410C', bg: '#FFF7ED', title: 'Family Profiles', desc: 'Run assessments for yourself or a family member — each report is properly attributed and stored separately.' },
@@ -182,7 +182,7 @@ export default function LandingPage() {
                 </div>
                 {/* Cards row */}
                 <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                  {[['22/30', 'Risk Score'], ['Completed', 'Triage Status']].map(([v, l]) => (
+                  {[['64/100', 'Risk Score'], ['Completed', 'Triage Status']].map(([v, l]) => (
                     <div key={l} style={{ flex: 1, background: 'white', borderRadius: '10px', border: '1px solid var(--border)', padding: '12px' }}>
                       <div style={{ fontSize: '9px', color: 'var(--text-4)', fontWeight: '800', marginBottom: '4px', textTransform: 'uppercase' }}>{l}</div>
                       <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-1)' }}>{v}</div>
@@ -208,7 +208,7 @@ export default function LandingPage() {
               Everything you need for smart triage
             </h2>
             <p style={{ fontSize: '17px', color: 'var(--text-3)', maxWidth: '540px', margin: '0 auto' }}>
-              Robust full-stack health platform — Flask API, PostgreSQL persistence, and Next.js performance.
+              Robust full-stack health platform — FastAPI ML service, secure database persistence, and Next.js performance.
             </p>
           </div>
 

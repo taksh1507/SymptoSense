@@ -1,5 +1,6 @@
 import { SCORING_DATASET } from "./rules";
-import { RiskAnalysis, SurveyResult, UrgencyLevel } from "./types";
+import { classifyUrgency } from "./thresholds";
+import { RiskAnalysis, SurveyResult } from "./types";
 
 /**
  * Deterministic Risk Scoring Engine
@@ -7,6 +8,7 @@ import { RiskAnalysis, SurveyResult, UrgencyLevel } from "./types";
  */
 export function calculateRisk(input: SurveyResult): RiskAnalysis {
   const explanation: string[] = [];
+  const factors: RiskAnalysis["factors"] = [];
   let score = 0;
 
   // 1. Check for RED FLAGS (Highest Priority)
@@ -25,6 +27,13 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
       score: 100,
       urgency: "High",
       isRedFlag: true,
+      factors: [{
+        id: "red_flag",
+        label: `Red flag detected: ${detectedRedFlag}`,
+        score: 100,
+        isRedFlag: true,
+        category: "red_flag",
+      }],
       explanation: [`CRITICAL: Red flag detected ("${detectedRedFlag}"). Emergency priority override.`],
       recommendation: SCORING_DATASET.recommendations.High
     };
@@ -35,6 +44,13 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   // Default 15 for unknown symptoms — ensures severity can still push them to High
   const baseScore = SCORING_DATASET.symptoms[baseSymptom] ?? 15;
   score += baseScore;
+  factors.push({
+    id: "primary_symptom",
+    label: `Primary symptom (${input.symptom})`,
+    score: baseScore,
+    isRedFlag: false,
+    category: "symptom",
+  });
   explanation.push(`+${baseScore} Primary symptom base score (${input.symptom})`);
 
   // 3. Severity Weight
@@ -42,6 +58,13 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   const severityScore = SCORING_DATASET.severity[severityVal] ?? 0;
   score += severityScore;
   if (severityScore > 0) {
+    factors.push({
+      id: "severity",
+      label: `Severity: ${input.severity}`,
+      score: severityScore,
+      isRedFlag: false,
+      category: "severity",
+    });
     explanation.push(`+${severityScore} for ${input.severity} intensity`);
   }
 
@@ -59,6 +82,13 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   
   score += durationScore;
   if (durationScore > 0) {
+    factors.push({
+      id: "duration",
+      label: `Duration: ${input.duration}`,
+      score: durationScore,
+      isRedFlag: false,
+      category: "duration",
+    });
     explanation.push(`+${durationScore} for symptoms lasting ${input.duration}`);
   }
 
@@ -67,6 +97,13 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
     const additionalVal = input.additional.toLowerCase();
     const additionalScore = SCORING_DATASET.additionalSymptoms[additionalVal] ?? 10;
     score += additionalScore;
+    factors.push({
+      id: "additional_symptom",
+      label: `Accompanying symptom (${input.additional})`,
+      score: additionalScore,
+      isRedFlag: false,
+      category: "additional",
+    });
     explanation.push(`+${additionalScore} for accompanying symptom (${input.additional})`);
   }
 
@@ -76,6 +113,13 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
     const historyScore = SCORING_DATASET.medicalHistory[historyVal] ?? 10; // default 10 for unknown conditions
     score += historyScore;
     if (historyScore > 0) {
+      factors.push({
+        id: "medical_history",
+        label: `History of ${input.history}`,
+        score: historyScore,
+        isRedFlag: false,
+        category: "history",
+      });
       explanation.push(`+${historyScore} Risk weight for history of ${input.history}`);
     }
   }
@@ -83,12 +127,7 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   // 7. Urgency Classification — cap score at 100 before classifying
   score = Math.min(100, Math.max(0, score));
 
-  let urgency: UrgencyLevel = "Low";
-  if (score >= SCORING_DATASET.thresholds.high) {
-    urgency = "High";
-  } else if (score >= SCORING_DATASET.thresholds.medium) {
-    urgency = "Medium";
-  }
+  const urgency = classifyUrgency(score);
 
   // 8. Construct Story-Format Narrative
   const historyText = input.history === "none" ? "no prior medical conditions" : `a medical history of ${input.history}`;
@@ -102,6 +141,7 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
     score,
     urgency,
     isRedFlag: false,
+    factors,
     explanation,
     recommendation: SCORING_DATASET.recommendations[urgency],
     narrative: {

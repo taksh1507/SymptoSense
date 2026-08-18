@@ -25,9 +25,7 @@ export default function ReportsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const userId = (session?.user as any)?.id;
-    if (!userId) return;
-    fetch(`/api/sessions?userId=${userId}`)
+    fetch('/api/sessions')
       .then((r) => r.json())
       .then((data) => setReports(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));

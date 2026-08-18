@@ -11,6 +11,7 @@ import {
   generateRecommendations,
   type RiskLevel,
 } from '@/lib/report/reasoningEngine';
+import { COLOR_THRESHOLDS } from '@/lib/ai-engine/scoring/thresholds';
 import type { Urgency } from '@/lib/ai-engine/scoring/types';
 
 interface ReportDetail {
@@ -36,6 +37,18 @@ interface ReportDetail {
   confidenceScore?: number;
   confidenceLevel?: string;
   confidenceExplanation?: string;
+}
+
+interface FollowUpRecord {
+  id: string;
+  status: string; // pending | responded
+  scheduledAt: string;
+  respondedAt?: string;
+  contactedDoctor?: boolean;
+  diagnosis?: string;
+  resolved?: string;
+  improved?: string;
+  notes?: string;
 }
 
 // ── Parse stored answers into usable fields ───────────────────
@@ -88,13 +101,62 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [followUp, setFollowUp] = useState<FollowUpRecord | null>(null);
+  const [showCheckInForm, setShowCheckInForm] = useState(false);
+  const [checkInSubmitting, setCheckInSubmitting] = useState(false);
+  const [checkInError, setCheckInError] = useState('');
+  const [contactedDoctor, setContactedDoctor] = useState('');
+  const [improved, setImproved] = useState('');
+  const [diagnosis, setDiagnosis] = useState('');
+  const [notes, setNotes] = useState('');
 
   useEffect(() => {
-    fetch(`/api/sessions?sessionId=${id}`)
-      .then((r) => r.json())
-      .then((data) => setReport(data))
+    if (!id) return;
+    Promise.all([
+      fetch(`/api/sessions?sessionId=${id}`)
+        .then((r) => r.json())
+        .catch(() => null),
+      fetch(`/api/followups?sessionId=${id}`)
+        .then((r) => (r.ok ? r.json() : []))
+        .catch(() => []),
+    ])
+      .then(([reportData, followUpData]) => {
+        setReport(reportData);
+        if (Array.isArray(followUpData) && followUpData.length > 0) {
+          setFollowUp(followUpData[0]);
+        }
+      })
       .finally(() => setLoading(false));
   }, [id]);
+
+  const submitCheckIn = async () => {
+    setCheckInSubmitting(true);
+    setCheckInError('');
+    try {
+      const res = await fetch('/api/followups', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: id,
+          contactedDoctor: contactedDoctor === 'yes' ? true : contactedDoctor === 'no' ? false : undefined,
+          improved: improved || undefined,
+          diagnosis: diagnosis.trim(),
+          notes: notes.trim(),
+        }),
+      });
+      if (!res.ok) {
+        setCheckInError('Could not save check-in. Please try again.');
+        return;
+      }
+      const updated = await res.json();
+      setFollowUp(updated);
+      setShowCheckInForm(false);
+    } catch {
+      setCheckInError('Could not save check-in. Please try again.');
+    } finally {
+      setCheckInSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -122,8 +184,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   // ── Derived data ──────────────────────────────────────────────
   const score    = report.score ?? 0;
   const urgency  = (report.urgency ?? 'Low') as RiskLevel;
-  const riskColor = score >= 70 ? 'var(--red)' : score >= 35 ? '#B45309' : '#15803D';
-  const riskBg    = score >= 70 ? 'var(--red-light)' : score >= 35 ? '#FFFBEB' : '#F0FDF4';
+  const riskColor = score >= COLOR_THRESHOLDS.high ? 'var(--red)' : score >= COLOR_THRESHOLDS.medium ? '#B45309' : '#15803D';
+  const riskBg    = score >= COLOR_THRESHOLDS.high ? 'var(--red-light)' : score >= COLOR_THRESHOLDS.medium ? '#FFFBEB' : '#F0FDF4';
 
   const parsed = parseAnswers(report.answers);
   const { primarySymptom, severity, duration, additionalSymptoms, medicalHistory } = parsed;
@@ -176,7 +238,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
     return [
       `${symptomLabel.charAt(0).toUpperCase() + symptomLabel.slice(1)} identified as the primary symptom`,
       `Severity reported as ${severity}`,
-      score < 70 ? 'No critical emergency indicators detected at time of assessment' : 'High-risk indicators were present at time of assessment',
+      score < COLOR_THRESHOLDS.high ? 'No critical emergency indicators detected at time of assessment' : 'High-risk indicators were present at time of assessment',
     ];
   })();
 
@@ -339,7 +401,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           </div>
 
           {/* ── Warning Signs ── */}
-          <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', background: score >= 70 ? '#FFF5F5' : 'white', border: score >= 70 ? '1px solid var(--red-border)' : '1px solid var(--border)' }}>
+          <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', background: score >= COLOR_THRESHOLDS.high ? '#FFF5F5' : 'white', border: score >= COLOR_THRESHOLDS.high ? '1px solid var(--red-border)' : '1px solid var(--border)' }}>
             <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <span>⚠️</span>
               {language === 'Hindi' ? 'चेतावनी संकेत' : language === 'Marathi' ? 'सावधानीचे संकेत' : 'Warning Signs to Watch'}
@@ -353,6 +415,133 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
               ))}
             </div>
           </div>
+
+          {/* ── Outcome Check-in ── */}
+          {followUp && (
+            <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', border: '1.5px solid var(--border)', background: '#FAFBFF' }}>
+              <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span>✅</span>
+                {language === 'Hindi' ? 'फॉलो-अप चेक-इन' : language === 'Marathi' ? 'फॉलो-अप तपासणी' : 'Outcome Check-in'}
+              </h3>
+              <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: '0 0 14px 0', lineHeight: '1.5' }}>
+                {language === 'Hindi'
+                  ? 'आपके मूल्यांकन के बाद आपकी स्थिति में क्या बदलाव आया? यह हमें अपनी भविष्यवाणियों को बेहतर बनाने में मदद करता है।'
+                  : language === 'Marathi'
+                    ? 'तुमच्या मूल्यांकनानंतर तुमच्या स्थितीत काय बदलले? हे आम्हाला आमच्या अंदाज सुधारण्यास मदत करते.'
+                    : 'How were things after your assessment? This helps us improve our predictions.'}
+              </p>
+
+              {followUp.status === 'responded' ? (
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '14px 16px' }}>
+                  <p style={{ fontSize: '13.5px', fontWeight: '700', color: '#15803D', margin: '0 0 6px 0' }}>
+                    {language === 'Hindi' ? '✓ आपकी प्रतिक्रिया दर्ज की गई' : language === 'Marathi' ? '✓ तुमचा अभिप्राय नोंदवला' : '✓ Your check-in has been recorded'}
+                  </p>
+                  <div style={{ fontSize: '12.5px', color: 'var(--text-3)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    {followUp.contactedDoctor != null && (
+                      <span>• {language === 'Hindi' ? 'डॉक्टर से परामर्श किया' : language === 'Marathi' ? 'डॉक्टरांचा सल्ला घेतला' : 'Contacted a doctor'}: {followUp.contactedDoctor ? (language === 'Hindi' ? 'हाँ' : language === 'Marathi' ? 'होय' : 'Yes') : (language === 'Hindi' ? 'नहीं' : language === 'Marathi' ? 'नाही' : 'No')}</span>
+                    )}
+                    {followUp.improved && <span>• {language === 'Hindi' ? 'स्थिति' : language === 'Marathi' ? 'स्थिती' : 'Condition'}: {followUp.improved}</span>}
+                    {followUp.diagnosis && <span>• {language === 'Hindi' ? 'निदान' : language === 'Marathi' ? 'निदान' : 'Diagnosis'}: {followUp.diagnosis}</span>}
+                    {followUp.notes && <span>• {followUp.notes}</span>}
+                  </div>
+                </div>
+              ) : showCheckInForm || new Date(followUp.scheduledAt) <= new Date() ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                  <div>
+                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
+                      {language === 'Hindi' ? 'क्या आपने डॉक्टर या स्वास्थ्य पेशेवर से परामर्श किया?' : language === 'Marathi' ? 'तुम्ही डॉक्टर किंवा आरोग्य व्यावसायिकांचा सल्ला घेतला का?' : 'Did you see a doctor or health professional?'}
+                    </p>
+                    <div role="radiogroup" aria-label="Contacted a doctor" style={{ display: 'flex', gap: '10px' }}>
+                      {(['yes', 'no'] as const).map((val) => (
+                        <button
+                          key={val}
+                          type="button"
+                          aria-pressed={contactedDoctor === val}
+                          onClick={() => setContactedDoctor(val)}
+                          style={{
+                            padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: '600',
+                            border: contactedDoctor === val ? '2px solid var(--primary)' : '1.5px solid var(--border)',
+                            background: contactedDoctor === val ? 'var(--primary-soft, #EFF6FF)' : 'white',
+                            color: contactedDoctor === val ? 'var(--primary)' : 'var(--text-3)',
+                            cursor: 'pointer', fontFamily: 'inherit',
+                          }}
+                        >
+                          {val === 'yes'
+                            ? (language === 'Hindi' ? 'हाँ' : language === 'Marathi' ? 'होय' : 'Yes')
+                            : (language === 'Hindi' ? 'नहीं' : language === 'Marathi' ? 'नाही' : 'No')}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
+                      {language === 'Hindi' ? 'आपके लक्षण अब कैसे हैं?' : language === 'Marathi' ? 'तुमची लक्षणे आता कशी आहेत?' : 'How are your symptoms now?'}
+                    </p>
+                    <select
+                      value={improved}
+                      onChange={(e) => setImproved(e.target.value)}
+                      aria-label="Current condition"
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '13.5px', fontFamily: 'inherit', background: 'white', color: 'var(--text-1)' }}
+                    >
+                      <option value="">{language === 'Hindi' ? 'चुनें...' : language === 'Marathi' ? 'निवडा...' : 'Select...'}</option>
+                      <option value="worse">Worse</option>
+                      <option value="same">Same</option>
+                      <option value="better">Better</option>
+                      <option value="recovered">{language === 'Hindi' ? 'पूरी तरह ठीक' : language === 'Marathi' ? 'पूर्णपणे बरे' : 'Recovered'}</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
+                      {language === 'Hindi' ? 'निदान (यदि डॉक्टर ने बताया हो):' : language === 'Marathi' ? 'निदान (जर डॉक्टरांनी सांगितले असेल):' : 'Diagnosis (if the doctor told you):'}
+                    </p>
+                    <input
+                      type="text"
+                      value={diagnosis}
+                      onChange={(e) => setDiagnosis(e.target.value)}
+                      aria-label="Diagnosis"
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '13.5px', fontFamily: 'inherit', background: 'white', color: 'var(--text-1)' }}
+                    />
+                  </div>
+
+                  <div>
+                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
+                      {language === 'Hindi' ? 'अतिरिक्त टिप्पणियां' : language === 'Marathi' ? 'अतिरिक्त टिप्पण्या' : 'Additional notes'}
+                    </p>
+                    <textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={2}
+                      aria-label="Additional notes"
+                      style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '13.5px', fontFamily: 'inherit', background: 'white', color: 'var(--text-1)', resize: 'vertical' }}
+                    />
+                  </div>
+
+                  {checkInError && <p style={{ fontSize: '12.5px', color: 'var(--red)', margin: 0 }}>{checkInError}</p>}
+
+                  <button className="btn btn-primary" onClick={submitCheckIn} disabled={checkInSubmitting} style={{ alignSelf: 'flex-start', fontSize: '13px', padding: '10px 20px' }}>
+                    {checkInSubmitting
+                      ? (language === 'Hindi' ? 'सहेजा जा रहा है...' : language === 'Marathi' ? 'जतन होत आहे...' : 'Saving...')
+                      : (language === 'Hindi' ? 'चेक-इन सबमिट करें' : language === 'Marathi' ? 'तपासणी सबमिट करा' : 'Submit check-in')}
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-3)', margin: 0 }}>
+                    {language === 'Hindi'
+                      ? `हम ${new Date(followUp.scheduledAt).toLocaleDateString()} को आपकी स्थिति देखेंगे।`
+                      : language === 'Marathi'
+                        ? `आम्ही ${new Date(followUp.scheduledAt).toLocaleDateString()} रोजी तुमची स्थिती पाहू.`
+                        : `We'll check in on you on ${new Date(followUp.scheduledAt).toLocaleDateString()}.`}
+                  </p>
+                  <button className="btn btn-outline" onClick={() => setShowCheckInForm(true)} style={{ fontSize: '12.5px', padding: '8px 16px' }}>
+                    {language === 'Hindi' ? 'अभी चेक-इन करें' : language === 'Marathi' ? 'आता तपासणी करा' : 'Check in now'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* ── Disclaimer + Footer ── */}
           <div style={{ padding: '20px 0', borderTop: '1px solid var(--border-faint)', textAlign: 'center' }}>

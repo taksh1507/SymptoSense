@@ -1,4 +1,5 @@
 import { ScoringRules } from "./types";
+import { URGENCY_THRESHOLDS } from "./thresholds";
 
 /**
  * Deterministic Ruleset for the SymptoSense Risk Scoring Engine
@@ -83,25 +84,37 @@ export const SCORING_DATASET: ScoringRules = {
    * RED FLAGS — immediate HIGH urgency override
    */
   redFlags: [
+    // English
     "chest pain",
     "difficulty breathing",
     "unconsciousness",
     "severe bleeding",
     "confusion",
     "shortness of breath",
+    // Hindi (transliterated)
     "saans",
     "dhakan",
     "chakkar",
     "behosh",
+    // Hindi (Devanagari)
     "सीने में दर्द",
     "सांस लेने में तकलीफ",
     "बेहोश",
+    // Marathi (Devanagari)
+    "छातीत दुखणे",
+    "श्वास घेण्यास त्रास",
+    "श्वास लागणे",
+    "बेशुद्ध",
+    "मूर्छा",
+    "गोंधळ",
+    "रक्तस्त्राव",
+    "जोरदार रक्तस्त्राव",
   ],
 
-  // Urgency thresholds — adjusted so severe symptoms reach High more naturally
+  // Urgency thresholds — single source lives in thresholds.ts
   thresholds: {
-    medium: 28,   // was 31 — easier to reach Medium
-    high: 55,     // was 61 — severe + moderate-base symptom now reaches High
+    medium: URGENCY_THRESHOLDS.medium,
+    high: URGENCY_THRESHOLDS.high,
   },
 
   recommendations: {

@@ -95,6 +95,8 @@ export default function PersonModal() {
               <button
                 key={opt.type}
                 id={`person-${opt.type}`}
+                aria-pressed={sel}
+                aria-label={opt.label[langKey]}
                 onClick={() => { setPersonType(opt.type); setName(''); setRelation(''); }}
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px',
@@ -125,12 +127,13 @@ export default function PersonModal() {
         {personType && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '20px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+              <label htmlFor="person-name" style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {personType === 'self'
                   ? (language === 'Hindi' ? 'आपका नाम' : language === 'Marathi' ? 'तुमचे नाव' : 'Your name')
                   : (language === 'Hindi' ? 'मरीज़ का नाम' : language === 'Marathi' ? 'रुग्णाचे नाव' : "Patient's name")}
               </label>
               <input
+                id="person-name"
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
@@ -139,16 +142,18 @@ export default function PersonModal() {
                   : (language === 'Hindi' ? 'जैसे अमित' : language === 'Marathi' ? 'उदा. अमित' : 'e.g. Amit')}
                 className="input"
                 style={{ width: '100%' }}
+                autoComplete="name"
                 autoFocus
               />
             </div>
 
             {personType === 'family' && (
               <div>
-                <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                <label htmlFor="person-relation" style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                   {language === 'Hindi' ? 'संबंध' : language === 'Marathi' ? 'नाते' : 'Relation'}
                 </label>
                 <select
+                  id="person-relation"
                   value={relation}
                   onChange={(e) => setRelation(e.target.value as Relation)}
                   className="input"
@@ -163,6 +168,7 @@ export default function PersonModal() {
                 </select>
                 {relation === 'Other' && (
                   <input
+                    id="person-relation-other"
                     type="text"
                     value={customRelation}
                     onChange={(e) => setCustomRelation(e.target.value)}
@@ -175,8 +181,8 @@ export default function PersonModal() {
             )}
 
             {/* Gender selector — shown for both self and family */}
-            <div>
-              <label style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+            <div role="radiogroup" aria-labelledby="person-gender-label">
+              <label id="person-gender-label" style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {language === 'Hindi' ? 'लिंग' : language === 'Marathi' ? 'लिंग' : 'Gender'}
               </label>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
@@ -186,6 +192,7 @@ export default function PersonModal() {
                     <button
                       key={g.value}
                       type="button"
+                      aria-pressed={sel}
                       onClick={() => setGender(g.value)}
                       style={{
                         display: 'flex', alignItems: 'center', gap: '8px',

@@ -15,6 +15,15 @@ import {
 } from "./questionFlow";
 import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext } from "./types";
 
+const FEMALE_ONLY: string[] = [
+  'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
+  'pelvic_pain', 'pregnancy_symptoms', 'menstruation', 'period', 'ovarian',
+];
+const MALE_ONLY: string[] = [
+  'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
+  'erectile', 'penile',
+];
+
 export interface QuestionEngineAPI {
   currentQuestion: QuestionStep | null;
   currentStep: number;
@@ -47,7 +56,6 @@ export interface QuestionEngineAPI {
 export function useQuestionEngine({
   defaultLanguage = "en",
   onComplete,
-  onCancel,
   gender,
 }: EngineProps): QuestionEngineAPI {
   const [stage, setStage] = useState<FlowStage>("q1_age");
@@ -65,15 +73,6 @@ export function useQuestionEngine({
   const [genderMismatch, setGenderMismatch] = useState<{ symptom: string; gender: string } | null>(null);
 
   // Gender-symptom mismatch lookup tables
-  const FEMALE_ONLY: string[] = [
-    'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
-    'pelvic_pain', 'pregnancy_symptoms', 'menstruation', 'period', 'ovarian',
-  ];
-  const MALE_ONLY: string[] = [
-    'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
-    'erectile', 'penile',
-  ];
-
   const checkGenderMismatch = useCallback((selectedSymptoms: string[], custom?: string): { symptom: string; gender: string } | null => {
     if (!gender || gender === 'Other' || gender === 'Prefer not to say') return null;
     const tokens = [...selectedSymptoms, custom || ''].join(' ').toLowerCase();
@@ -99,8 +98,6 @@ export function useQuestionEngine({
   const [currentAiStep, setCurrentAiStep] = useState(0);
   const [duration, setDuration] = useState("");
   const [severity, setSeverity] = useState("");
-  const [medications, setMedications] = useState<string[]>([]);
-  const [customMedication, setCustomMedication] = useState<string | undefined>();
 
   // Mute persistence
   useEffect(() => {
@@ -162,7 +159,7 @@ export function useQuestionEngine({
     setCustomInputError(null);
     setShowCustomInput(false);
     setIsLoading(false);
-  }, [age, symptoms, customSymptom, language]);
+  }, [age, symptoms, customSymptom, language, gender]);
 
   // Initial load
   useEffect(() => {
@@ -326,8 +323,6 @@ export function useQuestionEngine({
 
     } else if (stage === "q11_medications") {
       const finalMeds = selectedOptions.filter((v) => v !== "other");
-      setMedications(finalMeds);
-      if (customInput.trim()) setCustomMedication(customInput.trim());
 
       setIsComplete(true);
       onComplete(buildFinalOutput(
@@ -345,7 +340,8 @@ export function useQuestionEngine({
   }, [
     currentQuestion, stage, selectedOptions, customInput, showCustomInput,
     validateCustomInput, stop, loadStaticQuestion, loadAIQuestion,
-    aiAnswers, currentAiStep, age, symptoms, customSymptom, duration, severity, language, onComplete,
+    aiAnswers, currentAiStep, age, symptoms, customSymptom, duration, severity, language,
+    onComplete, checkGenderMismatch, previousQuestions,
   ]);
 
   // ── Voice toggle ──────────────────────────────────────────────
@@ -360,7 +356,7 @@ export function useQuestionEngine({
         if (language !== "en") {
           normalized = await translate(transcript, language, "en");
         }
-        const matched = matchVoiceToOption(normalized, currentQuestion, language);
+        const matched = matchVoiceToOption(normalized, currentQuestion);
         if (matched) {
           handleOptionToggle(matched);
         } else {
@@ -407,8 +403,6 @@ export function useQuestionEngine({
     setPreviousQuestions([]);
     setDuration("");
     setSeverity("");
-    setMedications([]);
-    setCustomMedication(undefined);
     setLocalError(null);
     loadStaticQuestion("q1_age");
   }, [loadStaticQuestion]);
@@ -419,11 +413,6 @@ export function useQuestionEngine({
     lastSpokenRef.current = "";
     setLanguage((prev) => prev === "en" ? "hi" : prev === "hi" ? "mr" : "en");
   }, [cancelRecording, stop]);
-
-  const canProceed =
-    stage === "q2_symptoms" || stage === "q11_medications"
-      ? selectedOptions.length > 0 || customInput.trim().length >= 3
-      : selectedOptions.length > 0;
 
   return {
     currentQuestion,

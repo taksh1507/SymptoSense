@@ -15,13 +15,15 @@ model User {
   name          String?
   email         String?   @unique
   emailVerified DateTime?
+  phone         String?   // WhatsApp-enabled number (opt-in, E.164) for follow-up reminders
   image         String?
   password      String?   // For email/password authentication
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  accounts      Account[]
-  sessions      Session[]
-  testSessions  TestSession[]
+  accounts        Account[]
+  sessions        Session[]
+  testSessions    TestSession[]
+  predictionLogs  PredictionLog[]
 }
 
 model Account {
@@ -85,4 +87,51 @@ model TestSession {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   user            User?    @relation(fields: [userId], references: [id])
+  predictionLogs  PredictionLog[]
+  followUps       FollowUp[]
+}
+
+// Machine-learning inference log — one row per real /api/ml/predict call.
+// Stores ONLY the numeric feature vector + prediction result, no free text,
+// so anonymous (guest) triages can feed the retraining loop without PII.
+model PredictionLog {
+  id                  String       @id @default(cuid())
+  testSessionId       String?
+  userId              String?
+  features            String       // JSON of the full ML feature vector sent
+  ruleScore           Float?       // rule-engine score received by the model
+  predictedConfidence Float?       // model output (0–1), null when ML unavailable
+  confidenceLevel     String?      // High | Medium | Low | unavailable
+  mlAvailable         Boolean      @default(true)
+  modelVersion        String?
+  latencyMs           Int?
+  createdAt           DateTime     @default(now())
+  testSession         TestSession? @relation(fields: [testSessionId], references: [id], onDelete: SetNull)
+  user                User?        @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([testSessionId])
+  @@index([createdAt])
+}
+
+// Scheduled outcome check-in for a completed assessment — the ground-truth
+// labels that make continuous retraining meaningful.
+model FollowUp {
+  id              String      @id @default(cuid())
+  testSessionId   String
+  status          String      @default("pending") // pending | responded | dismissed
+  scheduledAt     DateTime    // earliest time the user is prompted
+  respondedAt     DateTime?
+  contactedDoctor Boolean?    // did they reach a doctor/emergency line
+  diagnosis       String?     // reported diagnosis (free text)
+  resolved        String?     // yes | no | partial
+  improved        String?     // worse | same | better | recovered
+  notes           String?
+  lastRemindedAt  DateTime?   // last reminder sent (drives daily rate limiting)
+  reminderCount   Int         @default(0) // reminders sent so far (cap = 3)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  testSession     TestSession @relation(fields: [testSessionId], references: [id], onDelete: Cascade)
+
+  @@index([testSessionId])
+  @@index([status])
 }

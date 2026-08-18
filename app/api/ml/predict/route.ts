@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { rateLimit, getClientIp } from "@/lib/rateLimit";
 
 const getMlUrl = () => {
   if (process.env.ML_SERVER_URL) {
@@ -13,9 +14,13 @@ const getMlUrl = () => {
 const ML_SERVER_URL = getMlUrl();
 const ML_TIMEOUT_MS = 10000; // 10 seconds max to handle Vercel cold starts
 
-const FALLBACK = { confidence: 0.7, confidenceLevel: "Medium" };
+const UNAVAILABLE = { confidence: null, confidenceLevel: "unavailable" };
 
 export async function POST(req: Request) {
+  if (!rateLimit(`ml-predict:${getClientIp(req)}`, 30, 60000)) {
+    return NextResponse.json(UNAVAILABLE, { status: 429 });
+  }
+
   try {
     const body = await req.json();
 
@@ -44,18 +49,18 @@ export async function POST(req: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.warn(`[ML Proxy] Server returned ${response.status}:`, errorText);
-      // Return neutral fallback — don't propagate the error to the client
-      return NextResponse.json(FALLBACK);
+      // Report the outage explicitly instead of silently returning a fake score.
+      return NextResponse.json(UNAVAILABLE, { status: 503 });
     }
 
     const data = await response.json();
     return NextResponse.json(data);
   } catch (error: unknown) {
     if (error instanceof Error && error.name === "AbortError") {
-      console.warn("[ML Proxy] Request timed out after", ML_TIMEOUT_MS, "ms — using fallback");
+      console.warn("[ML Proxy] Request timed out after", ML_TIMEOUT_MS, "ms — reporting unavailable");
     } else {
       console.error("[ML Proxy] Error:", error);
     }
-    return NextResponse.json(FALLBACK);
+    return NextResponse.json(UNAVAILABLE, { status: 503 });
   }
 }

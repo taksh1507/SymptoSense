@@ -2,12 +2,12 @@
 
 import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { useTestSession } from '@/hooks/useTestSession';
 import { calculateRisk } from '@/lib/ai-engine/scoring/engine';
+import { classifyUrgency } from '@/lib/ai-engine/scoring/thresholds';
 import type { SurveyResult } from '@/lib/ai-engine/scoring/types';
 import type { FinalAssessmentPayload } from '@/components/ai-question-engine/types';
 import { mapAnswersToMLFeatures } from '@/lib/ml/featureMapper';
-import type { ScoreResult, Urgency } from '@/lib/ai-engine/scoring/types';
+import type { Factor, ScoreResult, Urgency } from '@/lib/ai-engine/scoring/types';
 
 // Dashboard-level screens only (triage flow)
 export type TriageScreen =
@@ -131,6 +131,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     answers: Record<number, string>,
     score: number,
     urgency: RiskLevel,
+    factors: Factor[],
+    hasRedFlag: boolean,
     userId?: string,
     confidence?: {
       score: number; level: string; explanation: string;
@@ -143,12 +145,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const primaryCategory = symptoms[0] || "general";
 
       const getRecommendation = (s: number, l: Language | null) => {
-        if (s >= 20) {
+        const level = classifyUrgency(s);
+        if (level === 'High') {
           if (l === 'Hindi') return 'तुरंत चिकित्सा सहायता लें।';
           if (l === 'Marathi') return 'ताबडतोब वैद्यकीय मदत घ्या.';
           return 'Seek emergency care immediately.';
         }
-        if (s >= 10) {
+        if (level === 'Medium') {
           if (l === 'Hindi') return '24 घंटे के भीतर अपने डॉक्टर से सलाह लें।';
           if (l === 'Marathi') return '२४ तासांच्या आत डॉक्टरांचा सल्ला घ्या.';
           return 'Consult your doctor within 24 hours.';
@@ -176,7 +179,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         result: {
           score,
           urgency,
-          factors: symptoms.map((s) => ({ id: s, label: s, score: 0, isRedFlag: false, category: 'general' })),
+          factors,
           primaryCategory,
           recommendation: getRecommendation(score, state.language),
           confidenceScore: confidence?.score !== undefined ? confidence.score / 100 : undefined,
@@ -188,7 +191,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
           primaryAction: confidence?.primaryAction,
           recommendationSteps: confidence?.recommendationSteps,
           keyInsights: confidence?.insights,
-          hasRedFlag: score >= 20,
+          hasRedFlag,
           symptomCount: symptoms.length,
           highestSeverity: urgency,
         },
@@ -283,6 +286,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         // Hard 12-second timeout to handle Vercel serverless cold starts
         const mlController = new AbortController();
         const mlTimeoutId = setTimeout(() => mlController.abort(), 12000);
+        const mlRequestStart = performance.now();
         let res: Response;
         try {
           res = await fetch('/api/ml/predict', {
@@ -295,6 +299,26 @@ export function AppProvider({ children }: { children: ReactNode }) {
           clearTimeout(mlTimeoutId);
         }
         const mlResult = await res.json();
+        const mlUnavailable = mlResult?.confidence == null;
+
+        // Log this inference for the continuous-retraining loop (fire-and-forget).
+        // Numeric feature vector only — no free text, safe to store anonymously.
+        try {
+          fetch('/api/ml/log', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              features,
+              ruleScore: result.score,
+              predictedConfidence: mlUnavailable ? null : mlResult.confidence,
+              confidenceLevel: mlUnavailable ? 'unavailable' : mlResult.confidenceLevel,
+              mlAvailable: !mlUnavailable,
+              latencyMs: Math.round(performance.now() - mlRequestStart),
+            }),
+          }).catch(err => console.warn('[ml-log] Failed to log prediction:', err));
+        } catch (err) {
+          console.warn('[ml-log] Failed to log prediction:', err);
+        }
 
         // Fetch dynamic reasoning from Groq — pass real symptom context
         let reasonData: any = {};
@@ -305,7 +329,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify({
               features: {
                 ...features,
-                confidence_score: Math.round(mlResult.confidence * 100)
+                confidence_score: mlUnavailable ? undefined : Math.round(mlResult.confidence * 100),
               },
               // Real clinical context for specific one-liners
               clinicalContext: {
@@ -355,9 +379,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
         setState(s => ({
           ...s,
-          mlScore: Math.round(mlResult.confidence * 100),
-          mlLevel: mlResult.confidenceLevel,
-          mlExplanation: reasonData.confidenceReasoning || "",
+          mlScore: mlUnavailable ? 0 : Math.round(mlResult.confidence * 100),
+          mlLevel: mlUnavailable ? 'unavailable' : mlResult.confidenceLevel,
+          mlExplanation: mlUnavailable
+            ? 'Confidence score unavailable right now — the ML service is offline. Your risk assessment above is still valid from our clinical rules engine.'
+            : reasonData.confidenceReasoning || "",
           riskReasoning: reasonData.riskReasoning || "",
           riskFactors: reasonData.riskFactors || [],
           recommendationSteps: reasonData.recommendationSteps || [],
@@ -365,9 +391,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           keyInsights: reasonData.keyInsights || []
         }));
         return {
-          score: mlResult.confidence,
-          level: mlResult.confidenceLevel,
-          explanation: reasonData.confidenceReasoning,
+          score: mlUnavailable ? undefined : mlResult.confidence,
+          level: mlUnavailable ? 'unavailable' : mlResult.confidenceLevel,
+          explanation: mlUnavailable
+            ? 'Prediction confidence unavailable — ML service offline.'
+            : reasonData.confidenceReasoning,
           riskReason: reasonData.riskReasoning,
           riskSummary: reasonData.riskSummary,
           riskFactors: reasonData.riskFactors,
@@ -377,11 +405,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
         };
       } catch (e) {
         console.error("Final ML Error:", e);
-        // Return a local fallback so the loading screen always proceeds
+        // Report that reliability estimation is unavailable instead of
+        // silently pretending the model returned 0.7 / Medium.
         return {
-          score: 0.7,
-          level: "Medium",
-          explanation: "Confidence estimated from symptom pattern.",
+          score: undefined,
+          level: "unavailable",
+          explanation: "Confidence score unavailable — ML service offline.",
           riskReason: `${result.urgency} risk based on ${primarySymptom.replace(/_/g, ' ')}.`,
           riskSummary: undefined,
           riskFactors: [],
@@ -427,7 +456,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
               const finalResult: ScoreResult = {
                 score: result.score,
                 urgency: result.urgency as Urgency,
-                factors: data.symptoms?.map(s => ({ id: s, label: s, score: 0, isRedFlag: false, category: 'general' })) || [],
+                factors: result.factors,
                 recommendation: result.recommendation.en,
                 primaryCategory: primarySymptom,
                 hasRedFlag: result.isRedFlag,
@@ -449,13 +478,12 @@ export function AppProvider({ children }: { children: ReactNode }) {
                 } : undefined
               };
 
-              // Sync with useTestSession store for Results page
-              useTestSession.getState().setScoreResult(finalResult);
-
               saveTestToDatabase(
                 answersRecord,
                 finalResult.score,
                 finalResult.urgency as RiskLevel,
+                finalResult.factors,
+                finalResult.hasRedFlag,
                 userId,
                 ml ? {
                   score: Math.round(ml.score * 100),

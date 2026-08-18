@@ -18,6 +18,7 @@ export interface RiskAnalysis {
   explanation: string[];
   recommendation: { en: string; hi: string };
   isRedFlag: boolean;
+  factors: Factor[];
   narrative?: { en: string; hi: string; mr: string };
 }
 

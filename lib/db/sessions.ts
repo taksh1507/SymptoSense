@@ -82,6 +82,23 @@ export async function completeTestSession(
     // Non-fatal — report detail page falls back to local engine if these are missing
     console.warn('[sessions] Extended fields write failed (run `prisma generate` to fix):', e);
   }
+
+  // Schedule an outcome check-in — generates the ground-truth labels the
+  // retraining loop needs. Non-fatal if it fails.
+  try {
+    const hasFollowUp = await prisma.followUp.findFirst({
+      where: { testSessionId: sessionId },
+      select: { id: true },
+    });
+    if (!hasFollowUp) {
+      const scheduledAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days
+      await prisma.followUp.create({
+        data: { testSessionId: sessionId, scheduledAt },
+      });
+    }
+  } catch (e) {
+    console.warn('[sessions] FollowUp scheduling failed:', e);
+  }
 }
 
 export async function getTestSession(sessionId: string) {
