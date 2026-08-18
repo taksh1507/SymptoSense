@@ -147,6 +147,7 @@ export function useQuestionEngine({
   const [symptoms, setSymptoms] = useState<string[]>([]);
   const [customSymptom, setCustomSymptom] = useState<string | undefined>();
   const [aiAnswers, setAiAnswers] = useState<AnswerMap>({});
+  const [aiAnswerLabels, setAiAnswerLabels] = useState<AnswerMap>({});
   const [previousQuestions, setPreviousQuestions] = useState<{ question: string; answer: string; category?: string }[]>([]);
   const [currentAiStep, setCurrentAiStep] = useState(0);
   const [duration, setDuration] = useState("");
@@ -358,6 +359,7 @@ export function useQuestionEngine({
         },
       ];
       setPreviousQuestions(updatedPrevQuestions);
+      setAiAnswerLabels((prev) => ({ ...prev, [key]: answerLabel }));
 
       // ── Re-check interim risk after each adaptive answer ────────
       const interim = computeInterimRisk(symptoms, customSymptom);
@@ -402,6 +404,7 @@ export function useQuestionEngine({
         symptoms,
         customSymptom,
         aiAnswers,
+        aiAnswerLabels,
         duration,
         severity,
         finalMeds,
@@ -413,7 +416,7 @@ export function useQuestionEngine({
     currentQuestion, stage, selectedOptions, customInput, showCustomInput,
     validateCustomInput, stop, loadStaticQuestion, loadAIQuestion,
     aiAnswers, currentAiStep, age, symptoms, customSymptom, duration, severity, language,
-    onComplete, checkGenderMismatch, previousQuestions,
+    onComplete, checkGenderMismatch, previousQuestions, aiAnswerLabels,
   ]);
 
   // ── Voice toggle ──────────────────────────────────────────────
@@ -471,6 +474,7 @@ export function useQuestionEngine({
     setSymptoms([]);
     setCustomSymptom(undefined);
     setAiAnswers({});
+    setAiAnswerLabels({});
     setCurrentAiStep(0);
     setPreviousQuestions([]);
     setDuration("");
@@ -493,13 +497,14 @@ export function useQuestionEngine({
       symptoms,
       customSymptom,
       aiAnswers,
+      aiAnswerLabels,
       "< 1 day",
       "severe",
       [],
       undefined,
       language
     ));
-  }, [age, symptoms, customSymptom, aiAnswers, language, onComplete]);
+  }, [age, symptoms, customSymptom, aiAnswers, aiAnswerLabels, language, onComplete]);
 
   const toggleLanguage = useCallback(() => {
     cancelRecording();

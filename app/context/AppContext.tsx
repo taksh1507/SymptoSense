@@ -256,10 +256,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
   // Called when AIQuestionEngine completes
   const handleAIComplete = (data: FinalAssessmentPayload) => {
     const primarySymptom = data.symptoms?.[0] || data.customSymptom || 'general';
+    // Use human-readable AI answer labels, not option_a-style codes,
+    // so additional-symptom text and the risk narrative stay legible.
+    const aiAnswerTexts = Object.values(data.aiAnswerLabels || {});
     const additionalSymptoms = [
       ...(data.symptoms?.slice(1) || []),
       ...(data.customSymptom && !data.symptoms?.includes(data.customSymptom) ? [data.customSymptom] : []),
-      ...Object.values(data.aiAnswers || {}).filter(v => v && v !== 'none'),
+      ...aiAnswerTexts.filter(v => v && v !== 'none'),
     ];
     const medicalHistory = data.medications?.filter(m => m !== 'none') || [];
     const additionalSymptom = additionalSymptoms[0] || 'none';

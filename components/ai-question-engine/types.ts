@@ -48,6 +48,7 @@ export interface FinalAssessmentPayload {
   symptoms: string[];
   customSymptom?: string;
   aiAnswers: AnswerMap;
+  aiAnswerLabels: AnswerMap; // human-readable (en) label per AI answer key — feeds ML heuristics + clinical context
   duration: string;
   severity: string;
   medications: string[];

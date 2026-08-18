@@ -31,10 +31,14 @@ export function mapAnswersToMLFeatures(data: Partial<FinalAssessmentPayload>): M
   const symptoms = new Set(data.symptoms || []);
   const meds = new Set(data.medications || []);
   
-  // Combine all AI answer values AND keys for richer text matching
+  // Combine AI answer codes, human-readable labels, and keys for rich matching.
+  // Labels are the key fix: Groq returns opaque option_a/b/c codes, so the
+  // intensity/progression/ambiguity regexes below only ever matched the static
+  // fallback questions before. Now real option text drives those signals.
   const aiValues = Object.values(data.aiAnswers || {});
+  const aiAnswerTexts = Object.values(data.aiAnswerLabels || {});
   const aiKeys = Object.keys(data.aiAnswers || {});
-  const aiAnswersRaw = [...aiValues, ...aiKeys].join(" ").toLowerCase();
+  const aiAnswersRaw = [...aiValues, ...aiAnswerTexts, ...aiKeys].join(" ").toLowerCase();
 
   // Helper to check for a symptom in selections or AI follow-up text
   const hasSymptom = (key: string, patterns: string[]) => {
