@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const context: QuestionContext = await req.json();
-    const { age, symptoms, customSymptom, aiAnswers, previousQuestions, currentAiStep, language, gender } = context;
+    const { age, symptoms, customSymptom, aiAnswers, previousQuestions, currentAiStep, language, gender, riskSnapshot } = context;
 
     const symptomsStr = [
       ...(symptoms || []),
@@ -73,6 +73,33 @@ export async function POST(req: Request) {
       .filter(Boolean) as string[];
     const remainingCategories = ALL_CATEGORIES.filter(c => !coveredCategories.includes(c));
 
+    // ── Live risk snapshot from the deterministic engine ──────────
+    // Lets Groq prioritize probing that matters for the current risk band.
+    let riskGuide = '';
+    if (riskSnapshot && !riskSnapshot.isRedFlag) {
+      const factorList = Array.isArray(riskSnapshot.factors) ? riskSnapshot.factors.join("; ") : '';
+      const preferred =
+        riskSnapshot.urgency === 'High'
+          ? 'clinical_red_flags, symptom_location'
+          : riskSnapshot.urgency === 'Medium'
+            ? 'symptom_triggers, episode_history'
+            : 'body_system_review, lifestyle_environmental';
+      riskGuide = `
+CURRENT INTERIM RISK (computed by the rules engine from this patient's earlier answers):
+- Level: ${riskSnapshot.urgency}
+- Score: ${riskSnapshot.score}/100
+- Contributing factors: ${factorList || 'n/a'}
+
+PRIORITY: Weight the question toward these categories first: ${preferred}.${
+        riskSnapshot.urgency === 'High'
+          ? ' Keep the question focused on identifying escalating danger; do not reassure.'
+          : riskSnapshot.urgency === 'Medium'
+            ? ' Probe whether the situation is stabilizing or deteriorating.'
+            : ' Screen for hidden aggravating factors and lifestyle triggers.'
+      }
+`;
+    }
+
     const systemMessage = `You are a medical triage assistant generating adaptive follow-up questions. You ONLY respond with valid JSON. No explanations, no markdown, no extra text.`;
 
     const userMessage = `Generate ONE medical follow-up question for this patient.
@@ -83,6 +110,7 @@ PATIENT PROFILE:
 - Gender: ${gender || "not specified"}
 - Question ${currentAiStep + 1} of 6
 ${genderClinicalNote ? `\n${genderClinicalNote}\n` : ''}
+${riskGuide ? `\n${riskGuide}\n` : ''}
 
 CONVERSATION HISTORY (questions already asked — DO NOT repeat these topics):
 ${historyStr}

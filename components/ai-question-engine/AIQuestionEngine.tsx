@@ -68,6 +68,7 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel,
     selectedOptions, customInput, customInputError, showCustomInput,
     language, toggleLanguage, isSpeaking, isRecording, isLoading, isComplete,
     voiceError, isMuted, toggleMute, genderMismatch, dismissMismatch,
+    riskSnapshot, redFlagPending, acknowledgeRedFlag,
     handleOptionToggle, handleCustomInputChange, handleNext, handleVoiceToggle,
     replayQuestion,
   } = engine;
@@ -96,6 +97,41 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel,
         <p style={{ color: "var(--text-3)", marginTop: "8px" }}>
           {language === "hi" ? "आपका डेटा विश्लेषण किया जा रहा है..." : language === "mr" ? "तुमचा डेटा विश्लेषण केला जात आहे..." : "Analyzing your data..."}
         </p>
+      </div>
+    );
+  }
+
+  // ── Red-flag short-circuit interstitial ───────────────────────
+  // The deterministic engine detected a high-acuity presentation (e.g. chest
+  // pain, breathing difficulty). We stop asking questions and go straight to
+  // the emergency result.
+  if (redFlagPending) {
+    const flagged = riskSnapshot?.factors?.[0]?.replace('Red flag: ', '') || '';
+    return (
+      <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
+        <div className="card" style={{ padding: "36px 32px", borderRadius: "20px", border: "2px solid #FCA5A5", background: "#FFF5F5", textAlign: "center" }}>
+          <div style={{ fontSize: "48px", marginBottom: "16px" }}>🚨</div>
+          <h2 style={{ fontSize: "20px", fontWeight: 900, color: "#B91C1C", marginBottom: "12px", letterSpacing: "-0.3px" }}>
+            {language === "hi" ? "तत्काल चिकित्सा ध्यान की आवश्यकता" : language === "mr" ? "तात्काळ वैद्यकीय लक्ष आवश्यक" : "Urgent medical attention needed"}
+          </h2>
+          <p style={{ fontSize: "14px", color: "#7F1D1D", lineHeight: "1.65", marginBottom: "18px" }}>
+            {language === "hi"
+              ? `आपके लक्षण "${flagged || 'सीने में दर्द'}" उच्च जोखिम के संकेत देते हैं। हम प्रश्न छोड़कर तुरंत आपका मूल्यांकन पूरा करेंगे।`
+              : language === "mr"
+              ? `तुमच्या लक्षणांमुळे ("${flagged || 'छातीत दुखणे'}") उच्च जोखमीचे संकेत दिसत आहेत. आम्ही प्रश्न वगळून ताबडतोब तुमचे मूल्यांकन पूर्ण करू.`
+              : `Your symptoms ("${flagged || 'chest pain'}") show high-risk indicators. We'll skip the remaining questions and complete your assessment right away.`}
+          </p>
+          <p style={{ fontSize: "13px", fontWeight: 700, color: "#991B1B", lineHeight: "1.6", marginBottom: "28px" }}>
+            {language === "hi"
+              ? "परिणाम देखने के लिए नीचे दिए गए बटन पर क्लिक करें।"
+              : language === "mr"
+              ? "निकाल पाहण्यासाठी खालील बटणावर क्लिक करा."
+              : "Click below to see your results."}
+          </p>
+          <button onClick={acknowledgeRedFlag} className="btn btn-primary" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 700 }}>
+            {language === "hi" ? "परिणाम देखें →" : language === "mr" ? "निकाल पहा →" : "See Results →"}
+          </button>
+        </div>
       </div>
     );
   }
@@ -178,6 +214,23 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel,
       </div>
 
       <ProgressBar step={currentStep} total={totalSteps} progress={progress} />
+
+      {/* Live risk snapshot chip */}
+      {riskSnapshot && !riskSnapshot.isRedFlag && (
+        <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "14px", flexWrap: "wrap" }}>
+          <span className="badge" style={{
+            background: riskSnapshot.urgency === "High" ? "var(--red-light)" : riskSnapshot.urgency === "Medium" ? "#FFFBEB" : "#F0FDF4",
+            color: riskSnapshot.urgency === "High" ? "#B91C1C" : riskSnapshot.urgency === "Medium" ? "#B45309" : "#15803D",
+            border: `1px solid ${riskSnapshot.urgency === "High" ? "var(--red-border)" : riskSnapshot.urgency === "Medium" ? "#FDE68A" : "#BBF7D0"}`,
+          }}>
+            {riskSnapshot.urgency === "High" ? "🔴" : riskSnapshot.urgency === "Medium" ? "🟡" : "🟢"}{" "}
+            {language === "hi" ? "जोखिम" : language === "mr" ? "जोखीम" : "Risk"}: {riskSnapshot.urgency} · {riskSnapshot.score}/100
+          </span>
+          <span style={{ fontSize: "11.5px", color: "var(--text-4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto" }}>
+            {riskSnapshot.factors.join(" · ")}
+          </span>
+        </div>
+      )}
 
       {/* Question Card */}
       <div className="card" style={{ padding: "28px", marginBottom: "16px" }}>

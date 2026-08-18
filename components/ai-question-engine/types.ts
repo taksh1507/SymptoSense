@@ -22,6 +22,13 @@ export interface QuestionStep {
   singleSelect?: boolean; // enforces single selection even in multiselect
 }
 
+export interface RiskSnapshot {
+  urgency: "Low" | "Medium" | "High";
+  score: number;
+  factors: string[];
+  isRedFlag: boolean;
+}
+
 export interface QuestionContext {
   age: string;
   symptoms: string[];
@@ -31,6 +38,7 @@ export interface QuestionContext {
   currentAiStep: number; // 0-5 (6 AI questions max)
   language: Language;
   gender?: string; // Male | Female | Other | Prefer not to say — used for clinical relevance checks
+  riskSnapshot?: RiskSnapshot; // live interim risk from the deterministic engine feeding question selection
 }
 
 export type AnswerMap = Record<string, string>;

@@ -13,7 +13,8 @@ import {
   AI_QUESTION_COUNT,
   type FlowStage,
 } from "./questionFlow";
-import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext } from "./types";
+import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext, RiskSnapshot } from "./types";
+import { SCORING_DATASET } from "@/lib/ai-engine/scoring/rules";
 
 const FEMALE_ONLY: string[] = [
   'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
@@ -23,6 +24,53 @@ const MALE_ONLY: string[] = [
   'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
   'erectile', 'penile',
 ];
+
+// High-acuity symptom values selectable in Q2 that are treated as red flags
+// immediately (their free-text aliases are caught by SCORING_DATASET.redFlags).
+const RED_FLAG_SYMPTOM_VALUES: string[] = ["chest_pain", "breathlessness"];
+
+// Interim risk estimation from early answers (before severity/duration are asked).
+function computeInterimRisk(symptoms: string[], custom?: string): RiskSnapshot {
+  const values = [...symptoms, ...(custom ? [custom] : [])];
+  const text = values.join(" ").replace(/_/g, " ").toLowerCase();
+
+  const flaggedValue = symptoms.find((s) => RED_FLAG_SYMPTOM_VALUES.includes(s));
+  const flaggedText = flaggedValue
+    ? flaggedValue.replace(/_/g, " ")
+    : SCORING_DATASET.redFlags.find((flag) => text.includes(flag));
+
+  if (flaggedText) {
+    return {
+      urgency: "High",
+      score: 100,
+      isRedFlag: true,
+      factors: [`Red flag: ${flaggedText}`],
+    };
+  }
+
+  const primary = symptoms[0] ?? custom ?? "general";
+  const baseScore =
+    SCORING_DATASET.symptoms[primary] ??
+    SCORING_DATASET.symptoms[primary.replace(/_/g, " ")] ??
+    15;
+  const additional = symptoms[1];
+  const additionalScore = additional
+    ? SCORING_DATASET.additionalSymptoms[additional] ??
+      SCORING_DATASET.additionalSymptoms[additional.replace(/_/g, " ")] ??
+      SCORING_DATASET.symptoms[additional] ??
+      10
+    : symptoms.length > 1
+      ? 10
+      : 0;
+
+  const score = Math.min(100, baseScore + additionalScore);
+  const urgency = score >= 55 ? "High" : score >= 28 ? "Medium" : "Low";
+
+  const factors: string[] = [`${primary.replace(/_/g, " ")} (base ${baseScore})`];
+  if (additional) factors.push(`${additional.replace(/_/g, " ")} (${additionalScore})`);
+
+  return { urgency, score, isRedFlag: false, factors };
+}
 
 export interface QuestionEngineAPI {
   currentQuestion: QuestionStep | null;
@@ -45,6 +93,9 @@ export interface QuestionEngineAPI {
   toggleMute: () => void;
   genderMismatch: { symptom: string; gender: string } | null; // non-null = show warning popup
   dismissMismatch: () => void;
+  riskSnapshot: RiskSnapshot | null;
+  redFlagPending: boolean;
+  acknowledgeRedFlag: () => void;
   handleOptionToggle: (value: string) => void;
   handleCustomInputChange: (text: string) => void;
   handleNext: () => void;
@@ -71,6 +122,8 @@ export function useQuestionEngine({
   const [localError, setLocalError] = useState<string | null>(null);
   const [isMuted, setIsMuted] = useState(false);
   const [genderMismatch, setGenderMismatch] = useState<{ symptom: string; gender: string } | null>(null);
+  const [riskSnapshot, setRiskSnapshot] = useState<RiskSnapshot | null>(null);
+  const [redFlagPending, setRedFlagPending] = useState(false);
 
   // Gender-symptom mismatch lookup tables
   const checkGenderMismatch = useCallback((selectedSymptoms: string[], custom?: string): { symptom: string; gender: string } | null => {
@@ -151,6 +204,7 @@ export function useQuestionEngine({
       currentAiStep: aiStep,
       language,
       gender,
+      riskSnapshot: riskSnapshot ?? undefined,
     };
     const q = await fetchAIQuestion(context);
     setCurrentQuestion(q);
@@ -159,7 +213,7 @@ export function useQuestionEngine({
     setCustomInputError(null);
     setShowCustomInput(false);
     setIsLoading(false);
-  }, [age, symptoms, customSymptom, language, gender]);
+  }, [age, symptoms, customSymptom, language, gender, riskSnapshot]);
 
   // Initial load
   useEffect(() => {
@@ -269,6 +323,15 @@ export function useQuestionEngine({
 
       setSymptoms(finalSymptoms);
       if (customInput.trim()) setCustomSymptom(customInput.trim());
+
+      // ── Live risk snapshot: short-circuit on red flags ──────────
+      const interim = computeInterimRisk(finalSymptoms, customInput.trim() || undefined);
+      setRiskSnapshot(interim);
+      if (interim.isRedFlag) {
+        setRedFlagPending(true);
+        return; // UI shows the urgent-care interstitial next
+      }
+
       setCurrentStep(2);
       setStage("ai_questions");
       setCurrentAiStep(0);
@@ -295,6 +358,15 @@ export function useQuestionEngine({
         },
       ];
       setPreviousQuestions(updatedPrevQuestions);
+
+      // ── Re-check interim risk after each adaptive answer ────────
+      const interim = computeInterimRisk(symptoms, customSymptom);
+      if (interim.isRedFlag) {
+        setRiskSnapshot(interim);
+        setRedFlagPending(true);
+        return; // short-circuit to the urgent-care interstitial
+      }
+      setRiskSnapshot(interim);
 
       const nextAiStep = currentAiStep + 1;
       if (nextAiStep >= AI_QUESTION_COUNT) {
@@ -404,8 +476,30 @@ export function useQuestionEngine({
     setDuration("");
     setSeverity("");
     setLocalError(null);
+    setRiskSnapshot(null);
+    setRedFlagPending(false);
     loadStaticQuestion("q1_age");
   }, [loadStaticQuestion]);
+
+  // ── Red-flag short-circuit: finish the assessment immediately ──
+  // The deterministic engine already judged this High/emergency, so we skip
+  // the remaining adaptive + static questions and let AppContext produce the
+  // emergency result (severity defaults to "severe" to keep scoring consistent).
+  const acknowledgeRedFlag = useCallback(() => {
+    setIsComplete(true);
+    setRedFlagPending(false);
+    onComplete(buildFinalOutput(
+      age,
+      symptoms,
+      customSymptom,
+      aiAnswers,
+      "< 1 day",
+      "severe",
+      [],
+      undefined,
+      language
+    ));
+  }, [age, symptoms, customSymptom, aiAnswers, language, onComplete]);
 
   const toggleLanguage = useCallback(() => {
     cancelRecording();
@@ -435,6 +529,9 @@ export function useQuestionEngine({
     toggleMute,
     genderMismatch,
     dismissMismatch,
+    riskSnapshot,
+    redFlagPending,
+    acknowledgeRedFlag,
     handleOptionToggle,
     handleCustomInputChange,
     handleNext,
