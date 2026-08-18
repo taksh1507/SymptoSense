@@ -93,6 +93,32 @@ function getWarningSigns(primarySymptom: string, additionalSymptoms: string[], r
   return signs.slice(0, 4);
 }
 
+// ── Drug-interaction warnings (e.g. blood thinners) ───────────
+function getDrugWarnings(onBloodThinners: boolean, symptomTokens: string[]): string[] {
+  if (!onBloodThinners) return [];
+  const warnings: string[] = [];
+  const text = symptomTokens.join(' ').toLowerCase();
+  if (/(bleed|bleeding|blood.?in.?stool|rectal.?bleed|vomit)/.test(text)) {
+    warnings.push('You are on blood thinners and report bleeding-related symptoms — this warrants prompt medical care. Do not stop your medication on your own; consult a doctor first.');
+  }
+  if (symptomTokens.some((s) => s === 'chest_pain' || s === 'breathlessness')) {
+    warnings.push('Blood thinners increase bleeding risk in cardiac events — chest pain or breathing difficulty here needs urgent evaluation by a professional.');
+  }
+  return warnings;
+}
+
+// Parse the raw answer map (questionId -> value) once for meds/drug checks
+function parseAnswerMap(answersJson: string): Record<string, string> {
+  try {
+    const arr: { questionId: string; answer: string }[] = JSON.parse(answersJson || '[]');
+    const map: Record<string, string> = {};
+    arr.forEach((a) => { map[a.questionId] = a.answer; });
+    return map;
+  } catch {
+    return {};
+  }
+}
+
 export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -242,6 +268,12 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
     ];
   })();
 
+  // ── Doctor-visit note data ───────────────────────────────────
+  const answerMap = parseAnswerMap(report.answers);
+  const medRaw = answerMap['q11'] ? answerMap['q11'].split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const onBloodThinners = medRaw.includes('blood_thinners') || medRaw.includes('blood_thinner') || medRaw.includes('blood thinner');
+  const drugWarnings = getDrugWarnings(onBloodThinners, [...parsed.allSymptoms, ...parsed.additionalSymptoms, ...parsed.medicalHistory]);
+
   return (
     <AppShell>
       <div className="mobile-padding" style={{ padding: '32px 24px', minHeight: '100%', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
@@ -274,13 +306,23 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                   )}
                 </p>
               </div>
-              <button
-                className="btn btn-primary"
-                onClick={() => router.push('/dashboard')}
-                style={{ fontSize: '13px', padding: '9px 18px', flexShrink: 0 }}
-              >
-                {language === 'Hindi' ? 'नया मूल्यांकन' : language === 'Marathi' ? 'नवीन मूल्यांकन' : 'New Assessment'}
-              </button>
+              <div style={{ display: 'flex', gap: '10px', flexShrink: 0, flexWrap: 'wrap' }}>
+                <button
+                  className="btn btn-outline no-print"
+                  onClick={() => { try { window.print(); } catch { /* noop */ } }}
+                  style={{ fontSize: '13px', padding: '9px 16px' }}
+                  title="Print or save as PDF"
+                >
+                  🖨️ {language === 'Hindi' ? 'प्रिंट / PDF' : language === 'Marathi' ? 'प्रिंट / PDF' : 'Print / PDF'}
+                </button>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => router.push('/dashboard')}
+                  style={{ fontSize: '13px', padding: '9px 18px', flexShrink: 0 }}
+                >
+                  {language === 'Hindi' ? 'नया मूल्यांकन' : language === 'Marathi' ? 'नवीन मूल्यांकन' : 'New Assessment'}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -554,6 +596,64 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                   </button>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── Doctor Visit Note ── */}
+          <div className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
+            <div style={{ background: '#F8FAFC', padding: '18px 24px', borderBottom: '1px solid var(--border-faint)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>📋</div>
+                <div>
+                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0 }}>Doctor Visit Note</h3>
+                  <p style={{ fontSize: '11.5px', color: 'var(--text-4)', margin: '2px 0 0 0' }}>Quick facts to share at your consultation</p>
+                </div>
+              </div>
+              <button
+                className="btn btn-outline no-print"
+                onClick={() => { try { window.print(); } catch { /* noop */ } }}
+                style={{ fontSize: '12.5px', padding: '8px 16px' }}
+              >
+                🖨️ {language === 'Hindi' ? 'प्रिंट करें' : language === 'Marathi' ? 'प्रिंट करा' : 'Print / Save PDF'}
+              </button>
+            </div>
+            <div style={{ padding: '18px 24px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '14px' }}>
+                {[
+                  { label: 'Assessment date', value: new Date(report.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) },
+                  { label: 'Patient', value: report.personName === 'Myself' ? 'Self' : `${report.personName || 'Self'}${relationLabel}` },
+                  { label: 'Primary symptom', value: primarySymptom.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) },
+                  { label: 'Other symptoms', value: additionalSymptoms.length ? additionalSymptoms.slice(0, 4).map((s) => s.replace(/_/g, ' ')).join(', ') : 'None reported' },
+                  { label: 'Severity', value: severity.replace(/^./, (c) => c.toUpperCase()) },
+                  { label: 'Duration', value: duration },
+                  { label: 'Risk level', value: `${urgency} (score ${score}/100)` },
+                  { label: 'Report confidence', value: !isLegacy && report.confidenceScore != null ? `${Math.round(report.confidenceScore * 100)}% (${report.confidenceLevel})` : 'Not available' },
+                  { label: 'Medications / history', value: medRaw.length ? medRaw.map((m) => m.replace(/_/g, ' ')).join(', ') : 'None reported' },
+                  { label: 'Follow-up', value: followUp ? (followUp.status === 'responded' ? 'Check-in recorded' : 'Pending check-in') : 'Not scheduled' },
+                ].map((f) => (
+                  <div key={f.label} style={{ background: 'var(--bg)', border: '1px solid var(--border-faint)', borderRadius: '10px', padding: '10px 12px' }}>
+                    <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-4)', marginBottom: '3px' }}>{f.label}</div>
+                    <div style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-1)', lineHeight: '1.4' }}>{f.value}</div>
+                  </div>
+                ))}
+              </div>
+              <p style={{ fontSize: '12.5px', color: 'var(--text-3)', lineHeight: '1.6', margin: 0, fontStyle: 'italic', borderTop: '1px solid var(--border-faint)', paddingTop: '12px' }}>
+                “{riskOneLiner}” — {displaySummary}
+              </p>
+            </div>
+          </div>
+
+          {/* ── Drug-interaction warnings ── */}
+          {drugWarnings.length > 0 && (
+            <div className="card" style={{ padding: '16px 20px', borderRadius: '16px', border: '1.5px solid #FDE68A', background: '#FFFBEB' }}>
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {drugWarnings.map((w, i) => (
+                    <p key={i} style={{ fontSize: '13px', fontWeight: '600', color: '#92400E', lineHeight: '1.5', margin: 0 }}>{w}</p>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 

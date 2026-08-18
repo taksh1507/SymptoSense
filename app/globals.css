@@ -399,3 +399,47 @@ a:focus-visible {
     max-width: 100%;
   }
 }
+
+/* ═══════════════════════════════════════════════
+   PRINT / PDF — doctor-visit note
+   Slims the app chrome away so only the report
+   (incl. the Doctor Visit Note card) prints.
+   ═══════════════════════════════════════════════ */
+@media print {
+  @page { margin: 14mm; }
+
+  html, body {
+    background: #fff !important;
+    font-size: 11pt;
+  }
+
+  aside, header, footer,
+  .no-print,
+  .mobile-padding > div > div:first-child {   /* back button row */
+    display: none !important;
+  }
+
+  .mobile-main {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  .mobile-padding {
+    padding: 0 !important;
+  }
+
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 10px !important;
+    break-inside: avoid;
+  }
+
+  .card + .card,
+  h1, h2, h3 { break-inside: avoid; }
+
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+}
