@@ -418,12 +418,16 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
           {/* ── Outcome Check-in ── */}
           {followUp && (
-            <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', border: '1.5px solid var(--border)', background: '#FAFBFF' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <span>✅</span>
-                {language === 'Hindi' ? 'फॉलो-अप चेक-इन' : language === 'Marathi' ? 'फॉलो-अप तपासणी' : 'Outcome Check-in'}
-              </h3>
-              <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: '0 0 14px 0', lineHeight: '1.5' }}>
+            <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', border: '1.5px solid var(--border)', background: '#FAFBFF', boxShadow: 'var(--shadow-md)', overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
+                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #10B981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, boxShadow: '0 3px 8px rgb(16 185 129 / 0.3)' }}>
+                  ✅
+                </div>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0 }}>
+                  {language === 'Hindi' ? 'फॉलो-अप चेक-इन' : language === 'Marathi' ? 'फॉलो-अप तपासणी' : 'Outcome Check-in'}
+                </h3>
+              </div>
+              <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: '6px 0 14px 34px', lineHeight: '1.5' }}>
                 {language === 'Hindi'
                   ? 'आपके मूल्यांकन के बाद आपकी स्थिति में क्या बदलाव आया? यह हमें अपनी भविष्यवाणियों को बेहतर बनाने में मदद करता है।'
                   : language === 'Marathi'
@@ -432,21 +436,28 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
               </p>
 
               {followUp.status === 'responded' ? (
-                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '12px', padding: '14px 16px' }}>
-                  <p style={{ fontSize: '13.5px', fontWeight: '700', color: '#15803D', margin: '0 0 6px 0' }}>
-                    {language === 'Hindi' ? '✓ आपकी प्रतिक्रिया दर्ज की गई' : language === 'Marathi' ? '✓ तुमचा अभिप्राय नोंदवला' : '✓ Your check-in has been recorded'}
+                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '16px 18px' }}>
+                  <p style={{ fontSize: '13.5px', fontWeight: '700', color: '#15803D', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#15803D', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>✓</span>
+                    {language === 'Hindi' ? 'आपकी प्रतिक्रिया दर्ज की गई' : language === 'Marathi' ? 'तुमचा अभिप्राय नोंदवला' : 'Your check-in has been recorded'}
                   </p>
-                  <div style={{ fontSize: '12.5px', color: 'var(--text-3)', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                     {followUp.contactedDoctor != null && (
-                      <span>• {language === 'Hindi' ? 'डॉक्टर से परामर्श किया' : language === 'Marathi' ? 'डॉक्टरांचा सल्ला घेतला' : 'Contacted a doctor'}: {followUp.contactedDoctor ? (language === 'Hindi' ? 'हाँ' : language === 'Marathi' ? 'होय' : 'Yes') : (language === 'Hindi' ? 'नहीं' : language === 'Marathi' ? 'नाही' : 'No')}</span>
+                      <span className="badge" style={{ background: followUp.contactedDoctor ? '#DBEAFE' : '#F1F5F9', color: followUp.contactedDoctor ? '#1D4ED8' : '#475569', border: `1px solid ${followUp.contactedDoctor ? '#BFDBFE' : '#E2E8F0'}` }}>
+                        {language === 'Hindi' ? 'डॉक्टर से परामर्श' : language === 'Marathi' ? 'डॉक्टरांचा सल्ला' : 'Doctor'}: {followUp.contactedDoctor ? (language === 'Hindi' ? 'हाँ' : language === 'Marathi' ? 'होय' : 'Yes') : (language === 'Hindi' ? 'नहीं' : language === 'Marathi' ? 'नाही' : 'No')}
+                      </span>
                     )}
-                    {followUp.improved && <span>• {language === 'Hindi' ? 'स्थिति' : language === 'Marathi' ? 'स्थिती' : 'Condition'}: {followUp.improved}</span>}
-                    {followUp.diagnosis && <span>• {language === 'Hindi' ? 'निदान' : language === 'Marathi' ? 'निदान' : 'Diagnosis'}: {followUp.diagnosis}</span>}
-                    {followUp.notes && <span>• {followUp.notes}</span>}
+                    {followUp.improved && (
+                      <span className="badge" style={{ background: followUp.improved === 'worse' ? '#FEF2F2' : followUp.improved === 'same' ? '#FFFBEB' : '#F0FDF4', color: followUp.improved === 'worse' ? '#B91C1C' : followUp.improved === 'same' ? '#B45309' : '#15803D', border: `1px solid ${followUp.improved === 'worse' ? '#FECACA' : followUp.improved === 'same' ? '#FDE68A' : '#BBF7D0'}` }}>
+                        {language === 'Hindi' ? 'स्थिति' : language === 'Marathi' ? 'स्थिती' : 'Condition'}: {followUp.improved.charAt(0).toUpperCase() + followUp.improved.slice(1)}
+                      </span>
+                    )}
+                    {followUp.diagnosis && <span className="badge" style={{ background: '#F3E8FF', color: '#7E22CE', border: '1px solid #E9D5FF' }}>💬 {followUp.diagnosis}</span>}
                   </div>
+                  {followUp.notes && <p style={{ fontSize: '12.5px', color: 'var(--text-3)', margin: '10px 0 0 0', lineHeight: '1.5' }}>“{followUp.notes}”</p>}
                 </div>
               ) : showCheckInForm || new Date(followUp.scheduledAt) <= new Date() ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                   <div>
                     <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
                       {language === 'Hindi' ? 'क्या आपने डॉक्टर या स्वास्थ्य पेशेवर से परामर्श किया?' : language === 'Marathi' ? 'तुम्ही डॉक्टर किंवा आरोग्य व्यावसायिकांचा सल्ला घेतला का?' : 'Did you see a doctor or health professional?'}
@@ -459,11 +470,12 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                           aria-pressed={contactedDoctor === val}
                           onClick={() => setContactedDoctor(val)}
                           style={{
-                            padding: '8px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: '600',
-                            border: contactedDoctor === val ? '2px solid var(--primary)' : '1.5px solid var(--border)',
-                            background: contactedDoctor === val ? 'var(--primary-soft, #EFF6FF)' : 'white',
-                            color: contactedDoctor === val ? 'var(--primary)' : 'var(--text-3)',
-                            cursor: 'pointer', fontFamily: 'inherit',
+                            padding: '8px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: '600',
+                            border: contactedDoctor === val ? '1.5px solid var(--red)' : '1.5px solid var(--border)',
+                            background: contactedDoctor === val ? 'var(--red-light)' : 'white',
+                            color: contactedDoctor === val ? 'var(--red)' : 'var(--text-3)',
+                            boxShadow: contactedDoctor === val ? '0 2px 6px rgb(185 28 28 / 0.15)' : 'none',
+                            cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
                           }}
                         >
                           {val === 'yes'
@@ -482,7 +494,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                       value={improved}
                       onChange={(e) => setImproved(e.target.value)}
                       aria-label="Current condition"
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '13.5px', fontFamily: 'inherit', background: 'white', color: 'var(--text-1)' }}
+                      className="input"
                     >
                       <option value="">{language === 'Hindi' ? 'चुनें...' : language === 'Marathi' ? 'निवडा...' : 'Select...'}</option>
                       <option value="worse">Worse</option>
@@ -501,7 +513,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                       value={diagnosis}
                       onChange={(e) => setDiagnosis(e.target.value)}
                       aria-label="Diagnosis"
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '13.5px', fontFamily: 'inherit', background: 'white', color: 'var(--text-1)' }}
+                      className="input"
                     />
                   </div>
 
@@ -514,7 +526,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                       onChange={(e) => setNotes(e.target.value)}
                       rows={2}
                       aria-label="Additional notes"
-                      style={{ width: '100%', padding: '10px 12px', borderRadius: '12px', border: '1.5px solid var(--border)', fontSize: '13.5px', fontFamily: 'inherit', background: 'white', color: 'var(--text-1)', resize: 'vertical' }}
+                      className="input"
+                      style={{ resize: 'vertical' }}
                     />
                   </div>
 
@@ -528,7 +541,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                 </div>
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-3)', margin: 0 }}>
+                  <p style={{ fontSize: '12.5px', color: 'var(--text-3)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span style={{ fontSize: '13px' }}>📅</span>
                     {language === 'Hindi'
                       ? `हम ${new Date(followUp.scheduledAt).toLocaleDateString()} को आपकी स्थिति देखेंगे।`
                       : language === 'Marathi'

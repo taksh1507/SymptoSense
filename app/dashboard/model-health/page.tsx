@@ -55,6 +55,7 @@ export default function ModelHealthPage() {
   const [report, setReport] = useState<MlReport | null>(null);
   const [error, setError] = useState('');
   const [retraining, setRetraining] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
 
   const load = useCallback(async (): Promise<MlReport | null> => {
     try {
@@ -70,6 +71,7 @@ export default function ModelHealthPage() {
       const data = await res.json();
       setStats(data.stats);
       setReport(data.mlReport);
+      setLastUpdated(new Date());
       setError('');
       return data.mlReport as MlReport | null;
     } catch {
@@ -80,6 +82,8 @@ export default function ModelHealthPage() {
 
   useEffect(() => {
     load();
+    const iv = setInterval(() => load(), 60000);
+    return () => clearInterval(iv);
   }, [load]);
 
   const runRetrain = async () => {
@@ -118,6 +122,7 @@ export default function ModelHealthPage() {
 
   const flaggedDrift = (report?.drift || []).filter((d) => d.flagged);
   const drift = report?.drift || [];
+  const maxAbsZ = Math.max(1, ...drift.map((d) => Math.abs(d.z)));
 
   return (
     <AppShell>
@@ -126,14 +131,33 @@ export default function ModelHealthPage() {
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
             <div>
-              <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', margin: 0, letterSpacing: '-0.5px' }}>Model Health</h1>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px' }}>
+                <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', margin: 0, letterSpacing: '-0.5px' }}>Model Health</h1>
+                <span
+                  className="badge"
+                  style={{
+                    background: report ? 'rgba(16,185,129,0.1)' : '#F1F5F9',
+                    color: report ? '#059669' : '#64748B',
+                    border: `1px solid ${report ? 'rgba(16,185,129,0.35)' : '#E2E8F0'}`,
+                    display: 'inline-flex', alignItems: 'center', gap: '5px',
+                  }}
+                >
+                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: report ? '#10B981' : '#94A3B8', animation: report ? 'pulseDot 1.6s infinite' : 'none' }} />
+                  {report ? 'Retraining loop active' : 'Waiting for first retrain'}
+                </span>
+              </div>
               <p style={{ fontSize: '12.5px', color: 'var(--text-4)', margin: '4px 0 0 0' }}>
                 Live data feeding the continuous retraining loop.
               </p>
             </div>
-            <button className="btn btn-primary" onClick={runRetrain} disabled={retraining} style={{ fontSize: '13px', padding: '10px 18px' }}>
-              {retraining ? 'Retraining…' : 'Run retrain now'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+              {lastUpdated && (
+                <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>Updated {lastUpdated.toLocaleTimeString()}</span>
+              )}
+              <button className="btn btn-primary" onClick={runRetrain} disabled={retraining} style={{ fontSize: '13px', padding: '10px 18px' }}>
+                {retraining ? 'Retraining…' : 'Run retrain now'}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -195,19 +219,34 @@ export default function ModelHealthPage() {
 
           {drift.length > 0 && (
             <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
-              <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: '0 0 4px 0' }}>
-                Feature drift <span style={{ fontSize: '12px', fontWeight: '600', color: flaggedDrift.length ? '#DC2626' : '#15803D' }}>({flaggedDrift.length} flagged)</span>
-              </h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
+                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  Feature drift
+                  {flaggedDrift.length > 0 && (
+                    <span className="badge" style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+                      {flaggedDrift.length} flagged
+                    </span>
+                  )}
+                </h3>
+              </div>
               <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: '0 0 12px 0' }}>
                 z &gt; 2 between live predictions and the training distribution suggests new population patterns.
               </p>
               <div style={{ fontSize: '12.5px' }}>
                 {drift.map((d) => (
-                  <div key={d.feature} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 0', borderBottom: '1px solid var(--border-faint)', color: d.flagged ? '#DC2626' : 'var(--text-2)', fontWeight: d.flagged ? '700' : '500' }}>
-                    <span>{d.feature.replace(/_/g, ' ')}</span>
-                    <span style={{ color: 'var(--text-4)' }}>
-                      train {d.train_mean} · live {d.live_mean} · z={d.z}
+                  <div key={d.feature} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0', borderBottom: '1px solid var(--border-faint)' }}>
+                    <span style={{ flex: '1 1 auto', fontWeight: d.flagged ? '700' : '500', color: d.flagged ? '#DC2626' : 'var(--text-2)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {d.feature.replace(/_/g, ' ')}
                     </span>
+                    <div style={{ flex: '0 0 120px', height: '6px', borderRadius: '999px', background: '#E5E7EB', overflow: 'hidden' }}>
+                      <div style={{ height: '100%', borderRadius: '999px', width: `${Math.min(100, (Math.abs(d.z) / maxAbsZ) * 100)}%`, background: d.flagged ? '#DC2626' : '#94A3B8', transition: 'width 0.4s ease' }} />
+                    </div>
+                    <span style={{ flex: '0 0 auto', color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>
+                      Δ {d.z > 0 ? '+' : ''}{d.z.toFixed(1)}σ
+                    </span>
+                    {d.flagged && (
+                      <span className="badge" style={{ flex: '0 0 auto', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>drift</span>
+                    )}
                   </div>
                 ))}
               </div>

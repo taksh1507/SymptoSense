@@ -195,6 +195,47 @@ html, body {
   border-color: var(--red);
   box-shadow: 0 0 0 3px rgb(185 28 28 / 0.1);
 }
+select.input,
+textarea.input {
+  font-family: var(--font);
+  font-size: var(--text-base);
+  color: var(--text-1);
+  background: var(--surface);
+}
+select.input { appearance: auto; cursor: pointer; }
+textarea.input { line-height: 1.5; }
+
+/* Shared native form controls */
+input:not([type='checkbox']):not([type='radio']),
+select,
+textarea {
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* ─── Focus rings ─── */
+.btn:focus-visible,
+.nav-link:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--red);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* ─── Selection ─── */
+::selection {
+  background: var(--red);
+  color: #fff;
+}
+
+/* ─── Reduced motion ─── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
 
 /* ═══════════════════════════════════════════════
    SIDEBAR NAV — light white sidebar, red accents
