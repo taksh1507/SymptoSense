@@ -86,7 +86,7 @@ export function ConfidenceMeter({ score, level, explanation, kind = 'heuristic' 
       }}
     >
       {/* Tooltip Icon */}
-      <div style={{ position: "absolute", top: 16, right: 16, color: "var(--text-4)", cursor: "help" }} title={kind === 'disease' ? 'Calibrated probability of the top dataset disease prediction. Not a medical diagnosis or a probability of clinical correctness.' : 'Heuristic input-pattern score. This is not a calibrated probability of assessment correctness.'}>
+      <div style={{ position: "absolute", top: 16, right: 16, color: "var(--text-4)", cursor: "help" }} title={kind === 'disease' ? 'Raw uncalibrated predict_proba score for the top dataset class. It is not a medical diagnosis or a probability of clinical correctness.' : 'Heuristic input-pattern score. This is not a calibrated probability of assessment correctness.'}>
         <HelpCircle size={18} />
       </div>
 

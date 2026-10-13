@@ -1,133 +1,5080 @@
 [
-  "abdominal_pain",
-  "abnormal_menstruation",
-  "acidity",
-  "acute_liver_failure",
-  "altered_sensorium",
-  "anxiety",
-  "back_pain",
-  "belly_pain",
-  "blackheads",
-  "bladder_discomfort",
-  "blister",
-  "blood_in_sputum",
-  "bloody_stool",
-  "blurred_and_distorted_vision",
-  "breathlessness",
-  "brittle_nails",
-  "bruising",
-  "burning_micturition",
-  "chest_pain",
-  "chills",
-  "cold_hands_and_feets",
-  "coma",
-  "congestion",
-  "constipation",
-  "continuous_feel_of_urine",
-  "continuous_sneezing",
-  "cough",
-  "cramps",
-  "dark_urine",
-  "dehydration",
-  "depression",
-  "diarrhoea",
-  "dischromic_patches",
-  "distention_of_abdomen",
-  "dizziness",
-  "drying_and_tingling_lips",
-  "enlarged_thyroid",
-  "excessive_hunger",
-  "extra_marital_contacts",
-  "family_history",
-  "fast_heart_rate",
-  "fatigue",
-  "fluid_overload",
-  "foul_smell_of_urine",
-  "headache",
-  "high_fever",
-  "hip_joint_pain",
-  "history_of_alcohol_consumption",
-  "increased_appetite",
-  "indigestion",
-  "inflammatory_nails",
-  "internal_itching",
-  "irregular_sugar_level",
-  "irritability",
-  "irritation_in_anus",
-  "itching",
-  "joint_pain",
-  "knee_pain",
-  "lack_of_concentration",
-  "lethargy",
-  "loss_of_appetite",
-  "loss_of_balance",
-  "loss_of_smell",
-  "malaise",
-  "mild_fever",
-  "mood_swings",
-  "movement_stiffness",
-  "mucoid_sputum",
-  "muscle_pain",
-  "muscle_wasting",
-  "muscle_weakness",
-  "nausea",
-  "neck_pain",
-  "nodal_skin_eruptions",
-  "obesity",
-  "pain_behind_the_eyes",
-  "pain_during_bowel_movements",
-  "pain_in_anal_region",
-  "painful_walking",
-  "palpitations",
-  "passage_of_gases",
-  "patches_in_throat",
-  "phlegm",
-  "polyuria",
-  "prominent_veins_on_calf",
-  "puffy_face_and_eyes",
-  "pus_filled_pimples",
-  "receiving_blood_transfusion",
-  "receiving_unsterile_injections",
-  "red_sore_around_nose",
-  "red_spots_over_body",
-  "redness_of_eyes",
-  "restlessness",
-  "runny_nose",
-  "rusty_sputum",
-  "scurring",
-  "shivering",
-  "silver_like_dusting",
-  "sinus_pressure",
-  "skin_peeling",
-  "skin_rash",
-  "slurred_speech",
-  "small_dents_in_nails",
-  "spinning_movements",
-  "spotting_urination",
-  "stiff_neck",
-  "stomach_bleeding",
-  "stomach_pain",
-  "sunken_eyes",
-  "sweating",
-  "swelled_lymph_nodes",
-  "swelling_joints",
-  "swelling_of_stomach",
-  "swollen_blood_vessels",
-  "swollen_extremeties",
-  "swollen_legs",
-  "throat_irritation",
-  "toxic_look_typhos",
-  "ulcers_on_tongue",
-  "unsteadiness",
-  "visual_disturbances",
-  "vomiting",
-  "watering_from_eyes",
-  "weakness_in_limbs",
-  "weakness_of_one_body_side",
-  "weight_gain",
-  "weight_loss",
-  "yellow_crust_ooze",
-  "yellow_urine",
-  "yellowing_of_eyes",
-  "yellowish_skin"
+  {
+    "code": "E_0",
+    "name": "Have you recently had a viral infection?",
+    "display_name": "Have you recently had a viral infection?",
+    "code_question": "E_0",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_1",
+    "name": "Are you currently being treated or have you recently been treated with an oral antibiotic for an ear infection?",
+    "display_name": "Are you currently being treated or have you recently been treated with an oral antibiotic for an ear infection?",
+    "code_question": "E_1",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_10",
+    "name": "Are you currently taking or have you recently taken anti-inflammatory drugs (NSAIDs)?",
+    "display_name": "Are you currently taking or have you recently taken anti-inflammatory drugs (NSAIDs)?",
+    "code_question": "E_10",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_100",
+    "name": "Do you currently take hormones?",
+    "display_name": "Do you currently take hormones?",
+    "code_question": "E_100",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_101",
+    "name": "Have you been hospitalized for an asthma attack in the past year?",
+    "display_name": "Have you been hospitalized for an asthma attack in the past year?",
+    "code_question": "E_101",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_102",
+    "name": "Are you consulting because you have high blood pressure?",
+    "display_name": "Are you consulting because you have high blood pressure?",
+    "code_question": "E_102",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_103",
+    "name": "Have you lost your sense of smell?",
+    "display_name": "Have you lost your sense of smell?",
+    "code_question": "E_103",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_104",
+    "name": "Do you have high blood pressure or do you take medications to treat high blood pressure?",
+    "display_name": "Do you have high blood pressure or do you take medications to treat high blood pressure?",
+    "code_question": "E_104",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_105",
+    "name": "Have you ever had a heart attack or do you have angina (chest pain)?",
+    "display_name": "Have you ever had a heart attack or do you have angina (chest pain)?",
+    "code_question": "E_105",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_106",
+    "name": "Do you have heart failure?",
+    "display_name": "Do you have heart failure?",
+    "code_question": "E_106",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_107",
+    "name": "Have you ever had a stroke?",
+    "display_name": "Have you ever had a stroke?",
+    "code_question": "E_107",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_108",
+    "name": "Do you have a problem with poor circulation?",
+    "display_name": "Do you have a problem with poor circulation?",
+    "code_question": "E_108",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_109",
+    "name": "Have you ever had deep vein thrombosis (DVT)?",
+    "display_name": "Have you ever had deep vein thrombosis (DVT)?",
+    "code_question": "E_109",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_11",
+    "name": "Have you breastfed one of your children for more than 9 months?",
+    "display_name": "Have you breastfed one of your children for more than 9 months?",
+    "code_question": "E_11",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_110",
+    "name": "Have you been unable to move or get up for more than 3 consecutive days within the last 4 weeks?",
+    "display_name": "Have you been unable to move or get up for more than 3 consecutive days within the last 4 weeks?",
+    "code_question": "E_110",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_111",
+    "name": "Do you feel like you are dying or were you afraid that you were about do die?",
+    "display_name": "Do you feel like you are dying or were you afraid that you were about do die?",
+    "code_question": "E_111",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_112",
+    "name": "Do you wheeze while inhaling or is your breathing noisy after coughing spells?",
+    "display_name": "Do you wheeze while inhaling or is your breathing noisy after coughing spells?",
+    "code_question": "E_112",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_113",
+    "name": "Do you have chronic kidney failure?",
+    "display_name": "Do you have chronic kidney failure?",
+    "code_question": "E_113",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_114",
+    "name": "Are you more irritable or has your mood been very unstable recently?",
+    "display_name": "Are you more irritable or has your mood been very unstable recently?",
+    "code_question": "E_114",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_115",
+    "name": "Have you had unprotected sex with more than one partner in the last 6 months?",
+    "display_name": "Have you had unprotected sex with more than one partner in the last 6 months?",
+    "code_question": "E_115",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_116",
+    "name": "Have you had a cold in the last 2 weeks?",
+    "display_name": "Have you had a cold in the last 2 weeks?",
+    "code_question": "E_116",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_118",
+    "name": "Have you ever had pneumonia?",
+    "display_name": "Have you ever had pneumonia?",
+    "code_question": "E_117",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_119",
+    "name": "Have you been diagnosed with chronic sinusitis?",
+    "display_name": "Have you been diagnosed with chronic sinusitis?",
+    "code_question": "E_119",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_12",
+    "name": "Do you have a known severe food allergy?",
+    "display_name": "Do you have a known severe food allergy?",
+    "code_question": "E_12",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_120",
+    "name": "Do you have polyps in your nose?",
+    "display_name": "Do you have polyps in your nose?",
+    "code_question": "E_120",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_121",
+    "name": "Do you have a deviated nasal septum?",
+    "display_name": "Do you have a deviated nasal septum?",
+    "code_question": "E_121",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_123",
+    "name": "Do you have a chronic obstructive pulmonary disease (COPD)?",
+    "display_name": "Do you have a chronic obstructive pulmonary disease (COPD)?",
+    "code_question": "E_122",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_124",
+    "name": "Do you have asthma or have you ever had to use a bronchodilator in the past?",
+    "display_name": "Do you have asthma or have you ever had to use a bronchodilator in the past?",
+    "code_question": "E_124",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_125",
+    "name": "Have you ever been diagnosed with gastroesophageal reflux?",
+    "display_name": "Have you ever been diagnosed with gastroesophageal reflux?",
+    "code_question": "E_125",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_126",
+    "name": "Do you have liver cirrhosis?",
+    "display_name": "Do you have liver cirrhosis?",
+    "code_question": "E_126",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_127",
+    "name": "Do you feel that your eyes produce excessive tears?",
+    "display_name": "Do you feel that your eyes produce excessive tears?",
+    "code_question": "E_127",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_128",
+    "name": "Have you ever felt like you were suffocating for a very short time associated with inability to breathe or speak?",
+    "display_name": "Have you ever felt like you were suffocating for a very short time associated with inability to breathe or speak?",
+    "code_question": "E_128",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_129",
+    "name": "Do you have any lesions, redness or problems on your skin that you believe are related to the condition you are consulting for?",
+    "display_name": "Do you have any lesions, redness or problems on your skin that you believe are related to the condition you are consulting for?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_13",
+    "name": "Do you find that your symptoms have worsened over the last 2 weeks and that progressively less effort is required to cause the symptoms?",
+    "display_name": "Do you find that your symptoms have worsened over the last 2 weeks and that progressively less effort is required to cause the symptoms?",
+    "code_question": "E_13",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_130",
+    "name": "What color is the rash?",
+    "display_name": "What color is the rash?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": "V_11",
+        "name": "NA"
+      },
+      {
+        "code": "V_86",
+        "name": "dark"
+      },
+      {
+        "code": "V_107",
+        "name": "yellow"
+      },
+      {
+        "code": "V_138",
+        "name": "pale"
+      },
+      {
+        "code": "V_156",
+        "name": "pink"
+      },
+      {
+        "code": "V_157",
+        "name": "red"
+      }
+    ]
+  },
+  {
+    "code": "E_131",
+    "name": "Do your lesions peel off?",
+    "display_name": "Do your lesions peel off?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": "V_10",
+        "name": "N"
+      },
+      {
+        "code": "V_12",
+        "name": "Y"
+      }
+    ]
+  },
+  {
+    "code": "E_132",
+    "name": "Is the rash swollen?",
+    "display_name": "Is the rash swollen?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": 0,
+        "name": 0
+      },
+      {
+        "code": 1,
+        "name": 1
+      },
+      {
+        "code": 2,
+        "name": 2
+      },
+      {
+        "code": 3,
+        "name": 3
+      },
+      {
+        "code": 4,
+        "name": 4
+      },
+      {
+        "code": 5,
+        "name": 5
+      },
+      {
+        "code": 6,
+        "name": 6
+      },
+      {
+        "code": 7,
+        "name": 7
+      },
+      {
+        "code": 8,
+        "name": 8
+      },
+      {
+        "code": 9,
+        "name": 9
+      },
+      {
+        "code": 10,
+        "name": 10
+      }
+    ]
+  },
+  {
+    "code": "E_133",
+    "name": "Where is the affected region located?",
+    "display_name": "Where is the affected region located?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "M",
+    "allowed_values": [
+      {
+        "code": "V_123",
+        "name": "nowhere"
+      },
+      {
+        "code": "V_14",
+        "name": "iliac wing(R)"
+      },
+      {
+        "code": "V_15",
+        "name": "iliac wing(L)"
+      },
+      {
+        "code": "V_16",
+        "name": "groin(R)"
+      },
+      {
+        "code": "V_17",
+        "name": "groin(L)"
+      },
+      {
+        "code": "V_18",
+        "name": "axilla(R)"
+      },
+      {
+        "code": "V_19",
+        "name": "axilla(L)"
+      },
+      {
+        "code": "V_20",
+        "name": "tonsil(R)"
+      },
+      {
+        "code": "V_21",
+        "name": "tonsil(L)"
+      },
+      {
+        "code": "V_22",
+        "name": "anus"
+      },
+      {
+        "code": "V_23",
+        "name": "posterior aspect of the ankle(R)"
+      },
+      {
+        "code": "V_24",
+        "name": "posterior aspect of the ankle(L)"
+      },
+      {
+        "code": "V_25",
+        "name": "back of head"
+      },
+      {
+        "code": "V_26",
+        "name": "back of the neck"
+      },
+      {
+        "code": "V_27",
+        "name": "forearm(R)"
+      },
+      {
+        "code": "V_28",
+        "name": "forearm(L)"
+      },
+      {
+        "code": "V_29",
+        "name": "lower chest"
+      },
+      {
+        "code": "V_30",
+        "name": "biceps(R)"
+      },
+      {
+        "code": "V_31",
+        "name": "biceps(L)"
+      },
+      {
+        "code": "V_32",
+        "name": "mouth"
+      },
+      {
+        "code": "V_33",
+        "name": "thyroid cartilage"
+      },
+      {
+        "code": "V_34",
+        "name": "ankle(R)"
+      },
+      {
+        "code": "V_35",
+        "name": "ankle(L)"
+      },
+      {
+        "code": "V_36",
+        "name": "clitoris"
+      },
+      {
+        "code": "V_37",
+        "name": "coccyx"
+      },
+      {
+        "code": "V_38",
+        "name": "cervical spine"
+      },
+      {
+        "code": "V_39",
+        "name": "thoracic spine"
+      },
+      {
+        "code": "V_40",
+        "name": "lumbar spine"
+      },
+      {
+        "code": "V_41",
+        "name": "commissure(R)"
+      },
+      {
+        "code": "V_42",
+        "name": "commissure(L)"
+      },
+      {
+        "code": "V_43",
+        "name": "lateral side of the foot(R)"
+      },
+      {
+        "code": "V_44",
+        "name": "lateral side of the foot(L)"
+      },
+      {
+        "code": "V_45",
+        "name": "elbow(R)"
+      },
+      {
+        "code": "V_46",
+        "name": "elbow(L)"
+      },
+      {
+        "code": "V_47",
+        "name": "popliteal fossa(R)"
+      },
+      {
+        "code": "V_48",
+        "name": "popliteal fossa(L)"
+      },
+      {
+        "code": "V_49",
+        "name": "iliac crest(R)"
+      },
+      {
+        "code": "V_50",
+        "name": "iliac crest(L)"
+      },
+      {
+        "code": "V_51",
+        "name": "thigh(R)"
+      },
+      {
+        "code": "V_52",
+        "name": "thigh(L)"
+      },
+      {
+        "code": "V_53",
+        "name": "side of the neck(R)"
+      },
+      {
+        "code": "V_54",
+        "name": "side of the neck(L)"
+      },
+      {
+        "code": "V_55",
+        "name": "side of the chest(R)"
+      },
+      {
+        "code": "V_56",
+        "name": "side of the chest(L)"
+      },
+      {
+        "code": "V_57",
+        "name": "lower teeth(R)"
+      },
+      {
+        "code": "V_58",
+        "name": "lower teeth(L)"
+      },
+      {
+        "code": "V_59",
+        "name": "upper teeth(R)"
+      },
+      {
+        "code": "V_60",
+        "name": "upper teeth(L)"
+      },
+      {
+        "code": "V_61",
+        "name": "above the tongue"
+      },
+      {
+        "code": "V_62",
+        "name": "top of the head"
+      },
+      {
+        "code": "V_63",
+        "name": "finger (ring finger)(R)"
+      },
+      {
+        "code": "V_64",
+        "name": "finger (ring finger)(L)"
+      },
+      {
+        "code": "V_65",
+        "name": "finger (little finger)(R)"
+      },
+      {
+        "code": "V_66",
+        "name": "finger (little finger)(L)"
+      },
+      {
+        "code": "V_67",
+        "name": "finger (index)(R)"
+      },
+      {
+        "code": "V_68",
+        "name": "finger (index)(L)"
+      },
+      {
+        "code": "V_69",
+        "name": "finger (middle)(R)"
+      },
+      {
+        "code": "V_70",
+        "name": "finger (middle)(L)"
+      },
+      {
+        "code": "V_72",
+        "name": "dorsal aspect of the foot(R)"
+      },
+      {
+        "code": "V_73",
+        "name": "dorsal aspect of the foot(L)"
+      },
+      {
+        "code": "V_74",
+        "name": "dorsal aspect of the wrist(R)"
+      },
+      {
+        "code": "V_75",
+        "name": "dorsal aspect of the wrist(L)"
+      },
+      {
+        "code": "V_76",
+        "name": "dorsal aspect of the hand(R)"
+      },
+      {
+        "code": "V_77",
+        "name": "dorsal aspect of the hand(L)"
+      },
+      {
+        "code": "V_78",
+        "name": "palmar side of the forearm(R)"
+      },
+      {
+        "code": "V_79",
+        "name": "palmar side of the forearm(L)"
+      },
+      {
+        "code": "V_80",
+        "name": "palmar face of the wrist(R)"
+      },
+      {
+        "code": "V_81",
+        "name": "palmar face of the wrist(L)"
+      },
+      {
+        "code": "V_82",
+        "name": "buttock(R)"
+      },
+      {
+        "code": "V_83",
+        "name": "buttock(L)"
+      },
+      {
+        "code": "V_84",
+        "name": "flank(R)"
+      },
+      {
+        "code": "V_85",
+        "name": "flank(L)"
+      },
+      {
+        "code": "V_87",
+        "name": "iliac fossa(R)"
+      },
+      {
+        "code": "V_88",
+        "name": "iliac fossa(L)"
+      },
+      {
+        "code": "V_89",
+        "name": "forehead"
+      },
+      {
+        "code": "V_90",
+        "name": "lower gum"
+      },
+      {
+        "code": "V_91",
+        "name": "upper gum"
+      },
+      {
+        "code": "V_92",
+        "name": "knee(R)"
+      },
+      {
+        "code": "V_93",
+        "name": "knee(L)"
+      },
+      {
+        "code": "V_94",
+        "name": "glans"
+      },
+      {
+        "code": "V_95",
+        "name": "labia majora(R)"
+      },
+      {
+        "code": "V_96",
+        "name": "labia majora(L)"
+      },
+      {
+        "code": "V_97",
+        "name": "big toe(R)"
+      },
+      {
+        "code": "V_98",
+        "name": "big toe(L)"
+      },
+      {
+        "code": "V_99",
+        "name": "hip(R)"
+      },
+      {
+        "code": "V_100",
+        "name": "hip(L)"
+      },
+      {
+        "code": "V_101",
+        "name": "upper chest"
+      },
+      {
+        "code": "V_102",
+        "name": "hymen"
+      },
+      {
+        "code": "V_103",
+        "name": "hypochondrium(R)"
+      },
+      {
+        "code": "V_104",
+        "name": "hypochondrium(L)"
+      },
+      {
+        "code": "V_105",
+        "name": "ischio jambier(R)"
+      },
+      {
+        "code": "V_106",
+        "name": "ischio jambier(L)"
+      },
+      {
+        "code": "V_108",
+        "name": "cheek(R)"
+      },
+      {
+        "code": "V_109",
+        "name": "cheek(L)"
+      },
+      {
+        "code": "V_110",
+        "name": "internal cheek(R)"
+      },
+      {
+        "code": "V_111",
+        "name": "internal cheek(L)"
+      },
+      {
+        "code": "V_113",
+        "name": "renal fossa(R)"
+      },
+      {
+        "code": "V_114",
+        "name": "renal fossa(L)"
+      },
+      {
+        "code": "V_115",
+        "name": "uvula"
+      },
+      {
+        "code": "V_116",
+        "name": "bottom lip(R)"
+      },
+      {
+        "code": "V_117",
+        "name": "upper lip(R)"
+      },
+      {
+        "code": "V_118",
+        "name": "chin"
+      },
+      {
+        "code": "V_119",
+        "name": "calf(R)"
+      },
+      {
+        "code": "V_120",
+        "name": "calf(L)"
+      },
+      {
+        "code": "V_121",
+        "name": "jaw"
+      },
+      {
+        "code": "V_122",
+        "name": "nose"
+      },
+      {
+        "code": "V_124",
+        "name": "occiput"
+      },
+      {
+        "code": "V_125",
+        "name": "eye(R)"
+      },
+      {
+        "code": "V_126",
+        "name": "eye(L)"
+      },
+      {
+        "code": "V_127",
+        "name": "scapula(R)"
+      },
+      {
+        "code": "V_128",
+        "name": "scapula(L)"
+      },
+      {
+        "code": "V_129",
+        "name": "ear(R)"
+      },
+      {
+        "code": "V_130",
+        "name": "ear(L)"
+      },
+      {
+        "code": "V_131",
+        "name": "toe (1)(R)"
+      },
+      {
+        "code": "V_132",
+        "name": "toe (1)(L)"
+      },
+      {
+        "code": "V_133",
+        "name": "toe (2)(R)"
+      },
+      {
+        "code": "V_134",
+        "name": "toe (2)(L)"
+      },
+      {
+        "code": "V_135",
+        "name": "toe (3)(R)"
+      },
+      {
+        "code": "V_136",
+        "name": "toe (3)(L)"
+      },
+      {
+        "code": "V_137",
+        "name": "palace"
+      },
+      {
+        "code": "V_139",
+        "name": "vaginal wall"
+      },
+      {
+        "code": "V_140",
+        "name": "vaginal wall(R)"
+      },
+      {
+        "code": "V_141",
+        "name": "vaginal wall(L)"
+      },
+      {
+        "code": "V_142",
+        "name": "palm(R)"
+      },
+      {
+        "code": "V_143",
+        "name": "palm(L)"
+      },
+      {
+        "code": "V_144",
+        "name": "little toe (4)(R)"
+      },
+      {
+        "code": "V_145",
+        "name": "little toe (4)(L)"
+      },
+      {
+        "code": "V_146",
+        "name": "labia minora(R)"
+      },
+      {
+        "code": "V_147",
+        "name": "labia minora(L)"
+      },
+      {
+        "code": "V_148",
+        "name": "pharynx"
+      },
+      {
+        "code": "V_149",
+        "name": "sole(R)"
+      },
+      {
+        "code": "V_150",
+        "name": "sole(L)"
+      },
+      {
+        "code": "V_151",
+        "name": "thumb(R)"
+      },
+      {
+        "code": "V_152",
+        "name": "thumb(L)"
+      },
+      {
+        "code": "V_153",
+        "name": "pubis"
+      },
+      {
+        "code": "V_155",
+        "name": "penis"
+      },
+      {
+        "code": "V_158",
+        "name": "scrotum"
+      },
+      {
+        "code": "V_159",
+        "name": "breast(R)"
+      },
+      {
+        "code": "V_160",
+        "name": "breast(L)"
+      },
+      {
+        "code": "V_162",
+        "name": "under the tongue"
+      },
+      {
+        "code": "V_163",
+        "name": "under the jaw"
+      },
+      {
+        "code": "V_164",
+        "name": "heel(R)"
+      },
+      {
+        "code": "V_165",
+        "name": "heel(L)"
+      },
+      {
+        "code": "V_166",
+        "name": "temple(R)"
+      },
+      {
+        "code": "V_167",
+        "name": "temple(L)"
+      },
+      {
+        "code": "V_168",
+        "name": "testicle(R)"
+      },
+      {
+        "code": "V_169",
+        "name": "testicle(L)"
+      },
+      {
+        "code": "V_170",
+        "name": "posterior chest wall(R)"
+      },
+      {
+        "code": "V_171",
+        "name": "posterior chest wall(L)"
+      },
+      {
+        "code": "V_172",
+        "name": "tibia(R)"
+      },
+      {
+        "code": "V_173",
+        "name": "tibia(L)"
+      },
+      {
+        "code": "V_174",
+        "name": "trachea"
+      },
+      {
+        "code": "V_175",
+        "name": "trapezius(R)"
+      },
+      {
+        "code": "V_176",
+        "name": "trapezius(L)"
+      },
+      {
+        "code": "V_177",
+        "name": "triceps(R)"
+      },
+      {
+        "code": "V_178",
+        "name": "triceps(L)"
+      },
+      {
+        "code": "V_185",
+        "name": "urethra"
+      },
+      {
+        "code": "V_186",
+        "name": "vagina"
+      },
+      {
+        "code": "V_187",
+        "name": "belly"
+      },
+      {
+        "code": "V_188",
+        "name": "vermilion(R)"
+      },
+      {
+        "code": "V_189",
+        "name": "vermilion(L)"
+      },
+      {
+        "code": "V_190",
+        "name": "vulval vestibule"
+      },
+      {
+        "code": "V_194",
+        "name": "shoulder(R)"
+      },
+      {
+        "code": "V_195",
+        "name": "shoulder(L)"
+      },
+      {
+        "code": "V_197",
+        "name": "epigastric"
+      }
+    ]
+  },
+  {
+    "code": "E_134",
+    "name": "How intense is the pain caused by the rash?",
+    "display_name": "How intense is the pain caused by the rash?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": 0,
+        "name": 0
+      },
+      {
+        "code": 1,
+        "name": 1
+      },
+      {
+        "code": 2,
+        "name": 2
+      },
+      {
+        "code": 3,
+        "name": 3
+      },
+      {
+        "code": 4,
+        "name": 4
+      },
+      {
+        "code": 5,
+        "name": 5
+      },
+      {
+        "code": 6,
+        "name": 6
+      },
+      {
+        "code": 7,
+        "name": 7
+      },
+      {
+        "code": 8,
+        "name": 8
+      },
+      {
+        "code": 9,
+        "name": 9
+      },
+      {
+        "code": 10,
+        "name": 10
+      }
+    ]
+  },
+  {
+    "code": "E_135",
+    "name": "Is the lesion (or are the lesions) larger than 1cm?",
+    "display_name": "Is the lesion (or are the lesions) larger than 1cm?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": "V_10",
+        "name": "N"
+      },
+      {
+        "code": "V_12",
+        "name": "Y"
+      }
+    ]
+  },
+  {
+    "code": "E_136",
+    "name": "How severe is the itching?",
+    "display_name": "How severe is the itching?",
+    "code_question": "E_129",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": 0,
+        "name": 0
+      },
+      {
+        "code": 1,
+        "name": 1
+      },
+      {
+        "code": 2,
+        "name": 2
+      },
+      {
+        "code": 3,
+        "name": 3
+      },
+      {
+        "code": 4,
+        "name": 4
+      },
+      {
+        "code": 5,
+        "name": 5
+      },
+      {
+        "code": 6,
+        "name": 6
+      },
+      {
+        "code": 7,
+        "name": 7
+      },
+      {
+        "code": 8,
+        "name": 8
+      },
+      {
+        "code": 9,
+        "name": 9
+      },
+      {
+        "code": 10,
+        "name": 10
+      }
+    ]
+  },
+  {
+    "code": "E_137",
+    "name": "Have you ever had surgery to remove lymph nodes?",
+    "display_name": "Have you ever had surgery to remove lymph nodes?",
+    "code_question": "E_137",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_138",
+    "name": "Do you suffer from fibromyalgia?",
+    "display_name": "Do you suffer from fibromyalgia?",
+    "code_question": "E_138",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_139",
+    "name": "Do you have a known heart defect?",
+    "display_name": "Do you have a known heart defect?",
+    "code_question": "E_139",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_14",
+    "name": "Do you have chest pain even at rest?",
+    "display_name": "Do you have chest pain even at rest?",
+    "code_question": "E_14",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_140",
+    "name": "Have you recently had stools that were black (like coal)?",
+    "display_name": "Have you recently had stools that were black (like coal)?",
+    "code_question": "E_140",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_141",
+    "name": "Did you have your first menstrual period before the age of 12?",
+    "display_name": "Did you have your first menstrual period before the age of 12?",
+    "code_question": "E_141",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_142",
+    "name": "Does your mother suffer from asthma?",
+    "display_name": "Does your mother suffer from asthma?",
+    "code_question": "E_142",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_143",
+    "name": "Do you exercise regularly, 4 times per week or more?",
+    "display_name": "Do you exercise regularly, 4 times per week or more?",
+    "code_question": "E_143",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_144",
+    "name": "Do you have diffuse (widespread) muscle pain?",
+    "display_name": "Do you have diffuse (widespread) muscle pain?",
+    "code_question": "E_144",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_145",
+    "name": "Do you have very abundant or very long menstruation periods?",
+    "display_name": "Do you have very abundant or very long menstruation periods?",
+    "code_question": "E_145",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_146",
+    "name": "Are you taking any new oral anticoagulants ((NOACs)?",
+    "display_name": "Are you taking any new oral anticoagulants ((NOACs)?",
+    "code_question": "E_146",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_147",
+    "name": "Have you been treated in hospital recently for nausea, agitation, intoxication or aggressive behavior and received medication via an intravenous or intramuscular route?",
+    "display_name": "Have you been treated in hospital recently for nausea, agitation, intoxication or aggressive behavior and received medication via an intravenous or intramuscular route?",
+    "code_question": "E_147",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_148",
+    "name": "Are you feeling nauseous or do you feel like vomiting?",
+    "display_name": "Are you feeling nauseous or do you feel like vomiting?",
+    "code_question": "E_148",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_149",
+    "name": "Do you take a calcium channel blockers (medication)?",
+    "display_name": "Do you take a calcium channel blockers (medication)?",
+    "code_question": "E_149",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_15",
+    "name": "Have you started or taken any antipsychotic medication within the last 7 days?",
+    "display_name": "Have you started or taken any antipsychotic medication within the last 7 days?",
+    "code_question": "E_15",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_150",
+    "name": "Have you been able to pass stools or gas since your symptoms increased?",
+    "display_name": "Have you been able to pass stools or gas since your symptoms increased?",
+    "code_question": "E_150",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_151",
+    "name": "Do you have swelling in one or more areas of your body?",
+    "display_name": "Do you have swelling in one or more areas of your body?",
+    "code_question": "E_151",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_152",
+    "name": "Where is the swelling located?",
+    "display_name": "Where is the swelling located?",
+    "code_question": "E_151",
+    "is_antecedent": false,
+    "data_type": "M",
+    "allowed_values": [
+      {
+        "code": "V_123",
+        "name": "nowhere"
+      },
+      {
+        "code": "V_14",
+        "name": "iliac wing(R)"
+      },
+      {
+        "code": "V_15",
+        "name": "iliac wing(L)"
+      },
+      {
+        "code": "V_16",
+        "name": "groin(R)"
+      },
+      {
+        "code": "V_17",
+        "name": "groin(L)"
+      },
+      {
+        "code": "V_18",
+        "name": "axilla(R)"
+      },
+      {
+        "code": "V_19",
+        "name": "axilla(L)"
+      },
+      {
+        "code": "V_20",
+        "name": "tonsil(R)"
+      },
+      {
+        "code": "V_21",
+        "name": "tonsil(L)"
+      },
+      {
+        "code": "V_22",
+        "name": "anus"
+      },
+      {
+        "code": "V_23",
+        "name": "posterior aspect of the ankle(R)"
+      },
+      {
+        "code": "V_24",
+        "name": "posterior aspect of the ankle(L)"
+      },
+      {
+        "code": "V_25",
+        "name": "back of head"
+      },
+      {
+        "code": "V_26",
+        "name": "back of the neck"
+      },
+      {
+        "code": "V_27",
+        "name": "forearm(R)"
+      },
+      {
+        "code": "V_28",
+        "name": "forearm(L)"
+      },
+      {
+        "code": "V_29",
+        "name": "lower chest"
+      },
+      {
+        "code": "V_30",
+        "name": "biceps(R)"
+      },
+      {
+        "code": "V_31",
+        "name": "biceps(L)"
+      },
+      {
+        "code": "V_32",
+        "name": "mouth"
+      },
+      {
+        "code": "V_33",
+        "name": "thyroid cartilage"
+      },
+      {
+        "code": "V_34",
+        "name": "ankle(R)"
+      },
+      {
+        "code": "V_35",
+        "name": "ankle(L)"
+      },
+      {
+        "code": "V_36",
+        "name": "clitoris"
+      },
+      {
+        "code": "V_37",
+        "name": "coccyx"
+      },
+      {
+        "code": "V_38",
+        "name": "cervical spine"
+      },
+      {
+        "code": "V_39",
+        "name": "thoracic spine"
+      },
+      {
+        "code": "V_40",
+        "name": "lumbar spine"
+      },
+      {
+        "code": "V_41",
+        "name": "commissure(R)"
+      },
+      {
+        "code": "V_42",
+        "name": "commissure(L)"
+      },
+      {
+        "code": "V_43",
+        "name": "lateral side of the foot(R)"
+      },
+      {
+        "code": "V_44",
+        "name": "lateral side of the foot(L)"
+      },
+      {
+        "code": "V_45",
+        "name": "elbow(R)"
+      },
+      {
+        "code": "V_46",
+        "name": "elbow(L)"
+      },
+      {
+        "code": "V_47",
+        "name": "popliteal fossa(R)"
+      },
+      {
+        "code": "V_48",
+        "name": "popliteal fossa(L)"
+      },
+      {
+        "code": "V_49",
+        "name": "iliac crest(R)"
+      },
+      {
+        "code": "V_50",
+        "name": "iliac crest(L)"
+      },
+      {
+        "code": "V_51",
+        "name": "thigh(R)"
+      },
+      {
+        "code": "V_52",
+        "name": "thigh(L)"
+      },
+      {
+        "code": "V_53",
+        "name": "side of the neck(R)"
+      },
+      {
+        "code": "V_54",
+        "name": "side of the neck(L)"
+      },
+      {
+        "code": "V_55",
+        "name": "side of the chest(R)"
+      },
+      {
+        "code": "V_56",
+        "name": "side of the chest(L)"
+      },
+      {
+        "code": "V_57",
+        "name": "lower teeth(R)"
+      },
+      {
+        "code": "V_58",
+        "name": "lower teeth(L)"
+      },
+      {
+        "code": "V_59",
+        "name": "upper teeth(R)"
+      },
+      {
+        "code": "V_60",
+        "name": "upper teeth(L)"
+      },
+      {
+        "code": "V_61",
+        "name": "above the tongue"
+      },
+      {
+        "code": "V_62",
+        "name": "top of the head"
+      },
+      {
+        "code": "V_63",
+        "name": "finger (ring finger)(R)"
+      },
+      {
+        "code": "V_64",
+        "name": "finger (ring finger)(L)"
+      },
+      {
+        "code": "V_65",
+        "name": "finger (little finger)(R)"
+      },
+      {
+        "code": "V_66",
+        "name": "finger (little finger)(L)"
+      },
+      {
+        "code": "V_67",
+        "name": "finger (index)(R)"
+      },
+      {
+        "code": "V_68",
+        "name": "finger (index)(L)"
+      },
+      {
+        "code": "V_69",
+        "name": "finger (middle)(R)"
+      },
+      {
+        "code": "V_70",
+        "name": "finger (middle)(L)"
+      },
+      {
+        "code": "V_72",
+        "name": "dorsal aspect of the foot(R)"
+      },
+      {
+        "code": "V_73",
+        "name": "dorsal aspect of the foot(L)"
+      },
+      {
+        "code": "V_74",
+        "name": "dorsal aspect of the wrist(R)"
+      },
+      {
+        "code": "V_75",
+        "name": "dorsal aspect of the wrist(L)"
+      },
+      {
+        "code": "V_76",
+        "name": "dorsal aspect of the hand(R)"
+      },
+      {
+        "code": "V_77",
+        "name": "dorsal aspect of the hand(L)"
+      },
+      {
+        "code": "V_78",
+        "name": "palmar side of the forearm(R)"
+      },
+      {
+        "code": "V_79",
+        "name": "palmar side of the forearm(L)"
+      },
+      {
+        "code": "V_80",
+        "name": "palmar face of the wrist(R)"
+      },
+      {
+        "code": "V_81",
+        "name": "palmar face of the wrist(L)"
+      },
+      {
+        "code": "V_82",
+        "name": "buttock(R)"
+      },
+      {
+        "code": "V_83",
+        "name": "buttock(L)"
+      },
+      {
+        "code": "V_84",
+        "name": "flank(R)"
+      },
+      {
+        "code": "V_85",
+        "name": "flank(L)"
+      },
+      {
+        "code": "V_87",
+        "name": "iliac fossa(R)"
+      },
+      {
+        "code": "V_88",
+        "name": "iliac fossa(L)"
+      },
+      {
+        "code": "V_89",
+        "name": "forehead"
+      },
+      {
+        "code": "V_90",
+        "name": "lower gum"
+      },
+      {
+        "code": "V_91",
+        "name": "upper gum"
+      },
+      {
+        "code": "V_92",
+        "name": "knee(R)"
+      },
+      {
+        "code": "V_93",
+        "name": "knee(L)"
+      },
+      {
+        "code": "V_94",
+        "name": "glans"
+      },
+      {
+        "code": "V_95",
+        "name": "labia majora(R)"
+      },
+      {
+        "code": "V_96",
+        "name": "labia majora(L)"
+      },
+      {
+        "code": "V_97",
+        "name": "big toe(R)"
+      },
+      {
+        "code": "V_98",
+        "name": "big toe(L)"
+      },
+      {
+        "code": "V_99",
+        "name": "hip(R)"
+      },
+      {
+        "code": "V_100",
+        "name": "hip(L)"
+      },
+      {
+        "code": "V_101",
+        "name": "upper chest"
+      },
+      {
+        "code": "V_102",
+        "name": "hymen"
+      },
+      {
+        "code": "V_103",
+        "name": "hypochondrium(R)"
+      },
+      {
+        "code": "V_104",
+        "name": "hypochondrium(L)"
+      },
+      {
+        "code": "V_105",
+        "name": "ischio jambier(R)"
+      },
+      {
+        "code": "V_106",
+        "name": "ischio jambier(L)"
+      },
+      {
+        "code": "V_108",
+        "name": "cheek(R)"
+      },
+      {
+        "code": "V_109",
+        "name": "cheek(L)"
+      },
+      {
+        "code": "V_110",
+        "name": "internal cheek(R)"
+      },
+      {
+        "code": "V_111",
+        "name": "internal cheek(L)"
+      },
+      {
+        "code": "V_113",
+        "name": "renal fossa(R)"
+      },
+      {
+        "code": "V_114",
+        "name": "renal fossa(L)"
+      },
+      {
+        "code": "V_115",
+        "name": "uvula"
+      },
+      {
+        "code": "V_116",
+        "name": "bottom lip(R)"
+      },
+      {
+        "code": "V_117",
+        "name": "upper lip(R)"
+      },
+      {
+        "code": "V_118",
+        "name": "chin"
+      },
+      {
+        "code": "V_119",
+        "name": "calf(R)"
+      },
+      {
+        "code": "V_120",
+        "name": "calf(L)"
+      },
+      {
+        "code": "V_121",
+        "name": "jaw"
+      },
+      {
+        "code": "V_122",
+        "name": "nose"
+      },
+      {
+        "code": "V_124",
+        "name": "occiput"
+      },
+      {
+        "code": "V_125",
+        "name": "eye(R)"
+      },
+      {
+        "code": "V_126",
+        "name": "eye(L)"
+      },
+      {
+        "code": "V_127",
+        "name": "scapula(R)"
+      },
+      {
+        "code": "V_128",
+        "name": "scapula(L)"
+      },
+      {
+        "code": "V_129",
+        "name": "ear(R)"
+      },
+      {
+        "code": "V_130",
+        "name": "ear(L)"
+      },
+      {
+        "code": "V_131",
+        "name": "toe (1)(R)"
+      },
+      {
+        "code": "V_132",
+        "name": "toe (1)(L)"
+      },
+      {
+        "code": "V_133",
+        "name": "toe (2)(R)"
+      },
+      {
+        "code": "V_134",
+        "name": "toe (2)(L)"
+      },
+      {
+        "code": "V_135",
+        "name": "toe (3)(R)"
+      },
+      {
+        "code": "V_136",
+        "name": "toe (3)(L)"
+      },
+      {
+        "code": "V_137",
+        "name": "palace"
+      },
+      {
+        "code": "V_139",
+        "name": "vaginal wall"
+      },
+      {
+        "code": "V_140",
+        "name": "vaginal wall(R)"
+      },
+      {
+        "code": "V_141",
+        "name": "vaginal wall(L)"
+      },
+      {
+        "code": "V_142",
+        "name": "palm(R)"
+      },
+      {
+        "code": "V_143",
+        "name": "palm(L)"
+      },
+      {
+        "code": "V_144",
+        "name": "little toe (4)(R)"
+      },
+      {
+        "code": "V_145",
+        "name": "little toe (4)(L)"
+      },
+      {
+        "code": "V_146",
+        "name": "labia minora(R)"
+      },
+      {
+        "code": "V_147",
+        "name": "labia minora(L)"
+      },
+      {
+        "code": "V_148",
+        "name": "pharynx"
+      },
+      {
+        "code": "V_149",
+        "name": "sole(R)"
+      },
+      {
+        "code": "V_150",
+        "name": "sole(L)"
+      },
+      {
+        "code": "V_151",
+        "name": "thumb(R)"
+      },
+      {
+        "code": "V_152",
+        "name": "thumb(L)"
+      },
+      {
+        "code": "V_153",
+        "name": "pubis"
+      },
+      {
+        "code": "V_155",
+        "name": "penis"
+      },
+      {
+        "code": "V_158",
+        "name": "scrotum"
+      },
+      {
+        "code": "V_159",
+        "name": "breast(R)"
+      },
+      {
+        "code": "V_160",
+        "name": "breast(L)"
+      },
+      {
+        "code": "V_162",
+        "name": "under the tongue"
+      },
+      {
+        "code": "V_163",
+        "name": "under the jaw"
+      },
+      {
+        "code": "V_164",
+        "name": "heel(R)"
+      },
+      {
+        "code": "V_165",
+        "name": "heel(L)"
+      },
+      {
+        "code": "V_166",
+        "name": "temple(R)"
+      },
+      {
+        "code": "V_167",
+        "name": "temple(L)"
+      },
+      {
+        "code": "V_168",
+        "name": "testicle(R)"
+      },
+      {
+        "code": "V_169",
+        "name": "testicle(L)"
+      },
+      {
+        "code": "V_170",
+        "name": "posterior chest wall(R)"
+      },
+      {
+        "code": "V_171",
+        "name": "posterior chest wall(L)"
+      },
+      {
+        "code": "V_172",
+        "name": "tibia(R)"
+      },
+      {
+        "code": "V_173",
+        "name": "tibia(L)"
+      },
+      {
+        "code": "V_174",
+        "name": "trachea"
+      },
+      {
+        "code": "V_175",
+        "name": "trapezius(R)"
+      },
+      {
+        "code": "V_176",
+        "name": "trapezius(L)"
+      },
+      {
+        "code": "V_177",
+        "name": "triceps(R)"
+      },
+      {
+        "code": "V_178",
+        "name": "triceps(L)"
+      },
+      {
+        "code": "V_185",
+        "name": "urethra"
+      },
+      {
+        "code": "V_186",
+        "name": "vagina"
+      },
+      {
+        "code": "V_187",
+        "name": "belly"
+      },
+      {
+        "code": "V_188",
+        "name": "vermilion(R)"
+      },
+      {
+        "code": "V_189",
+        "name": "vermilion(L)"
+      },
+      {
+        "code": "V_190",
+        "name": "vulval vestibule"
+      },
+      {
+        "code": "V_194",
+        "name": "shoulder(R)"
+      },
+      {
+        "code": "V_195",
+        "name": "shoulder(L)"
+      },
+      {
+        "code": "V_197",
+        "name": "epigastric"
+      }
+    ]
+  },
+  {
+    "code": "E_153",
+    "name": "Are you being treated for osteoporosis?",
+    "display_name": "Are you being treated for osteoporosis?",
+    "code_question": "E_153",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_154",
+    "name": "Is your skin much paler than usual?",
+    "display_name": "Is your skin much paler than usual?",
+    "code_question": "E_154",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_155",
+    "name": "Do you feel your heart is beating fast (racing), irregularly (missing a beat) or do you feel palpitations?",
+    "display_name": "Do you feel your heart is beating fast (racing), irregularly (missing a beat) or do you feel palpitations?",
+    "code_question": "E_155",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_156",
+    "name": "Have you had weakness or paralysis on one side of the face, which may still be present or completely resolved?",
+    "display_name": "Have you had weakness or paralysis on one side of the face, which may still be present or completely resolved?",
+    "code_question": "E_156",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_157",
+    "name": "Have you recently had numbness, loss of sensation or tingling, in both arms and legs and around your mouth?",
+    "display_name": "Have you recently had numbness, loss of sensation or tingling, in both arms and legs and around your mouth?",
+    "code_question": "E_157",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_158",
+    "name": "Were you diagnosed with endocrine disease or a hormone dysfunction?",
+    "display_name": "Were you diagnosed with endocrine disease or a hormone dysfunction?",
+    "code_question": "E_158",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_159",
+    "name": "Did you lose consciousness?",
+    "display_name": "Did you lose consciousness?",
+    "code_question": "E_159",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_16",
+    "name": "Do you feel anxious?",
+    "display_name": "Do you feel anxious?",
+    "code_question": "E_16",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_160",
+    "name": "Were you born prematurely or did you suffer any complication at birth?",
+    "display_name": "Were you born prematurely or did you suffer any complication at birth?",
+    "code_question": "E_160",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_161",
+    "name": "Have you recently had a loss of appetite or do you get full more quickly then usually?",
+    "display_name": "Have you recently had a loss of appetite or do you get full more quickly then usually?",
+    "code_question": "E_161",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_162",
+    "name": "Have you had an involuntary weight loss over the last 3 months?",
+    "display_name": "Have you had an involuntary weight loss over the last 3 months?",
+    "code_question": "E_162",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_163",
+    "name": "Have you had any vaginal discharge?",
+    "display_name": "Have you had any vaginal discharge?",
+    "code_question": "E_163",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_164",
+    "name": "Do you feel your heart is beating very irregularly or in a disorganized pattern?",
+    "display_name": "Do you feel your heart is beating very irregularly or in a disorganized pattern?",
+    "code_question": "E_164",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_165",
+    "name": "Have any of your family members ever had a pneumothorax?",
+    "display_name": "Have any of your family members ever had a pneumothorax?",
+    "code_question": "E_165",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_166",
+    "name": "Did you vomit after coughing?",
+    "display_name": "Did you vomit after coughing?",
+    "code_question": "E_166",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_167",
+    "name": "Do you think you are pregnant or are you currently pregnant?",
+    "display_name": "Do you think you are pregnant or are you currently pregnant?",
+    "code_question": "E_167",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_168",
+    "name": "Do you have trouble keeping your tongue in your mouth?",
+    "display_name": "Do you have trouble keeping your tongue in your mouth?",
+    "code_question": "E_168",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_169",
+    "name": "Is your nose or the back of your throat itchy?",
+    "display_name": "Is your nose or the back of your throat itchy?",
+    "code_question": "E_169",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_17",
+    "name": "Are you of Asian descent?",
+    "display_name": "Are you of Asian descent?",
+    "code_question": "E_17",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_170",
+    "name": "Do you have severe itching in one or both eyes?",
+    "display_name": "Do you have severe itching in one or both eyes?",
+    "code_question": "E_170",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_171",
+    "name": "Do you feel like you are detached from your own body or your surroundings?",
+    "display_name": "Do you feel like you are detached from your own body or your surroundings?",
+    "code_question": "E_171",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_172",
+    "name": "Do you have a hard time opening/raising one or both eyelids?",
+    "display_name": "Do you have a hard time opening/raising one or both eyelids?",
+    "code_question": "E_172",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_173",
+    "name": "Do you have a burning sensation that starts in your stomach then goes up into your throat, and can be associated with a bitter taste in your mouth?",
+    "display_name": "Do you have a burning sensation that starts in your stomach then goes up into your throat, and can be associated with a bitter taste in your mouth?",
+    "code_question": "E_173",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_174",
+    "name": "Have you been unintentionally losing weight or have you lost your appetite?",
+    "display_name": "Have you been unintentionally losing weight or have you lost your appetite?",
+    "code_question": "E_174",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_175",
+    "name": "Have you noticed any new fatigue, generalized and vague discomfort, diffuse (widespread) muscle aches or a change in your general well-being related to your consultation today?",
+    "display_name": "Have you noticed any new fatigue, generalized and vague discomfort, diffuse (widespread) muscle aches or a change in your general well-being related to your consultation today?",
+    "code_question": "E_175",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_176",
+    "name": "Did you previously, or do you currently, have any weakness/paralysis in one or more of your limbs or in your face?",
+    "display_name": "Did you previously, or do you currently, have any weakness/paralysis in one or more of your limbs or in your face?",
+    "code_question": "E_176",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_177",
+    "name": "Do you currently, or did you ever, have numbness, loss of sensitivity or tingling anywhere on your body?",
+    "display_name": "Do you currently, or did you ever, have numbness, loss of sensitivity or tingling anywhere on your body?",
+    "code_question": "E_177",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_178",
+    "name": "Have you noticed any unusual bleeding or bruising related to your consultation today?",
+    "display_name": "Have you noticed any unusual bleeding or bruising related to your consultation today?",
+    "code_question": "E_178",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_179",
+    "name": "Have you noticed light red blood or blood clots in your stool?",
+    "display_name": "Have you noticed light red blood or blood clots in your stool?",
+    "code_question": "E_179",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_18",
+    "name": "Do you have cystic fibrosis?",
+    "display_name": "Do you have cystic fibrosis?",
+    "code_question": "E_18",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_180",
+    "name": "Are you unable to control the direction of your eyes?",
+    "display_name": "Are you unable to control the direction of your eyes?",
+    "code_question": "E_180",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_181",
+    "name": "Do you have nasal congestion or a clear runny nose?",
+    "display_name": "Do you have nasal congestion or a clear runny nose?",
+    "code_question": "E_181",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_182",
+    "name": "Do you have greenish or yellowish nasal discharge?",
+    "display_name": "Do you have greenish or yellowish nasal discharge?",
+    "code_question": "E_182",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_183",
+    "name": "Do you live in a rural area?",
+    "display_name": "Do you live in a rural area?",
+    "code_question": "E_183",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_184",
+    "name": "Do you take medication that dilates your blood vessels?",
+    "display_name": "Do you take medication that dilates your blood vessels?",
+    "code_question": "E_184",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_185",
+    "name": "Have you ever had a head trauma?",
+    "display_name": "Have you ever had a head trauma?",
+    "code_question": "E_185",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_186",
+    "name": "Have you ever been diagnosed with obstructive sleep apnea (OSA)?",
+    "display_name": "Have you ever been diagnosed with obstructive sleep apnea (OSA)?",
+    "code_question": "E_186",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_187",
+    "name": "Did you eat dark-fleshed fish (such as tuna) or Swiss cheese before the reaction occurred?",
+    "display_name": "Did you eat dark-fleshed fish (such as tuna) or Swiss cheese before the reaction occurred?",
+    "code_question": "E_187",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_188",
+    "name": "Do you have pale stools and dark urine?",
+    "display_name": "Do you have pale stools and dark urine?",
+    "code_question": "E_188",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_189",
+    "name": "Have you had sexual intercourse with an HIV-positive partner in the past 12 months?",
+    "display_name": "Have you had sexual intercourse with an HIV-positive partner in the past 12 months?",
+    "code_question": "E_189",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_19",
+    "name": "Have you been diagnosed with hyperthyroidism?",
+    "display_name": "Have you been diagnosed with hyperthyroidism?",
+    "code_question": "E_19",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_190",
+    "name": "Have you noticed that you produce more saliva than usual?",
+    "display_name": "Have you noticed that you produce more saliva than usual?",
+    "code_question": "E_190",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_191",
+    "name": "Are you a former smoker?",
+    "display_name": "Are you a former smoker?",
+    "code_question": "E_191",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_192",
+    "name": "Do you feel that muscle spasms or soreness in your neck are keeping you from turning your head to one side?",
+    "display_name": "Do you feel that muscle spasms or soreness in your neck are keeping you from turning your head to one side?",
+    "code_question": "E_192",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_193",
+    "name": "Do you have annoying muscle spasms in your face, neck or any other part of your body?",
+    "display_name": "Do you have annoying muscle spasms in your face, neck or any other part of your body?",
+    "code_question": "E_193",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_194",
+    "name": "Have you noticed a high pitched sound when breathing in?",
+    "display_name": "Have you noticed a high pitched sound when breathing in?",
+    "code_question": "E_194",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_195",
+    "name": "Do you live in the suburbs?",
+    "display_name": "Do you live in the suburbs?",
+    "code_question": "E_195",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_196",
+    "name": "Have you had surgery within the last month?",
+    "display_name": "Have you had surgery within the last month?",
+    "code_question": "E_196",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_197",
+    "name": "Do you have a known kidney problem resulting in an inability to retain proteins?",
+    "display_name": "Do you have a known kidney problem resulting in an inability to retain proteins?",
+    "code_question": "E_197",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_198",
+    "name": "Do you work in agriculture?",
+    "display_name": "Do you work in agriculture?",
+    "code_question": "E_198",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_199",
+    "name": "Do you work in construction?",
+    "display_name": "Do you work in construction?",
+    "code_question": "E_199",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_2",
+    "name": "Are you infected with the human immunodeficiency virus (HIV)?",
+    "display_name": "Are you infected with the human immunodeficiency virus (HIV)?",
+    "code_question": "E_2",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_20",
+    "name": "Do you have Rheumatoid Arthritis?",
+    "display_name": "Do you have Rheumatoid Arthritis?",
+    "code_question": "E_20",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_200",
+    "name": "Do you work in the mining sector?",
+    "display_name": "Do you work in the mining sector?",
+    "code_question": "E_200",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_201",
+    "name": "Do you have a cough?",
+    "display_name": "Do you have a cough?",
+    "code_question": "E_201",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_202",
+    "name": "Does the person have a whooping cough?",
+    "display_name": "Does the person have a whooping cough?",
+    "code_question": "E_202",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_203",
+    "name": "Do you have intense coughing fits?",
+    "display_name": "Do you have intense coughing fits?",
+    "code_question": "E_203",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_204",
+    "name": "Have you traveled out of the country in the last 4 weeks?",
+    "display_name": "Have you traveled out of the country in the last 4 weeks?",
+    "code_question": "E_204",
+    "is_antecedent": true,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": "V_10",
+        "name": "N"
+      },
+      {
+        "code": "V_0",
+        "name": "North Africa"
+      },
+      {
+        "code": "V_1",
+        "name": "West Africa"
+      },
+      {
+        "code": "V_2",
+        "name": "South Africa"
+      },
+      {
+        "code": "V_3",
+        "name": "Central America"
+      },
+      {
+        "code": "V_4",
+        "name": "North America"
+      },
+      {
+        "code": "V_5",
+        "name": "South America"
+      },
+      {
+        "code": "V_6",
+        "name": "Asia"
+      },
+      {
+        "code": "V_7",
+        "name": "South East Asia"
+      },
+      {
+        "code": "V_8",
+        "name": "Caraibes"
+      },
+      {
+        "code": "V_9",
+        "name": "Europe"
+      },
+      {
+        "code": "V_13",
+        "name": "Oceania"
+      }
+    ]
+  },
+  {
+    "code": "E_205",
+    "name": "Do you suddenly have difficulty or an inability to open your mouth or have jaw pain when opening it?",
+    "display_name": "Do you suddenly have difficulty or an inability to open your mouth or have jaw pain when opening it?",
+    "code_question": "E_205",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_206",
+    "name": "Do you have painful mouth ulcers or sores?",
+    "display_name": "Do you have painful mouth ulcers or sores?",
+    "code_question": "E_206",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_207",
+    "name": "Do you live in in a big city?",
+    "display_name": "Do you live in in a big city?",
+    "code_question": "E_207",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_208",
+    "name": "Is your BMI less than 18.5, or are you underweight?",
+    "display_name": "Is your BMI less than 18.5, or are you underweight?",
+    "code_question": "E_208",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_209",
+    "name": "Are your vaccinations up to date?",
+    "display_name": "Are your vaccinations up to date?",
+    "code_question": "E_209",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_21",
+    "name": "Have you ever had a spontaneous pneumothorax?",
+    "display_name": "Have you ever had a spontaneous pneumothorax?",
+    "code_question": "E_21",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_210",
+    "name": "Have you recently thrown up blood or something resembling coffee beans?",
+    "display_name": "Have you recently thrown up blood or something resembling coffee beans?",
+    "code_question": "E_210",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_211",
+    "name": "Have you vomited several times or have you made several efforts to vomit?",
+    "display_name": "Have you vomited several times or have you made several efforts to vomit?",
+    "code_question": "E_211",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_212",
+    "name": "Have you noticed that the tone of your voice has become deeper, softer or hoarse?",
+    "display_name": "Have you noticed that the tone of your voice has become deeper, softer or hoarse?",
+    "code_question": "E_212",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_213",
+    "name": "Have you recently taken decongestants or other substances that may have stimulant effects?",
+    "display_name": "Have you recently taken decongestants or other substances that may have stimulant effects?",
+    "code_question": "E_213",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_214",
+    "name": "Have you noticed a wheezing sound when you exhale?",
+    "display_name": "Have you noticed a wheezing sound when you exhale?",
+    "code_question": "E_214",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_215",
+    "name": "Do you have symptoms that get worse after eating?",
+    "display_name": "Do you have symptoms that get worse after eating?",
+    "code_question": "E_215",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_216",
+    "name": "Do you have pain that is increased with movement?",
+    "display_name": "Do you have pain that is increased with movement?",
+    "code_question": "E_216",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_217",
+    "name": "Are your symptoms worse when lying down and alleviated while sitting up?",
+    "display_name": "Are your symptoms worse when lying down and alleviated while sitting up?",
+    "code_question": "E_217",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_218",
+    "name": "Do you have symptoms that are increased with physical exertion but alleviated with rest?",
+    "display_name": "Do you have symptoms that are increased with physical exertion but alleviated with rest?",
+    "code_question": "E_218",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_219",
+    "name": "Are your symptoms more prominent at night?",
+    "display_name": "Are your symptoms more prominent at night?",
+    "code_question": "E_219",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_22",
+    "name": "Do you have a known issue with one of your heart valves?",
+    "display_name": "Do you have a known issue with one of your heart valves?",
+    "code_question": "E_22",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_220",
+    "name": "Do you have pain that is increased when you breathe in deeply?",
+    "display_name": "Do you have pain that is increased when you breathe in deeply?",
+    "code_question": "E_220",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_221",
+    "name": "Are the symptoms or pain increased with coughing, with an effort like lifting a weight or from forcing a bowel movement?",
+    "display_name": "Are the symptoms or pain increased with coughing, with an effort like lifting a weight or from forcing a bowel movement?",
+    "code_question": "E_221",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_222",
+    "name": "Are you exposed to secondhand cigarette smoke on a daily basis?",
+    "display_name": "Are you exposed to secondhand cigarette smoke on a daily basis?",
+    "code_question": "E_222",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_223",
+    "name": "Are there members of your family who have been diagnosed with pancreatic cancer?",
+    "display_name": "Are there members of your family who have been diagnosed with pancreatic cancer?",
+    "code_question": "E_223",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_224",
+    "name": "Do you have family members who have had lung cancer?",
+    "display_name": "Do you have family members who have had lung cancer?",
+    "code_question": "E_224",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_225",
+    "name": "Do you have close family members who had a cardiovascular disease problem before the age of 50?",
+    "display_name": "Do you have close family members who had a cardiovascular disease problem before the age of 50?",
+    "code_question": "E_225",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_226",
+    "name": "Are you more likely to develop common allergies than the general population?",
+    "display_name": "Are you more likely to develop common allergies than the general population?",
+    "code_question": "E_226",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_227",
+    "name": "Are you immunosuppressed?",
+    "display_name": "Are you immunosuppressed?",
+    "code_question": "E_227",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_23",
+    "name": "Do you ever temporarily stop breathing while you’re asleep?",
+    "display_name": "Do you ever temporarily stop breathing while you’re asleep?",
+    "code_question": "E_23",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_24",
+    "name": "Have you ever had a diagnosis of anemia?",
+    "display_name": "Have you ever had a diagnosis of anemia?",
+    "code_question": "E_24",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_25",
+    "name": "Have any of your family members been diagnosed with cluster headaches?",
+    "display_name": "Have any of your family members been diagnosed with cluster headaches?",
+    "code_question": "E_25",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_26",
+    "name": "Do you have any family members who have been diagnosed with anemia?",
+    "display_name": "Do you have any family members who have been diagnosed with anemia?",
+    "code_question": "E_26",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_27",
+    "name": "Have you ever had a sexually transmitted infection?",
+    "display_name": "Have you ever had a sexually transmitted infection?",
+    "code_question": "E_27",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_28",
+    "name": "Are there any members of your family who have been diagnosed myasthenia gravis?",
+    "display_name": "Are there any members of your family who have been diagnosed myasthenia gravis?",
+    "code_question": "E_28",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_29",
+    "name": "Do any members of your immediate family have a psychiatric illness?",
+    "display_name": "Do any members of your immediate family have a psychiatric illness?",
+    "code_question": "E_29",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_3",
+    "name": "Have you ever had a pericarditis?",
+    "display_name": "Have you ever had a pericarditis?",
+    "code_question": "E_3",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_30",
+    "name": "Do you feel your abdomen is bloated or distended (swollen due to pressure from inside)?",
+    "display_name": "Do you feel your abdomen is bloated or distended (swollen due to pressure from inside)?",
+    "code_question": "E_30",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_31",
+    "name": "Do you have severe Chronic Obstructive Pulmonary Disease (COPD)?",
+    "display_name": "Do you have severe Chronic Obstructive Pulmonary Disease (COPD)?",
+    "code_question": "E_31",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_32",
+    "name": "Do you have a decrease in appetite?",
+    "display_name": "Do you have a decrease in appetite?",
+    "code_question": "E_32",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_33",
+    "name": "Do you have pain that improves when you lean forward?",
+    "display_name": "Do you have pain that improves when you lean forward?",
+    "code_question": "E_33",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_34",
+    "name": "Do you have an active cancer?",
+    "display_name": "Do you have an active cancer?",
+    "code_question": "E_34",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_35",
+    "name": "Do you regularly drink coffee or tea?",
+    "display_name": "Do you regularly drink coffee or tea?",
+    "code_question": "E_35",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_37",
+    "name": "Do you have metastatic cancer?",
+    "display_name": "Do you have metastatic cancer?",
+    "code_question": "E_36",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_38",
+    "name": "Do you have pain or weakness in your jaw?",
+    "display_name": "Do you have pain or weakness in your jaw?",
+    "code_question": "E_38",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_39",
+    "name": "Have you felt confused or disorientated lately?",
+    "display_name": "Have you felt confused or disorientated lately?",
+    "code_question": "E_39",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_4",
+    "name": "Have you or any member of your family ever had croup?",
+    "display_name": "Have you or any member of your family ever had croup?",
+    "code_question": "E_4",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_40",
+    "name": "Have you been in contact with someone who has had pertussis (whoooping cough)?",
+    "display_name": "Have you been in contact with someone who has had pertussis (whoooping cough)?",
+    "code_question": "E_40",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_41",
+    "name": "Have you been in contact with a person with similar symptoms in the past 2 weeks?",
+    "display_name": "Have you been in contact with a person with similar symptoms in the past 2 weeks?",
+    "code_question": "E_41",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_42",
+    "name": "Have you been in contact with or ate something that you have an allergy to?",
+    "display_name": "Have you been in contact with or ate something that you have an allergy to?",
+    "code_question": "E_42",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_43",
+    "name": "Have you lost consciousness associated with violent and sustained muscle contractions or had an absence episode?",
+    "display_name": "Have you lost consciousness associated with violent and sustained muscle contractions or had an absence episode?",
+    "code_question": "E_43",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_44",
+    "name": "Do you take corticosteroids?",
+    "display_name": "Do you take corticosteroids?",
+    "code_question": "E_44",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_45",
+    "name": "Have you been coughing up blood?",
+    "display_name": "Have you been coughing up blood?",
+    "code_question": "E_45",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_46",
+    "name": "Have you had 2 or more asthma attacks in the past year?",
+    "display_name": "Have you had 2 or more asthma attacks in the past year?",
+    "code_question": "E_46",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_47",
+    "name": "Do you suffer from Crohn’s disease or ulcerative colitis (UC)?",
+    "display_name": "Do you suffer from Crohn’s disease or ulcerative colitis (UC)?",
+    "code_question": "E_47",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_48",
+    "name": "Do you live with 4 or more people?",
+    "display_name": "Do you live with 4 or more people?",
+    "code_question": "E_48",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_49",
+    "name": "Do you attend or work in a daycare?",
+    "display_name": "Do you attend or work in a daycare?",
+    "code_question": "E_49",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_5",
+    "name": "Have you ever had fluid in your lungs?",
+    "display_name": "Have you ever had fluid in your lungs?",
+    "code_question": "E_5",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_50",
+    "name": "Have you had significantly increased sweating?",
+    "display_name": "Have you had significantly increased sweating?",
+    "code_question": "E_50",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_51",
+    "name": "Have you had diarrhea or an increase in stool frequency?",
+    "display_name": "Have you had diarrhea or an increase in stool frequency?",
+    "code_question": "E_51",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_52",
+    "name": "Do you have the perception of seeing two images of a single object seen overlapping or adjacent to each other (double vision)?",
+    "display_name": "Do you have the perception of seeing two images of a single object seen overlapping or adjacent to each other (double vision)?",
+    "code_question": "E_52",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_53",
+    "name": "Do you have pain somewhere, related to your reason for consulting?",
+    "display_name": "Do you have pain somewhere, related to your reason for consulting?",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_54",
+    "name": "Characterize your pain:",
+    "display_name": "Characterize your pain:",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "M",
+    "allowed_values": [
+      {
+        "code": "V_11",
+        "name": "NA"
+      },
+      {
+        "code": "V_71",
+        "name": "heartbreaking"
+      },
+      {
+        "code": "V_112",
+        "name": "haunting"
+      },
+      {
+        "code": "V_154",
+        "name": "tedious"
+      },
+      {
+        "code": "V_161",
+        "name": "sensitive"
+      },
+      {
+        "code": "V_179",
+        "name": "a knife stroke"
+      },
+      {
+        "code": "V_180",
+        "name": "tugging"
+      },
+      {
+        "code": "V_181",
+        "name": "burning"
+      },
+      {
+        "code": "V_182",
+        "name": "a cramp"
+      },
+      {
+        "code": "V_183",
+        "name": "heavy"
+      },
+      {
+        "code": "V_184",
+        "name": "a pulse"
+      },
+      {
+        "code": "V_191",
+        "name": "violent"
+      },
+      {
+        "code": "V_192",
+        "name": "sharp"
+      },
+      {
+        "code": "V_193",
+        "name": "sickening"
+      },
+      {
+        "code": "V_196",
+        "name": "scary"
+      },
+      {
+        "code": "V_198",
+        "name": "exhausting"
+      }
+    ]
+  },
+  {
+    "code": "E_55",
+    "name": "Do you feel pain somewhere?",
+    "display_name": "Do you feel pain somewhere?",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "M",
+    "allowed_values": [
+      {
+        "code": "V_123",
+        "name": "nowhere"
+      },
+      {
+        "code": "V_14",
+        "name": "iliac wing(R)"
+      },
+      {
+        "code": "V_15",
+        "name": "iliac wing(L)"
+      },
+      {
+        "code": "V_16",
+        "name": "groin(R)"
+      },
+      {
+        "code": "V_17",
+        "name": "groin(L)"
+      },
+      {
+        "code": "V_18",
+        "name": "axilla(R)"
+      },
+      {
+        "code": "V_19",
+        "name": "axilla(L)"
+      },
+      {
+        "code": "V_20",
+        "name": "tonsil(R)"
+      },
+      {
+        "code": "V_21",
+        "name": "tonsil(L)"
+      },
+      {
+        "code": "V_22",
+        "name": "anus"
+      },
+      {
+        "code": "V_23",
+        "name": "posterior aspect of the ankle(R)"
+      },
+      {
+        "code": "V_24",
+        "name": "posterior aspect of the ankle(L)"
+      },
+      {
+        "code": "V_25",
+        "name": "back of head"
+      },
+      {
+        "code": "V_26",
+        "name": "back of the neck"
+      },
+      {
+        "code": "V_27",
+        "name": "forearm(R)"
+      },
+      {
+        "code": "V_28",
+        "name": "forearm(L)"
+      },
+      {
+        "code": "V_29",
+        "name": "lower chest"
+      },
+      {
+        "code": "V_30",
+        "name": "biceps(R)"
+      },
+      {
+        "code": "V_31",
+        "name": "biceps(L)"
+      },
+      {
+        "code": "V_32",
+        "name": "mouth"
+      },
+      {
+        "code": "V_33",
+        "name": "thyroid cartilage"
+      },
+      {
+        "code": "V_34",
+        "name": "ankle(R)"
+      },
+      {
+        "code": "V_35",
+        "name": "ankle(L)"
+      },
+      {
+        "code": "V_36",
+        "name": "clitoris"
+      },
+      {
+        "code": "V_37",
+        "name": "coccyx"
+      },
+      {
+        "code": "V_38",
+        "name": "cervical spine"
+      },
+      {
+        "code": "V_39",
+        "name": "thoracic spine"
+      },
+      {
+        "code": "V_40",
+        "name": "lumbar spine"
+      },
+      {
+        "code": "V_41",
+        "name": "commissure(R)"
+      },
+      {
+        "code": "V_42",
+        "name": "commissure(L)"
+      },
+      {
+        "code": "V_43",
+        "name": "lateral side of the foot(R)"
+      },
+      {
+        "code": "V_44",
+        "name": "lateral side of the foot(L)"
+      },
+      {
+        "code": "V_45",
+        "name": "elbow(R)"
+      },
+      {
+        "code": "V_46",
+        "name": "elbow(L)"
+      },
+      {
+        "code": "V_47",
+        "name": "popliteal fossa(R)"
+      },
+      {
+        "code": "V_48",
+        "name": "popliteal fossa(L)"
+      },
+      {
+        "code": "V_49",
+        "name": "iliac crest(R)"
+      },
+      {
+        "code": "V_50",
+        "name": "iliac crest(L)"
+      },
+      {
+        "code": "V_51",
+        "name": "thigh(R)"
+      },
+      {
+        "code": "V_52",
+        "name": "thigh(L)"
+      },
+      {
+        "code": "V_53",
+        "name": "side of the neck(R)"
+      },
+      {
+        "code": "V_54",
+        "name": "side of the neck(L)"
+      },
+      {
+        "code": "V_55",
+        "name": "side of the chest(R)"
+      },
+      {
+        "code": "V_56",
+        "name": "side of the chest(L)"
+      },
+      {
+        "code": "V_57",
+        "name": "lower teeth(R)"
+      },
+      {
+        "code": "V_58",
+        "name": "lower teeth(L)"
+      },
+      {
+        "code": "V_59",
+        "name": "upper teeth(R)"
+      },
+      {
+        "code": "V_60",
+        "name": "upper teeth(L)"
+      },
+      {
+        "code": "V_61",
+        "name": "above the tongue"
+      },
+      {
+        "code": "V_62",
+        "name": "top of the head"
+      },
+      {
+        "code": "V_63",
+        "name": "finger (ring finger)(R)"
+      },
+      {
+        "code": "V_64",
+        "name": "finger (ring finger)(L)"
+      },
+      {
+        "code": "V_65",
+        "name": "finger (little finger)(R)"
+      },
+      {
+        "code": "V_66",
+        "name": "finger (little finger)(L)"
+      },
+      {
+        "code": "V_67",
+        "name": "finger (index)(R)"
+      },
+      {
+        "code": "V_68",
+        "name": "finger (index)(L)"
+      },
+      {
+        "code": "V_69",
+        "name": "finger (middle)(R)"
+      },
+      {
+        "code": "V_70",
+        "name": "finger (middle)(L)"
+      },
+      {
+        "code": "V_72",
+        "name": "dorsal aspect of the foot(R)"
+      },
+      {
+        "code": "V_73",
+        "name": "dorsal aspect of the foot(L)"
+      },
+      {
+        "code": "V_74",
+        "name": "dorsal aspect of the wrist(R)"
+      },
+      {
+        "code": "V_75",
+        "name": "dorsal aspect of the wrist(L)"
+      },
+      {
+        "code": "V_76",
+        "name": "dorsal aspect of the hand(R)"
+      },
+      {
+        "code": "V_77",
+        "name": "dorsal aspect of the hand(L)"
+      },
+      {
+        "code": "V_78",
+        "name": "palmar side of the forearm(R)"
+      },
+      {
+        "code": "V_79",
+        "name": "palmar side of the forearm(L)"
+      },
+      {
+        "code": "V_80",
+        "name": "palmar face of the wrist(R)"
+      },
+      {
+        "code": "V_81",
+        "name": "palmar face of the wrist(L)"
+      },
+      {
+        "code": "V_82",
+        "name": "buttock(R)"
+      },
+      {
+        "code": "V_83",
+        "name": "buttock(L)"
+      },
+      {
+        "code": "V_84",
+        "name": "flank(R)"
+      },
+      {
+        "code": "V_85",
+        "name": "flank(L)"
+      },
+      {
+        "code": "V_87",
+        "name": "iliac fossa(R)"
+      },
+      {
+        "code": "V_88",
+        "name": "iliac fossa(L)"
+      },
+      {
+        "code": "V_89",
+        "name": "forehead"
+      },
+      {
+        "code": "V_90",
+        "name": "lower gum"
+      },
+      {
+        "code": "V_91",
+        "name": "upper gum"
+      },
+      {
+        "code": "V_92",
+        "name": "knee(R)"
+      },
+      {
+        "code": "V_93",
+        "name": "knee(L)"
+      },
+      {
+        "code": "V_94",
+        "name": "glans"
+      },
+      {
+        "code": "V_95",
+        "name": "labia majora(R)"
+      },
+      {
+        "code": "V_96",
+        "name": "labia majora(L)"
+      },
+      {
+        "code": "V_97",
+        "name": "big toe(R)"
+      },
+      {
+        "code": "V_98",
+        "name": "big toe(L)"
+      },
+      {
+        "code": "V_99",
+        "name": "hip(R)"
+      },
+      {
+        "code": "V_100",
+        "name": "hip(L)"
+      },
+      {
+        "code": "V_101",
+        "name": "upper chest"
+      },
+      {
+        "code": "V_102",
+        "name": "hymen"
+      },
+      {
+        "code": "V_103",
+        "name": "hypochondrium(R)"
+      },
+      {
+        "code": "V_104",
+        "name": "hypochondrium(L)"
+      },
+      {
+        "code": "V_105",
+        "name": "ischio jambier(R)"
+      },
+      {
+        "code": "V_106",
+        "name": "ischio jambier(L)"
+      },
+      {
+        "code": "V_108",
+        "name": "cheek(R)"
+      },
+      {
+        "code": "V_109",
+        "name": "cheek(L)"
+      },
+      {
+        "code": "V_110",
+        "name": "internal cheek(R)"
+      },
+      {
+        "code": "V_111",
+        "name": "internal cheek(L)"
+      },
+      {
+        "code": "V_113",
+        "name": "renal fossa(R)"
+      },
+      {
+        "code": "V_114",
+        "name": "renal fossa(L)"
+      },
+      {
+        "code": "V_115",
+        "name": "uvula"
+      },
+      {
+        "code": "V_116",
+        "name": "bottom lip(R)"
+      },
+      {
+        "code": "V_117",
+        "name": "upper lip(R)"
+      },
+      {
+        "code": "V_118",
+        "name": "chin"
+      },
+      {
+        "code": "V_119",
+        "name": "calf(R)"
+      },
+      {
+        "code": "V_120",
+        "name": "calf(L)"
+      },
+      {
+        "code": "V_121",
+        "name": "jaw"
+      },
+      {
+        "code": "V_122",
+        "name": "nose"
+      },
+      {
+        "code": "V_124",
+        "name": "occiput"
+      },
+      {
+        "code": "V_125",
+        "name": "eye(R)"
+      },
+      {
+        "code": "V_126",
+        "name": "eye(L)"
+      },
+      {
+        "code": "V_127",
+        "name": "scapula(R)"
+      },
+      {
+        "code": "V_128",
+        "name": "scapula(L)"
+      },
+      {
+        "code": "V_129",
+        "name": "ear(R)"
+      },
+      {
+        "code": "V_130",
+        "name": "ear(L)"
+      },
+      {
+        "code": "V_131",
+        "name": "toe (1)(R)"
+      },
+      {
+        "code": "V_132",
+        "name": "toe (1)(L)"
+      },
+      {
+        "code": "V_133",
+        "name": "toe (2)(R)"
+      },
+      {
+        "code": "V_134",
+        "name": "toe (2)(L)"
+      },
+      {
+        "code": "V_135",
+        "name": "toe (3)(R)"
+      },
+      {
+        "code": "V_136",
+        "name": "toe (3)(L)"
+      },
+      {
+        "code": "V_137",
+        "name": "palace"
+      },
+      {
+        "code": "V_139",
+        "name": "vaginal wall"
+      },
+      {
+        "code": "V_140",
+        "name": "vaginal wall(R)"
+      },
+      {
+        "code": "V_141",
+        "name": "vaginal wall(L)"
+      },
+      {
+        "code": "V_142",
+        "name": "palm(R)"
+      },
+      {
+        "code": "V_143",
+        "name": "palm(L)"
+      },
+      {
+        "code": "V_144",
+        "name": "little toe (4)(R)"
+      },
+      {
+        "code": "V_145",
+        "name": "little toe (4)(L)"
+      },
+      {
+        "code": "V_146",
+        "name": "labia minora(R)"
+      },
+      {
+        "code": "V_147",
+        "name": "labia minora(L)"
+      },
+      {
+        "code": "V_148",
+        "name": "pharynx"
+      },
+      {
+        "code": "V_149",
+        "name": "sole(R)"
+      },
+      {
+        "code": "V_150",
+        "name": "sole(L)"
+      },
+      {
+        "code": "V_151",
+        "name": "thumb(R)"
+      },
+      {
+        "code": "V_152",
+        "name": "thumb(L)"
+      },
+      {
+        "code": "V_153",
+        "name": "pubis"
+      },
+      {
+        "code": "V_155",
+        "name": "penis"
+      },
+      {
+        "code": "V_158",
+        "name": "scrotum"
+      },
+      {
+        "code": "V_159",
+        "name": "breast(R)"
+      },
+      {
+        "code": "V_160",
+        "name": "breast(L)"
+      },
+      {
+        "code": "V_162",
+        "name": "under the tongue"
+      },
+      {
+        "code": "V_163",
+        "name": "under the jaw"
+      },
+      {
+        "code": "V_164",
+        "name": "heel(R)"
+      },
+      {
+        "code": "V_165",
+        "name": "heel(L)"
+      },
+      {
+        "code": "V_166",
+        "name": "temple(R)"
+      },
+      {
+        "code": "V_167",
+        "name": "temple(L)"
+      },
+      {
+        "code": "V_168",
+        "name": "testicle(R)"
+      },
+      {
+        "code": "V_169",
+        "name": "testicle(L)"
+      },
+      {
+        "code": "V_170",
+        "name": "posterior chest wall(R)"
+      },
+      {
+        "code": "V_171",
+        "name": "posterior chest wall(L)"
+      },
+      {
+        "code": "V_172",
+        "name": "tibia(R)"
+      },
+      {
+        "code": "V_173",
+        "name": "tibia(L)"
+      },
+      {
+        "code": "V_174",
+        "name": "trachea"
+      },
+      {
+        "code": "V_175",
+        "name": "trapezius(R)"
+      },
+      {
+        "code": "V_176",
+        "name": "trapezius(L)"
+      },
+      {
+        "code": "V_177",
+        "name": "triceps(R)"
+      },
+      {
+        "code": "V_178",
+        "name": "triceps(L)"
+      },
+      {
+        "code": "V_185",
+        "name": "urethra"
+      },
+      {
+        "code": "V_186",
+        "name": "vagina"
+      },
+      {
+        "code": "V_187",
+        "name": "belly"
+      },
+      {
+        "code": "V_188",
+        "name": "vermilion(R)"
+      },
+      {
+        "code": "V_189",
+        "name": "vermilion(L)"
+      },
+      {
+        "code": "V_190",
+        "name": "vulval vestibule"
+      },
+      {
+        "code": "V_194",
+        "name": "shoulder(R)"
+      },
+      {
+        "code": "V_195",
+        "name": "shoulder(L)"
+      },
+      {
+        "code": "V_197",
+        "name": "epigastric"
+      }
+    ]
+  },
+  {
+    "code": "E_56",
+    "name": "How intense is the pain?",
+    "display_name": "How intense is the pain?",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": 0,
+        "name": 0
+      },
+      {
+        "code": 1,
+        "name": 1
+      },
+      {
+        "code": 2,
+        "name": 2
+      },
+      {
+        "code": 3,
+        "name": 3
+      },
+      {
+        "code": 4,
+        "name": 4
+      },
+      {
+        "code": 5,
+        "name": 5
+      },
+      {
+        "code": 6,
+        "name": 6
+      },
+      {
+        "code": 7,
+        "name": 7
+      },
+      {
+        "code": 8,
+        "name": 8
+      },
+      {
+        "code": 9,
+        "name": 9
+      },
+      {
+        "code": 10,
+        "name": 10
+      }
+    ]
+  },
+  {
+    "code": "E_57",
+    "name": "Does the pain radiate to another location?",
+    "display_name": "Does the pain radiate to another location?",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "M",
+    "allowed_values": [
+      {
+        "code": "V_123",
+        "name": "nowhere"
+      },
+      {
+        "code": "V_14",
+        "name": "iliac wing(R)"
+      },
+      {
+        "code": "V_15",
+        "name": "iliac wing(L)"
+      },
+      {
+        "code": "V_16",
+        "name": "groin(R)"
+      },
+      {
+        "code": "V_17",
+        "name": "groin(L)"
+      },
+      {
+        "code": "V_18",
+        "name": "axilla(R)"
+      },
+      {
+        "code": "V_19",
+        "name": "axilla(L)"
+      },
+      {
+        "code": "V_20",
+        "name": "tonsil(R)"
+      },
+      {
+        "code": "V_21",
+        "name": "tonsil(L)"
+      },
+      {
+        "code": "V_22",
+        "name": "anus"
+      },
+      {
+        "code": "V_23",
+        "name": "posterior aspect of the ankle(R)"
+      },
+      {
+        "code": "V_24",
+        "name": "posterior aspect of the ankle(L)"
+      },
+      {
+        "code": "V_25",
+        "name": "back of head"
+      },
+      {
+        "code": "V_26",
+        "name": "back of the neck"
+      },
+      {
+        "code": "V_27",
+        "name": "forearm(R)"
+      },
+      {
+        "code": "V_28",
+        "name": "forearm(L)"
+      },
+      {
+        "code": "V_29",
+        "name": "lower chest"
+      },
+      {
+        "code": "V_30",
+        "name": "biceps(R)"
+      },
+      {
+        "code": "V_31",
+        "name": "biceps(L)"
+      },
+      {
+        "code": "V_32",
+        "name": "mouth"
+      },
+      {
+        "code": "V_33",
+        "name": "thyroid cartilage"
+      },
+      {
+        "code": "V_34",
+        "name": "ankle(R)"
+      },
+      {
+        "code": "V_35",
+        "name": "ankle(L)"
+      },
+      {
+        "code": "V_36",
+        "name": "clitoris"
+      },
+      {
+        "code": "V_37",
+        "name": "coccyx"
+      },
+      {
+        "code": "V_38",
+        "name": "cervical spine"
+      },
+      {
+        "code": "V_39",
+        "name": "thoracic spine"
+      },
+      {
+        "code": "V_40",
+        "name": "lumbar spine"
+      },
+      {
+        "code": "V_41",
+        "name": "commissure(R)"
+      },
+      {
+        "code": "V_42",
+        "name": "commissure(L)"
+      },
+      {
+        "code": "V_43",
+        "name": "lateral side of the foot(R)"
+      },
+      {
+        "code": "V_44",
+        "name": "lateral side of the foot(L)"
+      },
+      {
+        "code": "V_45",
+        "name": "elbow(R)"
+      },
+      {
+        "code": "V_46",
+        "name": "elbow(L)"
+      },
+      {
+        "code": "V_47",
+        "name": "popliteal fossa(R)"
+      },
+      {
+        "code": "V_48",
+        "name": "popliteal fossa(L)"
+      },
+      {
+        "code": "V_49",
+        "name": "iliac crest(R)"
+      },
+      {
+        "code": "V_50",
+        "name": "iliac crest(L)"
+      },
+      {
+        "code": "V_51",
+        "name": "thigh(R)"
+      },
+      {
+        "code": "V_52",
+        "name": "thigh(L)"
+      },
+      {
+        "code": "V_53",
+        "name": "side of the neck(R)"
+      },
+      {
+        "code": "V_54",
+        "name": "side of the neck(L)"
+      },
+      {
+        "code": "V_55",
+        "name": "side of the chest(R)"
+      },
+      {
+        "code": "V_56",
+        "name": "side of the chest(L)"
+      },
+      {
+        "code": "V_57",
+        "name": "lower teeth(R)"
+      },
+      {
+        "code": "V_58",
+        "name": "lower teeth(L)"
+      },
+      {
+        "code": "V_59",
+        "name": "upper teeth(R)"
+      },
+      {
+        "code": "V_60",
+        "name": "upper teeth(L)"
+      },
+      {
+        "code": "V_61",
+        "name": "above the tongue"
+      },
+      {
+        "code": "V_62",
+        "name": "top of the head"
+      },
+      {
+        "code": "V_63",
+        "name": "finger (ring finger)(R)"
+      },
+      {
+        "code": "V_64",
+        "name": "finger (ring finger)(L)"
+      },
+      {
+        "code": "V_65",
+        "name": "finger (little finger)(R)"
+      },
+      {
+        "code": "V_66",
+        "name": "finger (little finger)(L)"
+      },
+      {
+        "code": "V_67",
+        "name": "finger (index)(R)"
+      },
+      {
+        "code": "V_68",
+        "name": "finger (index)(L)"
+      },
+      {
+        "code": "V_69",
+        "name": "finger (middle)(R)"
+      },
+      {
+        "code": "V_70",
+        "name": "finger (middle)(L)"
+      },
+      {
+        "code": "V_72",
+        "name": "dorsal aspect of the foot(R)"
+      },
+      {
+        "code": "V_73",
+        "name": "dorsal aspect of the foot(L)"
+      },
+      {
+        "code": "V_74",
+        "name": "dorsal aspect of the wrist(R)"
+      },
+      {
+        "code": "V_75",
+        "name": "dorsal aspect of the wrist(L)"
+      },
+      {
+        "code": "V_76",
+        "name": "dorsal aspect of the hand(R)"
+      },
+      {
+        "code": "V_77",
+        "name": "dorsal aspect of the hand(L)"
+      },
+      {
+        "code": "V_78",
+        "name": "palmar side of the forearm(R)"
+      },
+      {
+        "code": "V_79",
+        "name": "palmar side of the forearm(L)"
+      },
+      {
+        "code": "V_80",
+        "name": "palmar face of the wrist(R)"
+      },
+      {
+        "code": "V_81",
+        "name": "palmar face of the wrist(L)"
+      },
+      {
+        "code": "V_82",
+        "name": "buttock(R)"
+      },
+      {
+        "code": "V_83",
+        "name": "buttock(L)"
+      },
+      {
+        "code": "V_84",
+        "name": "flank(R)"
+      },
+      {
+        "code": "V_85",
+        "name": "flank(L)"
+      },
+      {
+        "code": "V_87",
+        "name": "iliac fossa(R)"
+      },
+      {
+        "code": "V_88",
+        "name": "iliac fossa(L)"
+      },
+      {
+        "code": "V_89",
+        "name": "forehead"
+      },
+      {
+        "code": "V_90",
+        "name": "lower gum"
+      },
+      {
+        "code": "V_91",
+        "name": "upper gum"
+      },
+      {
+        "code": "V_92",
+        "name": "knee(R)"
+      },
+      {
+        "code": "V_93",
+        "name": "knee(L)"
+      },
+      {
+        "code": "V_94",
+        "name": "glans"
+      },
+      {
+        "code": "V_95",
+        "name": "labia majora(R)"
+      },
+      {
+        "code": "V_96",
+        "name": "labia majora(L)"
+      },
+      {
+        "code": "V_97",
+        "name": "big toe(R)"
+      },
+      {
+        "code": "V_98",
+        "name": "big toe(L)"
+      },
+      {
+        "code": "V_99",
+        "name": "hip(R)"
+      },
+      {
+        "code": "V_100",
+        "name": "hip(L)"
+      },
+      {
+        "code": "V_101",
+        "name": "upper chest"
+      },
+      {
+        "code": "V_102",
+        "name": "hymen"
+      },
+      {
+        "code": "V_103",
+        "name": "hypochondrium(R)"
+      },
+      {
+        "code": "V_104",
+        "name": "hypochondrium(L)"
+      },
+      {
+        "code": "V_105",
+        "name": "ischio jambier(R)"
+      },
+      {
+        "code": "V_106",
+        "name": "ischio jambier(L)"
+      },
+      {
+        "code": "V_108",
+        "name": "cheek(R)"
+      },
+      {
+        "code": "V_109",
+        "name": "cheek(L)"
+      },
+      {
+        "code": "V_110",
+        "name": "internal cheek(R)"
+      },
+      {
+        "code": "V_111",
+        "name": "internal cheek(L)"
+      },
+      {
+        "code": "V_113",
+        "name": "renal fossa(R)"
+      },
+      {
+        "code": "V_114",
+        "name": "renal fossa(L)"
+      },
+      {
+        "code": "V_115",
+        "name": "uvula"
+      },
+      {
+        "code": "V_116",
+        "name": "bottom lip(R)"
+      },
+      {
+        "code": "V_117",
+        "name": "upper lip(R)"
+      },
+      {
+        "code": "V_118",
+        "name": "chin"
+      },
+      {
+        "code": "V_119",
+        "name": "calf(R)"
+      },
+      {
+        "code": "V_120",
+        "name": "calf(L)"
+      },
+      {
+        "code": "V_121",
+        "name": "jaw"
+      },
+      {
+        "code": "V_122",
+        "name": "nose"
+      },
+      {
+        "code": "V_124",
+        "name": "occiput"
+      },
+      {
+        "code": "V_125",
+        "name": "eye(R)"
+      },
+      {
+        "code": "V_126",
+        "name": "eye(L)"
+      },
+      {
+        "code": "V_127",
+        "name": "scapula(R)"
+      },
+      {
+        "code": "V_128",
+        "name": "scapula(L)"
+      },
+      {
+        "code": "V_129",
+        "name": "ear(R)"
+      },
+      {
+        "code": "V_130",
+        "name": "ear(L)"
+      },
+      {
+        "code": "V_131",
+        "name": "toe (1)(R)"
+      },
+      {
+        "code": "V_132",
+        "name": "toe (1)(L)"
+      },
+      {
+        "code": "V_133",
+        "name": "toe (2)(R)"
+      },
+      {
+        "code": "V_134",
+        "name": "toe (2)(L)"
+      },
+      {
+        "code": "V_135",
+        "name": "toe (3)(R)"
+      },
+      {
+        "code": "V_136",
+        "name": "toe (3)(L)"
+      },
+      {
+        "code": "V_137",
+        "name": "palace"
+      },
+      {
+        "code": "V_139",
+        "name": "vaginal wall"
+      },
+      {
+        "code": "V_140",
+        "name": "vaginal wall(R)"
+      },
+      {
+        "code": "V_141",
+        "name": "vaginal wall(L)"
+      },
+      {
+        "code": "V_142",
+        "name": "palm(R)"
+      },
+      {
+        "code": "V_143",
+        "name": "palm(L)"
+      },
+      {
+        "code": "V_144",
+        "name": "little toe (4)(R)"
+      },
+      {
+        "code": "V_145",
+        "name": "little toe (4)(L)"
+      },
+      {
+        "code": "V_146",
+        "name": "labia minora(R)"
+      },
+      {
+        "code": "V_147",
+        "name": "labia minora(L)"
+      },
+      {
+        "code": "V_148",
+        "name": "pharynx"
+      },
+      {
+        "code": "V_149",
+        "name": "sole(R)"
+      },
+      {
+        "code": "V_150",
+        "name": "sole(L)"
+      },
+      {
+        "code": "V_151",
+        "name": "thumb(R)"
+      },
+      {
+        "code": "V_152",
+        "name": "thumb(L)"
+      },
+      {
+        "code": "V_153",
+        "name": "pubis"
+      },
+      {
+        "code": "V_155",
+        "name": "penis"
+      },
+      {
+        "code": "V_158",
+        "name": "scrotum"
+      },
+      {
+        "code": "V_159",
+        "name": "breast(R)"
+      },
+      {
+        "code": "V_160",
+        "name": "breast(L)"
+      },
+      {
+        "code": "V_162",
+        "name": "under the tongue"
+      },
+      {
+        "code": "V_163",
+        "name": "under the jaw"
+      },
+      {
+        "code": "V_164",
+        "name": "heel(R)"
+      },
+      {
+        "code": "V_165",
+        "name": "heel(L)"
+      },
+      {
+        "code": "V_166",
+        "name": "temple(R)"
+      },
+      {
+        "code": "V_167",
+        "name": "temple(L)"
+      },
+      {
+        "code": "V_168",
+        "name": "testicle(R)"
+      },
+      {
+        "code": "V_169",
+        "name": "testicle(L)"
+      },
+      {
+        "code": "V_170",
+        "name": "posterior chest wall(R)"
+      },
+      {
+        "code": "V_171",
+        "name": "posterior chest wall(L)"
+      },
+      {
+        "code": "V_172",
+        "name": "tibia(R)"
+      },
+      {
+        "code": "V_173",
+        "name": "tibia(L)"
+      },
+      {
+        "code": "V_174",
+        "name": "trachea"
+      },
+      {
+        "code": "V_175",
+        "name": "trapezius(R)"
+      },
+      {
+        "code": "V_176",
+        "name": "trapezius(L)"
+      },
+      {
+        "code": "V_177",
+        "name": "triceps(R)"
+      },
+      {
+        "code": "V_178",
+        "name": "triceps(L)"
+      },
+      {
+        "code": "V_185",
+        "name": "urethra"
+      },
+      {
+        "code": "V_186",
+        "name": "vagina"
+      },
+      {
+        "code": "V_187",
+        "name": "belly"
+      },
+      {
+        "code": "V_188",
+        "name": "vermilion(R)"
+      },
+      {
+        "code": "V_189",
+        "name": "vermilion(L)"
+      },
+      {
+        "code": "V_190",
+        "name": "vulval vestibule"
+      },
+      {
+        "code": "V_194",
+        "name": "shoulder(R)"
+      },
+      {
+        "code": "V_195",
+        "name": "shoulder(L)"
+      },
+      {
+        "code": "V_197",
+        "name": "epigastric"
+      }
+    ]
+  },
+  {
+    "code": "E_58",
+    "name": "How precisely is the pain located?",
+    "display_name": "How precisely is the pain located?",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": 0,
+        "name": 0
+      },
+      {
+        "code": 1,
+        "name": 1
+      },
+      {
+        "code": 2,
+        "name": 2
+      },
+      {
+        "code": 3,
+        "name": 3
+      },
+      {
+        "code": 4,
+        "name": 4
+      },
+      {
+        "code": 5,
+        "name": 5
+      },
+      {
+        "code": 6,
+        "name": 6
+      },
+      {
+        "code": 7,
+        "name": 7
+      },
+      {
+        "code": 8,
+        "name": 8
+      },
+      {
+        "code": 9,
+        "name": 9
+      },
+      {
+        "code": 10,
+        "name": 10
+      }
+    ]
+  },
+  {
+    "code": "E_59",
+    "name": "How fast did the pain appear?",
+    "display_name": "How fast did the pain appear?",
+    "code_question": "E_53",
+    "is_antecedent": false,
+    "data_type": "C",
+    "allowed_values": [
+      {
+        "code": 0,
+        "name": 0
+      },
+      {
+        "code": 1,
+        "name": 1
+      },
+      {
+        "code": 2,
+        "name": 2
+      },
+      {
+        "code": 3,
+        "name": 3
+      },
+      {
+        "code": 4,
+        "name": 4
+      },
+      {
+        "code": 5,
+        "name": 5
+      },
+      {
+        "code": 6,
+        "name": 6
+      },
+      {
+        "code": 7,
+        "name": 7
+      },
+      {
+        "code": 8,
+        "name": 8
+      },
+      {
+        "code": 9,
+        "name": 9
+      },
+      {
+        "code": 10,
+        "name": 10
+      }
+    ]
+  },
+  {
+    "code": "E_6",
+    "name": "Do you have chronic pancreatitis?",
+    "display_name": "Do you have chronic pancreatitis?",
+    "code_question": "E_6",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_60",
+    "name": "Do you consume energy drinks regularly?",
+    "display_name": "Do you consume energy drinks regularly?",
+    "code_question": "E_60",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_61",
+    "name": "Are you currently using intravenous drugs?",
+    "display_name": "Are you currently using intravenous drugs?",
+    "code_question": "E_61",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_62",
+    "name": "Do you regularly take stimulant drugs?",
+    "display_name": "Do you regularly take stimulant drugs?",
+    "code_question": "E_62",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_63",
+    "name": "Do you have difficulty articulating words/speaking?",
+    "display_name": "Do you have difficulty articulating words/speaking?",
+    "code_question": "E_63",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_64",
+    "name": "Do you feel out of breath with minimal physical effort?",
+    "display_name": "Do you feel out of breath with minimal physical effort?",
+    "code_question": "E_64",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_65",
+    "name": "Do you have difficulty swallowing, or have a feeling of discomfort/blockage when swallowing?",
+    "display_name": "Do you have difficulty swallowing, or have a feeling of discomfort/blockage when swallowing?",
+    "code_question": "E_65",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_66",
+    "name": "Are you experiencing shortness of breath or difficulty breathing in a significant way?",
+    "display_name": "Are you experiencing shortness of breath or difficulty breathing in a significant way?",
+    "code_question": "E_66",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_67",
+    "name": "Do you have bouts of choking or shortness of breath that wake you up at night?",
+    "display_name": "Do you have bouts of choking or shortness of breath that wake you up at night?",
+    "code_question": "E_67",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_69",
+    "name": "Do you have diabetes?",
+    "display_name": "Do you have diabetes?",
+    "code_question": "E_68",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_7",
+    "name": "Do you have a poor diet?",
+    "display_name": "Do you have a poor diet?",
+    "code_question": "E_7",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_70",
+    "name": "Are you significantly overweight compared to people of the same height as you?",
+    "display_name": "Are you significantly overweight compared to people of the same height as you?",
+    "code_question": "E_70",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_71",
+    "name": "Do you have high cholesterol or do you take medications to treat high cholesterol?",
+    "display_name": "Do you have high cholesterol or do you take medications to treat high cholesterol?",
+    "code_question": "E_71",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_72",
+    "name": "Have you had one or several flare ups of chronic obstructive pulmonary disease (COPD) in the past year?",
+    "display_name": "Have you had one or several flare ups of chronic obstructive pulmonary disease (COPD) in the past year?",
+    "code_question": "E_72",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_73",
+    "name": "In the last month, have you been in contact with anyone infected with the Ebola virus?",
+    "display_name": "In the last month, have you been in contact with anyone infected with the Ebola virus?",
+    "code_question": "E_73",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_74",
+    "name": "Have you noticed a diffuse (widespread) redness in one or both eyes?",
+    "display_name": "Have you noticed a diffuse (widespread) redness in one or both eyes?",
+    "code_question": "E_74",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_75",
+    "name": "Do you feel like you are (or were) choking or suffocating?",
+    "display_name": "Do you feel like you are (or were) choking or suffocating?",
+    "code_question": "E_75",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_76",
+    "name": "Do you feel slightly dizzy or lightheaded?",
+    "display_name": "Do you feel slightly dizzy or lightheaded?",
+    "code_question": "E_76",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_77",
+    "name": "Do you have a cough that produces colored or more abundant sputum than usual?",
+    "display_name": "Do you have a cough that produces colored or more abundant sputum than usual?",
+    "code_question": "E_77",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_78",
+    "name": "Do you drink alcohol excessively or do you have an addiction to alcohol?",
+    "display_name": "Do you drink alcohol excessively or do you have an addiction to alcohol?",
+    "code_question": "E_78",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_79",
+    "name": "Do you smoke cigarettes?",
+    "display_name": "Do you smoke cigarettes?",
+    "code_question": "E_79",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_8",
+    "name": "Do you currently undergo dialysis?",
+    "display_name": "Do you currently undergo dialysis?",
+    "code_question": "E_8",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_80",
+    "name": "Have you ever been diagnosed with depression?",
+    "display_name": "Have you ever been diagnosed with depression?",
+    "code_question": "E_80",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_81",
+    "name": "Do you suffer from chronic anxiety?",
+    "display_name": "Do you suffer from chronic anxiety?",
+    "code_question": "E_81",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_82",
+    "name": "Do you feel lightheaded and dizzy or do you feel like you are about to faint?",
+    "display_name": "Do you feel lightheaded and dizzy or do you feel like you are about to faint?",
+    "code_question": "E_82",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_83",
+    "name": "Have you noticed weakness in your facial muscles and/or eyes?",
+    "display_name": "Have you noticed weakness in your facial muscles and/or eyes?",
+    "code_question": "E_83",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_84",
+    "name": "Do you feel weakness in both arms and/or both legs?",
+    "display_name": "Do you feel weakness in both arms and/or both legs?",
+    "code_question": "E_84",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_86",
+    "name": "Do you have any close family members who suffer from allergies (any type), hay fever or eczema?",
+    "display_name": "Do you have any close family members who suffer from allergies (any type), hay fever or eczema?",
+    "code_question": "E_86",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_87",
+    "name": "Do you have any family members who have asthma?",
+    "display_name": "Do you have any family members who have asthma?",
+    "code_question": "E_85",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_88",
+    "name": "Do you feel so tired that you are unable to do your usual activities or are you stuck in your bed all day long?",
+    "display_name": "Do you feel so tired that you are unable to do your usual activities or are you stuck in your bed all day long?",
+    "code_question": "E_88",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_89",
+    "name": "Do you constantly feel fatigued or do you have non-restful sleep?",
+    "display_name": "Do you constantly feel fatigued or do you have non-restful sleep?",
+    "code_question": "E_89",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_9",
+    "name": "Do you have swollen or painful lymph nodes?",
+    "display_name": "Do you have swollen or painful lymph nodes?",
+    "code_question": "E_9",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_90",
+    "name": "Do your symptoms of muscle weakness increase with fatigue and/or stress?",
+    "display_name": "Do your symptoms of muscle weakness increase with fatigue and/or stress?",
+    "code_question": "E_90",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_91",
+    "name": "Do you have a fever (either felt or measured with a thermometer)?",
+    "display_name": "Do you have a fever (either felt or measured with a thermometer)?",
+    "code_question": "E_91",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_92",
+    "name": "Did your cheeks suddenly turn red?",
+    "display_name": "Did your cheeks suddenly turn red?",
+    "code_question": "E_92",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_93",
+    "name": "Do you have numbness, loss of sensation or tingling in the feet?",
+    "display_name": "Do you have numbness, loss of sensation or tingling in the feet?",
+    "code_question": "E_93",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_94",
+    "name": "Have you had chills or shivers?",
+    "display_name": "Have you had chills or shivers?",
+    "code_question": "E_94",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_95",
+    "name": "Do you have Parkinson’s disease?",
+    "display_name": "Do you have Parkinson’s disease?",
+    "code_question": "E_95",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_96",
+    "name": "Have you gained weight recently?",
+    "display_name": "Have you gained weight recently?",
+    "code_question": "E_96",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_97",
+    "name": "Do you have a sore throat?",
+    "display_name": "Do you have a sore throat?",
+    "code_question": "E_97",
+    "is_antecedent": false,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_98",
+    "name": "Do you have a hiatal hernia?",
+    "display_name": "Do you have a hiatal hernia?",
+    "code_question": "E_98",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  },
+  {
+    "code": "E_99",
+    "name": "Have you ever had a migraine or is a member of your family known to have migraines?",
+    "display_name": "Have you ever had a migraine or is a member of your family known to have migraines?",
+    "code_question": "E_99",
+    "is_antecedent": true,
+    "data_type": "B",
+    "allowed_values": []
+  }
 ]

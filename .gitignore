@@ -58,3 +58,6 @@ api/confidence_model.joblib
 
 .pytest_cache/
 ml-service/data/source.zip
+ml-service/data/ddxplus/*
+!ml-service/data/ddxplus/SOURCE.md
+*.db

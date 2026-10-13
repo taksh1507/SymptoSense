@@ -2,15 +2,15 @@
 import { RED_FLAGS } from '@/lib/redFlags';
 
 const ALIASES: Record<string, string[]> = {
-  weakness_of_one_body_side: ['weakness of one body side', 'weakness on one side', 'one-sided weakness', 'weakness of one side'],
-  altered_sensorium: ['altered sensorium', 'altered mental status', 'sudden confusion'],
+  weakness_of_one_body_side: ['weakness of one body side', 'weakness on one side', 'one-sided weakness', 'weakness of one side', 'e 156'],
+  altered_sensorium: ['altered sensorium', 'altered mental status', 'sudden confusion', 'e 39'],
   loss_of_balance: ['loss of balance', 'sudden loss of balance'],
-  coughing_of_blood: ['coughing of blood', 'coughing blood', 'coughing up blood'],
-  chest_pain: ['chest pain', 'सीने में दर्द', 'छातीत दुखणे'],
-  breathlessness: ['breathlessness', 'shortness of breath', 'difficulty breathing', 'सांस लेने में तकलीफ', 'सांस की तकलीफ', 'श्वास घेण्यास त्रास', 'श्वास लागणे'],
-  chest_tightness: ['chest tightness'], loss_of_consciousness: ['loss of consciousness', 'unconsciousness', 'unconscious', 'behosh', 'बेहोश', 'बेशुद्ध', 'मूर्छा'],
+  coughing_of_blood: ['coughing of blood', 'coughing blood', 'coughing up blood', 'e 45'],
+  chest_pain: ['chest pain', 'e 14', 'सीने में दर्द', 'छातीत दुखणे'],
+  breathlessness: ['breathlessness', 'shortness of breath', 'difficulty breathing', 'e 66', 'e 64', 'e 194', 'सांस लेने में तकलीफ', 'सांस की तकलीफ', 'श्वास घेण्यास त्रास', 'श्वास लागणे'],
+  chest_tightness: ['chest tightness'], loss_of_consciousness: ['loss of consciousness', 'unconsciousness', 'unconscious', 'e 159', 'e 43', 'behosh', 'बेहोश', 'बेशुद्ध', 'मूर्छा'],
   severe_bleeding: ['severe bleeding', 'heavy bleeding', 'जोरदार रक्तस्त्राव'], confusion: ['confusion', 'confused', 'गोंधळ'],
-  sudden_severe_headache: ['sudden severe headache'], chills: ['chills'], fever: ['fever', 'बुखार', 'ताप'], cough: ['cough', 'खांसी', 'खोकला'],
+  sudden_severe_headache: ['sudden severe headache'], speech_difficulty: ['e 63'], vomiting_blood: ['e 210'], chills: ['chills'], fever: ['fever', 'e 91', 'बुखार', 'ताप'], cough: ['cough', 'e 201', 'खांसी', 'खोकला'],
   dizziness: ['dizziness', 'dizzy', 'lightheaded', 'chakkar', 'चक्कर'], fatigue: ['fatigue', 'weakness', 'exhausted', 'tired', 'थकान', 'थकवा'],
   headache: ['headache', 'सिरदर्द', 'डोकेदुखी'], stomach_pain: ['stomach pain', 'abdominal pain', 'पेट दर्द', 'पोटदुखी'],
   nausea: ['nausea', 'मतली', 'मळमळ'], vomiting: ['vomiting'], bleeding: ['bleeding', 'रक्तस्त्राव'], palpitations: ['palpitations'],

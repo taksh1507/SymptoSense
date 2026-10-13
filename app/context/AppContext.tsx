@@ -114,7 +114,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setState(s => ({ ...s, assessmentPayload: assessmentContext(prepared) }));
       void persist();
       const symptoms = [...new Set([...context.selected, ...context.adaptive, ...extracted])].filter(s => s.length <= 100).slice(0, 132);
-      const response = await fetch('/api/ml/disease', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Assessment-Language': data.language }, body: JSON.stringify({ symptoms, age_group: data.age, severity: data.severity, duration: data.duration }), signal: active.signal });
+      const modelSex = state.gender === 'Male' ? 'M' : state.gender === 'Female' ? 'F' : undefined;
+      const response = await fetch('/api/ml/disease', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Assessment-Language': data.language }, body: JSON.stringify({ symptoms, age_group: data.age, sex: modelSex, severity: data.severity, duration: data.duration }), signal: active.signal });
       const prediction = await response.json();
       if (!response.ok) throw new Error(response.status === 422 ? 'No supported dataset symptoms were found. Continue with the questionnaire triage and consult a doctor.' : 'Disease model unavailable. The rule triage result remains available.');
       if (id !== generation.current) return;

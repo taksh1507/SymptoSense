@@ -61,7 +61,6 @@ export default function PersonModal() {
   const canProceed =
     personType !== null &&
     name.trim().length >= 2 &&
-    gender !== '' &&
     (personType === 'self' || (personType === 'family' && relation !== ''));
 
   const handleContinue = () => {
@@ -72,7 +71,7 @@ export default function PersonModal() {
         : relation === 'Other'
           ? ((customRelation.trim() || 'Other') as Relation)
           : (relation as Relation);
-    setPatientInfo(name.trim(), finalRelation, gender as Gender);
+    setPatientInfo(name.trim(), finalRelation, gender ? gender as Gender : null);
     setTriageScreen('questions');
   };
 
@@ -182,6 +181,7 @@ export default function PersonModal() {
 
             {/* Gender selector — shown for both self and family */}
             <div role="radiogroup" aria-labelledby="person-gender-label">
+              <p style={{ fontSize: 12, color: 'var(--text-3)', margin: '0 0 8px' }}>Sex is optional; you may skip this question.</p>
               <label id="person-gender-label" style={{ display: 'block', fontSize: '12px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 {language === 'Hindi' ? 'लिंग' : language === 'Marathi' ? 'लिंग' : 'Gender'}
               </label>

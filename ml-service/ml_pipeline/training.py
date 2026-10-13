@@ -101,8 +101,10 @@ def train():
     calibration_folds = min(5, int(np.bincount(y_train).min()))
     print('Winner:', winner, 'calibration folds:', calibration_folds, flush=True)
     calibrated = CalibratedClassifierCV(clone(best), method='sigmoid', cv=StratifiedKFold(calibration_folds, shuffle=True, random_state=SEED), n_jobs=1).fit(X_train, y_train)
-    probability = calibrated.predict_proba(X_test)
-    uncalibrated_probability = best.predict_proba(X_test)
+    # Calibration is retained and measured, but the deployed model uses raw
+    # probabilities because sigmoid calibration worsened held-out Brier here.
+    probability = best.predict_proba(X_test)
+    calibrated_probability = calibrated.predict_proba(X_test)
     prediction = probability.argmax(axis=1)
     precision, recall, f1, support = precision_recall_fscore_support(y_test, prediction, labels=classes, zero_division=0)
     truth = label_binarize(y_test, classes=classes)
@@ -110,7 +112,7 @@ def train():
     for i, name in enumerate(encoder.classes_):
         fpr, tpr, _ = roc_curve(truth[:, i], probability[:, i])
         roc.append({'disease': name, 'auc': float(roc_auc_score(truth[:, i], probability[:, i])), 'points': [{'fpr': float(a), 'tpr': float(b)} for a, b in zip(fpr, tpr)]})
-    # Confidence reliability: top prediction correctness versus its calibrated probability.
+    # Confidence reliability: top prediction correctness versus its model score.
     def reliability(probs):
         confidence = probs.max(axis=1); correct = (probs.argmax(axis=1) == y_test).astype(int)
         observed, predicted = calibration_curve(correct, confidence, n_bins=10, strategy='uniform')
@@ -140,7 +142,7 @@ def train():
                 active = np.flatnonzero(vector == 1)
                 # Bernoulli dropping gives the requested expected fraction even for sparse patients.
                 vector[active[rng.random(len(active)) < percent / 100]] = 0
-            accuracy.append(accuracy_score(y_test, calibrated.predict(damaged)))
+            accuracy.append(accuracy_score(y_test, best.predict(damaged)))
         robustness.append({'percent_dropped': percent, 'accuracy': float(np.mean(accuracy)), 'std': float(np.std(accuracy)), 'repeats': accuracy})
     severity_path = SERVICE / 'data' / 'Symptom-severity.csv'
     severity_data = pd.read_csv(severity_path)
@@ -167,11 +169,11 @@ def train():
     urgency_prediction = urgency_model.predict(X_test)
     rule = rule_predictions([[s for s, value in zip(symptoms, vector) if value == 1] for vector in X_test])
     final_urgency = np.array(['High' if any(s in rule['red_flags'] for s, value in zip(symptoms, vector) if value == 1) else u for vector, u in zip(X_test, urgency_prediction)])
-    print('Computing calibrated-probability SHAP', flush=True)
+    print('Computing deployed raw-probability SHAP', flush=True)
     rng = np.random.default_rng(SEED)
     background = X_train[rng.choice(len(X_train), min(12, len(X_train)), replace=False)]
     explain_rows = X_test[rng.choice(len(X_test), min(24, len(X_test)), replace=False)]
-    explanation = make_explainer(calibrated, background, symptoms)(explain_rows, max_evals=2 * len(symptoms) + 1)
+    explanation = make_explainer(best, background, symptoms)(explain_rows, max_evals=2 * len(symptoms) + 1)
     importance = np.abs(explanation.values).mean(axis=(0, 2))
     top = np.argsort(importance)[::-1][:15]
     shap_global = [{'symptom': symptoms[i], 'importance': float(importance[i])} for i in top]
@@ -180,10 +182,11 @@ def train():
         'dataset': eda, 'symptoms': symptoms, 'classes': encoder.classes_.tolist(),
         'split': {'train_rows': len(train_ids), 'test_rows': len(test_ids), 'train_indices': train_ids.tolist(), 'test_indices': test_ids.tolist(), 'duplicate_overlap': 0, 'minimum_training_class_rows': int(np.bincount(y_train).min()), 'cv_folds': 5, 'calibration_folds': calibration_folds, 'validation_class_coverage': [int(len(np.unique(y_train[valid]))) for _, valid in cv.split(X_train, y_train)]},
         'training': {'comparison': comparison, 'hyperparameters': tuning, 'winner': winner, 'best_parameters': searches[winner].best_params_, 'selection_metric': 'training-only 5-fold macro F1', 'learning_curve': learning},
-        'evaluation': {'metrics': scores(y_test, probability, classes), 'uncalibrated_metrics': scores(y_test, uncalibrated_probability, classes), 'confusion_matrix': confusion_matrix(y_test, prediction, labels=classes).tolist(), 'per_class': [{'disease': name, 'precision': float(p), 'recall': float(r), 'f1': float(f), 'support': int(n)} for name, p, r, f, n in zip(encoder.classes_, precision, recall, f1, support)], 'roc': roc, 'macro_auc': float(np.mean([r['auc'] for r in roc])), 'robustness': robustness},
-        'calibration': {'method': 'sigmoid; cross-fitted training-only pipelines', 'brier_definition': 'Multiclass sum of squared errors, averaged across test rows (range 0..2)', 'brier_before': brier(uncalibrated_probability), 'brier_after': brier(probability), 'curve_before': reliability(uncalibrated_probability), 'curve_after': reliability(probability), 'uncertainty_threshold': float(os.getenv('DISEASE_CONFIDENCE_THRESHOLD', '0.5'))},
-        'explainability': {'method': 'Permutation SHAP of deployed calibrated predict_proba; one seeded permutation', 'units': 'probability contribution', 'background_rows': len(background), 'global_rows': len(explain_rows), 'global_importance': shap_global},
-        'urgency': {'labels': ['Low', 'Medium', 'High'], 'severity_file': str(severity_path.name), 'severity_sha256': hashlib.sha256(severity_path.read_bytes()).hexdigest(), 'severity_aliases': {'foul_smell_of_urine': 'foul_smell_ofurine'}, 'duplicate_severity_entries': severity_duplicates, 'duplicate_weight_policy': 'Mean of supplied weights for repeated normalized symptom names (fluid_overload has 6 and 4, mean 5)', 'label_source': 'Disease mean symptom severity from TRAINING rows; relative disease-weight terciles, not clinician urgency labels', 'thresholds': [float(low_cut), float(high_cut)], 'disease_weights': [{'disease': d, 'weight': w, 'urgency': urgency_by_disease[d]} for d, w in disease_weights.items()], 'accuracy_against_derived_labels': float(accuracy_score(urgency_test, urgency_prediction)), 'confusion_matrix': confusion_matrix(urgency_test, urgency_prediction, labels=['Low', 'Medium', 'High']).tolist(), 'rule_agreement': float(accuracy_score(rule['predictions'], urgency_prediction)), 'rule_agreement_after_red_flags': float(accuracy_score(rule['predictions'], final_urgency)), 'rule_version': rule['rule_version'], 'rule_context': 'All listed symptoms are primary; mild severity, <1 day, no medical history. Agreement is not clinical validation.', 'disease_safety_floors': {'Heart attack': 'High', 'Paralysis (brain hemorrhage)': 'High', 'Tuberculosis': 'Medium'}, 'runtime_policy': 'Red-flag symptoms override to High; disease-level safety floors raise final urgency independently of the experimental severity-derived urgency model.'},
+        'deployment': {'model_artifact': 'best_model.joblib', 'probability_mode': 'uncalibrated predict_proba', 'uncertainty_threshold': float(os.getenv('DISEASE_CONFIDENCE_THRESHOLD', '0.5')), 'calibration_deployed': False, 'reason': 'Sigmoid calibration worsened held-out multiclass Brier score; raw model probabilities are shown.'},
+        'evaluation': {'metrics': scores(y_test, probability, classes), 'calibrated_metrics': scores(y_test, calibrated_probability, classes), 'confusion_matrix': confusion_matrix(y_test, prediction, labels=classes).tolist(), 'per_class': [{'disease': name, 'precision': float(p), 'recall': float(r), 'f1': float(f), 'support': int(n)} for name, p, r, f, n in zip(encoder.classes_, precision, recall, f1, support)], 'roc': roc, 'macro_auc': float(np.mean([r['auc'] for r in roc])), 'robustness': robustness},
+        'calibration': {'method': 'sigmoid; cross-fitted training-only pipelines; evaluated but not deployed', 'brier_definition': 'Multiclass sum of squared errors, averaged across test rows (range 0..2)', 'brier_before': brier(probability), 'brier_after': brier(calibrated_probability), 'curve_before': reliability(probability), 'curve_after': reliability(calibrated_probability), 'uncertainty_threshold': float(os.getenv('DISEASE_CONFIDENCE_THRESHOLD', '0.5'))},
+        'explainability': {'method': 'Permutation SHAP of deployed uncalibrated predict_proba; one seeded permutation', 'units': 'probability contribution', 'background_rows': len(background), 'global_rows': len(explain_rows), 'global_importance': shap_global},
+        'urgency': {'labels': ['Low', 'Medium', 'High'], 'severity_file': str(severity_path.name), 'severity_sha256': hashlib.sha256(severity_path.read_bytes()).hexdigest(), 'severity_aliases': {'foul_smell_of_urine': 'foul_smell_ofurine'}, 'duplicate_severity_entries': severity_duplicates, 'duplicate_weight_policy': 'Mean of supplied weights for repeated normalized symptom names (fluid_overload has 6 and 4, mean 5)', 'label_source': 'Disease mean symptom severity from TRAINING rows; relative disease-weight terciles, not clinician urgency labels', 'thresholds': [float(low_cut), float(high_cut)], 'disease_weights': [{'disease': d, 'weight': w, 'urgency': urgency_by_disease[d]} for d, w in disease_weights.items()], 'accuracy_against_derived_labels': float(accuracy_score(urgency_test, urgency_prediction)), 'confusion_matrix': confusion_matrix(urgency_test, urgency_prediction, labels=['Low', 'Medium', 'High']).tolist(), 'rule_agreement': float(accuracy_score(rule['predictions'], urgency_prediction)), 'rule_agreement_after_red_flags': float(accuracy_score(rule['predictions'], final_urgency)), 'rule_version': rule['rule_version'], 'rule_context': 'All listed symptoms are primary; mild severity, <1 day, no medical history. Agreement is not clinical validation.', 'disease_safety_floors': {'Heart attack': 'High', 'Paralysis (brain hemorrhage)': 'High', 'Tuberculosis': 'Medium'}, 'disease_safety_floor_source': 'Hand-authored precautionary choices by the project team; not based on clinical guidelines or validated triage rules.', 'runtime_policy': 'Red-flag symptoms override to High; disease-level safety floors raise final urgency independently of the experimental severity-derived urgency model.'},
         'limitations': ['Public symptom-disease associations are not independently verified patient records; dataset does not establish clinical diagnostic accuracy.', f'Only {len(X)} unique patterns remain after deduplication; held-out support is small and results do not establish external generalization.', 'The least-populated training classes have fewer than five rows: 5-fold stratification is approximate and some validation folds omit rare classes. Calibration uses the supported fold count.', 'Hyperparameter search and model selection share training CV folds; CV scores are selection estimates, while the held-out test is used only after selection.', 'Urgency labels are derived relative severity proxies; clinical urgency is not supervised by clinician labels. Red-flag rules always override to High.', 'Age, duration and reported intensity are absent from the disease dataset and are not disease-model features; rule triage uses the available context.', 'SHAP is a seeded sampling estimate, includes absent symptoms, and describes model behaviour rather than medical causation.', 'Calibration can worsen Brier score on this small dataset; report both measured scores. Confidence is a probability within the known dataset classes, not diagnosis certainty.'],
         'disclaimer': 'Not a medical diagnosis. Consult a qualified healthcare professional. Emergency red flags require immediate medical attention.'
     }
@@ -197,7 +200,7 @@ def train():
     for filename in ['symptom_list.json', 'red_flags.json']:
         hashes[filename] = hashlib.sha256((ARTIFACTS / filename).read_bytes()).hexdigest()
     report['artifacts'] = hashes
-    report['model_version'] = hashes['calibrated_model.joblib'][:16]
+    report['model_version'] = hashes['best_model.joblib'][:16]
     REPORT.parent.mkdir(parents=True, exist_ok=True)
     REPORT.write_text(json.dumps(report, indent=2, allow_nan=False), encoding='utf-8')
     # The frontend vocabulary is generated from the same training schema, never invented.
