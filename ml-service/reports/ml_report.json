@@ -8,7 +8,7 @@
     "shap": "0.53.0",
     "joblib": "1.5.3"
   },
-  "generated_at": "2026-10-13T07:26:56.717040+00:00",
+  "generated_at": "2026-10-13T08:16:32.864196+00:00",
   "random_state": 42,
   "dataset": {
     "source": "https://www.kaggle.com/datasets/itachi9604/disease-symptom-description-dataset",
@@ -4978,10 +4978,16 @@
         21
       ]
     ],
-    "rule_agreement": 0.2786885245901639,
-    "rule_agreement_after_red_flags": 0.29508196721311475,
-    "rule_version": "2026-10-13.1",
-    "rule_context": "All listed symptoms are primary; mild severity, <1 day, no medical history. Agreement is not clinical validation."
+    "rule_agreement": 0.29508196721311475,
+    "rule_agreement_after_red_flags": 0.3442622950819672,
+    "rule_version": "2026-10-13.2",
+    "rule_context": "All listed symptoms are primary; mild severity, <1 day, no medical history. Agreement is not clinical validation.",
+    "disease_safety_floors": {
+      "Heart attack": "High",
+      "Paralysis (brain hemorrhage)": "High",
+      "Tuberculosis": "Medium"
+    },
+    "runtime_policy": "Red-flag symptoms override to High; disease-level safety floors raise final urgency independently of the experimental severity-derived urgency model."
   },
   "limitations": [
     "Public symptom-disease associations are not independently verified patient records; dataset does not establish clinical diagnostic accuracy.",
@@ -5001,7 +5007,7 @@
     "urgency_model.joblib": "c199e6a4c9198a9a7a003bbadb81318671dd7ee6106f8a90d59776232fbe8416",
     "shap_background.joblib": "a5b2ece52cffe3c4ea9867eebbfdffc2d0459335291110e33c5932c55363eb64",
     "symptom_list.json": "0af72dc9d96c6dead7c2963e00234f9b934b9080152ec3a5246734877d39236b",
-    "red_flags.json": "0ac566e292f10f9a4a9be063b6e633701435d5b9c1636e98885a4c5c7755b04c"
+    "red_flags.json": "e573c5e6fefb835360b3c80044acc21f4350c77f48d5c04117445ed409918e40"
   },
   "model_version": "8979b27685f8b192"
 }

@@ -19,6 +19,20 @@ _lock = threading.RLock()
 _cache = None
 _cache_version = None
 ALIASES = {'rash': 'skin_rash', 'skin rash': 'skin_rash', 'stomach ache': 'stomach_pain', 'abdominal pain': 'abdominal_pain', 'shortness of breath': 'breathlessness', 'difficulty breathing': 'breathlessness', 'dizzy': 'dizziness', 'tiredness': 'fatigue', 'head ache': 'headache', 'sneezing': 'continuous_sneezing', 'low fever': 'mild_fever'}
+# Dataset labels are safety signals for triage, never diagnoses. These floors
+# prevent a severity-derived research model from assigning a low urgency.
+DISEASE_SAFETY_FLOORS = {
+    'heart attack': 'High',
+    'paralysis (brain hemorrhage)': 'High',
+    'tuberculosis': 'Medium',
+}
+URGENCY_RANK = {'Low': 0, 'Medium': 1, 'High': 2}
+
+def disease_safety_floor(top3):
+    matches = [(condition['disease'], DISEASE_SAFETY_FLOORS[condition['disease'].strip().lower()])
+               for condition in top3 if condition['disease'].strip().lower() in DISEASE_SAFETY_FLOORS]
+    floor = max((level for _, level in matches), key=URGENCY_RANK.get, default=None)
+    return floor, [name for name, _ in matches]
 
 class DiseaseInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
@@ -43,6 +57,9 @@ class DiseaseOutput(BaseModel):
     urgency: str
     model_urgency: str
     red_flag_override: bool
+    disease_safety_override: bool
+    disease_safety_floor: str | None
+    disease_safety_conditions: list[str]
     shap_top5: list[Contribution]
     ignored_symptoms: list[str]
     mapped_symptoms: list[dict[str, str]]
@@ -115,7 +132,11 @@ def predict_disease(data: DiseaseInput):
             raise ValueError()
     except ValueError as error:
         raise HTTPException(503, 'Invalid DISEASE_CONFIDENCE_THRESHOLD configuration') from error
-    return {'top3': [{'disease': str(bundle['encoder'].classes_[i]), 'probability': float(probability[i])} for i in order], 'confidence': confidence, 'uncertain': confidence < threshold, 'urgency': 'High' if override else model_urgency, 'model_urgency': model_urgency, 'red_flag_override': override, 'shap_top5': contributions, 'ignored_symptoms': ignored, 'mapped_symptoms': mapped, 'symptoms_used': used, 'uncertainty_threshold': threshold, 'model_version': bundle['report']['model_version'], 'disclaimer': bundle['report']['disclaimer'], 'context_note': 'Age, intensity and duration are not disease-model features. Urgency is a derived-label research model; clinical triage uses the rule engine.'}
+    top3 = [{'disease': str(bundle['encoder'].classes_[i]), 'probability': float(probability[i])} for i in order]
+    safety_floor, safety_conditions = disease_safety_floor(top3)
+    final_urgency = max([model_urgency, safety_floor or 'Low', 'High' if override else 'Low'], key=URGENCY_RANK.get)
+    safety_override = bool(safety_floor and URGENCY_RANK[safety_floor] > URGENCY_RANK[model_urgency])
+    return {'top3': top3, 'confidence': confidence, 'uncertain': confidence < threshold, 'urgency': final_urgency, 'model_urgency': model_urgency, 'red_flag_override': override, 'disease_safety_override': safety_override, 'disease_safety_floor': safety_floor, 'disease_safety_conditions': safety_conditions, 'shap_top5': contributions, 'ignored_symptoms': ignored, 'mapped_symptoms': mapped, 'symptoms_used': used, 'uncertainty_threshold': threshold, 'model_version': bundle['report']['model_version'], 'disclaimer': bundle['report']['disclaimer'], 'context_note': 'Age, intensity and duration are not disease-model features. Research urgency is experimental and derived from severity weights; disease safety floors and red-flag rules may raise urgency. Clinical triage uses the rule engine.'}
 
 @router.get('/ml-report')
 def ml_report():

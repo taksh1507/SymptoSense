@@ -3,7 +3,7 @@ import { classifyUrgency } from './thresholds';
 import type { RiskAnalysis, SurveyResult } from './types';
 import { extractAffirmedSymptoms, emergencyFindings, normalizeClinicalValue, isDeniedFinding } from '@/lib/assessment/findings';
 
-export const RULE_VERSION = '2026-10-13.1';
+export const RULE_VERSION = '2026-10-13.2';
 export function calculateRisk(input: SurveyResult): RiskAnalysis {
   const rawPrimary = input.symptoms?.length ? input.symptoms : [input.symptom];
   const rawAdditional = input.additionalSymptoms ?? (input.additional && input.additional !== 'none' ? [input.additional] : []);

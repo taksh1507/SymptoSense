@@ -21,6 +21,13 @@ for (const symptom of ['chest_pain', 'chest pain', 'breathlessness', 'shortness_
     assert.equal(result.score, 100); assert.equal(result.urgency, 'High'); assert.equal(result.hasRedFlag, true);
   });
 }
+test('dataset neurologic and respiratory danger symptoms trigger High triage', () => {
+  for (const symptom of ['weakness_of_one_body_side', 'altered_sensorium', 'loss_of_balance', 'breathlessness', 'coughing_of_blood']) {
+    const result = evaluateAssessment(parseAssessment({ ...base, symptoms: [symptom] }));
+    assert.equal(result.urgency, 'High', symptom);
+    assert.equal(result.hasRedFlag, true, symptom);
+  }
+});
 test('negated findings never activate an emergency', () => {
   assert.deepEqual(extractAffirmedSymptoms('No chest pain or dizziness'), []);
   assert.equal(calculateRisk({ symptom: 'no chest pain', severity: 'mild', duration: '< 1 day' }).isRedFlag, false);

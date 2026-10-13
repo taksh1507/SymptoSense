@@ -10,6 +10,8 @@ export function DiseaseResults({ result, status, error }: { result: DiseasePredi
     <p style={{ color: 'var(--text-3)', fontSize: 13 }}>{result.disclaimer}</p>
     {result.uncertain && <p role="status" style={{ padding: 14, borderRadius: 12, background: '#FFFBEB', color: '#92400E', fontWeight: 700 }}>Uncertain, please consult a doctor. The top probability is below the configured {(result.uncertainty_threshold * 100).toFixed(0)}% threshold.</p>}
     {result.red_flag_override && <p role="alert" style={{ color: 'var(--red)', fontWeight: 800 }}>Red-flag override: High urgency. Seek immediate medical attention; model probabilities cannot rule out an emergency.</p>}
+    {result.disease_safety_override && <p role="alert" style={{ color: 'var(--red)', fontWeight: 800 }}>Safety floor applied: {result.disease_safety_floor} urgency because the model ranked {result.disease_safety_conditions.join(', ')}. This is a precautionary rule, not a diagnosis.</p>}
+    {result.symptoms_used.length <= 1 && <p role="status" style={{ padding: 12, borderRadius: 10, background: 'var(--bg)', color: 'var(--text-2)' }}>Add more symptoms for a better-supported estimate. A single symptom often cannot distinguish between conditions.</p>}
     <ol style={{ padding: 0, listStyle: 'none', display: 'grid', gap: 12 }}>
       {result.top3.map(condition => <li key={condition.disease} style={{ padding: 14, background: 'var(--bg)', borderRadius: 12 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><strong>{condition.disease}</strong><span>{(condition.probability * 100).toFixed(1)}%</span></div><div style={{ height: 7, background: 'var(--border-faint)', borderRadius: 8, marginTop: 10 }}><div style={{ height: '100%', width: (condition.probability * 100) + '%', background: 'var(--red)', borderRadius: 8 }} /></div></li>)}
     </ol>
@@ -18,7 +20,7 @@ export function DiseaseResults({ result, status, error }: { result: DiseasePredi
       <div style={{ minWidth: 0 }}><h3>Why this result?</h3><p style={{ fontSize: 12, color: 'var(--text-3)' }}>SHAP contributions to the top condition’s calibrated probability, in percentage points. Present and absent symptoms can influence the result; these are model associations.</p><div style={{ height: 300, width: '100%' }}><ResponsiveContainer width="100%" height="100%"><BarChart data={bars} layout="vertical" margin={{ left: 5, right: 15 }}><XAxis type="number" /><YAxis type="category" dataKey="label" width={130} tick={{ fontSize: 11 }} /><Tooltip /><ReferenceLine x={0} stroke="#64748B" /><Bar dataKey="points" name="Probability contribution (points)">{bars.map(v => <Cell key={v.symptom} fill={v.points >= 0 ? '#15803D' : '#B91C1C'} />)}</Bar></BarChart></ResponsiveContainer></div></div>
     </div>
     <p style={{ lineHeight: 1.7 }}>{result.explanation}</p>
-    <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{result.context_note} Research urgency: {result.model_urgency}. Model version: {result.model_version}.</p>
+    <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{result.context_note} Safety-adjusted urgency: {result.urgency}. Experimental research urgency model: {result.model_urgency}. Model version: {result.model_version}.</p>
     {result.ignored_symptoms.length > 0 && <p style={{ fontSize: 12 }}>Outside the dataset vocabulary: {result.ignored_symptoms.join(', ')}.</p>}
   </section>;
 }

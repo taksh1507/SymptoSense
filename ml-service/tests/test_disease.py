@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from fastapi.testclient import TestClient
 from server import app
-from disease_inference import DiseaseOutput, load_bundle, map_symptoms
+from disease_inference import DiseaseOutput, disease_safety_floor, load_bundle, map_symptoms
 from ml_pipeline.data import load_dataset, SERVICE
 
 @pytest.fixture(scope='module')
@@ -61,6 +61,28 @@ def test_unknown_symptoms_are_not_model_features():
 def test_red_flag_override(client):
     data = client.post('/predict-disease', json={'symptoms': ['itching', 'chest_pain']}).json()
     assert data['urgency'] == 'High' and data['red_flag_override'] is True
+
+def test_stroke_like_dataset_symptoms_trigger_red_flag_override(client):
+    symptoms = ['vomiting', 'headache', 'weakness_of_one_body_side', 'altered_sensorium']
+    data = client.post('/predict-disease', json={'symptoms': symptoms}).json()
+    assert data['urgency'] == 'High' and data['red_flag_override'] is True
+    assert set(symptoms).issubset(set(data['symptoms_used']))
+
+@pytest.mark.parametrize(('disease', 'expected'), [
+    ('Heart attack', 'High'),
+    ('Paralysis (brain hemorrhage)', 'High'),
+    ('Tuberculosis', 'Medium'),
+])
+def test_disease_level_safety_floors(disease, expected):
+    floor, matches = disease_safety_floor([{'disease': disease, 'probability': 0.01}])
+    assert floor == expected and matches == [disease]
+
+def test_highest_disease_safety_floor_wins():
+    floor, matches = disease_safety_floor([
+        {'disease': 'Tuberculosis', 'probability': 0.4},
+        {'disease': 'Heart attack', 'probability': 0.2},
+    ])
+    assert floor == 'High' and matches == ['Tuberculosis', 'Heart attack']
 
 def test_unsupported_red_flag_still_signals_emergency(client):
     response = client.post('/predict-disease', json={'symptoms': ['severe_bleeding']})

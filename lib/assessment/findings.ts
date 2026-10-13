@@ -2,6 +2,10 @@
 import { RED_FLAGS } from '@/lib/redFlags';
 
 const ALIASES: Record<string, string[]> = {
+  weakness_of_one_body_side: ['weakness of one body side', 'weakness on one side', 'one-sided weakness', 'weakness of one side'],
+  altered_sensorium: ['altered sensorium', 'altered mental status', 'sudden confusion'],
+  loss_of_balance: ['loss of balance', 'sudden loss of balance'],
+  coughing_of_blood: ['coughing of blood', 'coughing blood', 'coughing up blood'],
   chest_pain: ['chest pain', 'सीने में दर्द', 'छातीत दुखणे'],
   breathlessness: ['breathlessness', 'shortness of breath', 'difficulty breathing', 'सांस लेने में तकलीफ', 'सांस की तकलीफ', 'श्वास घेण्यास त्रास', 'श्वास लागणे'],
   chest_tightness: ['chest tightness'], loss_of_consciousness: ['loss of consciousness', 'unconsciousness', 'unconscious', 'behosh', 'बेहोश', 'बेशुद्ध', 'मूर्छा'],
