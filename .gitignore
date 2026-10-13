@@ -45,3 +45,16 @@ ml-service/retrain_report.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local databases, backups, virtualenvs, and generated checks
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+.local/
+.venv/
+api/confidence_model.joblib
+!.env.example
+
+.pytest_cache/
+ml-service/data/source.zip

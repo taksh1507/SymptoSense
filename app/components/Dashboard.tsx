@@ -151,7 +151,7 @@ export default function Dashboard() {
     if (!userId) return;
     fetch(`/api/sessions?userId=${userId}`)
       .then((r) => r.json())
-      .then((data) => { setReports(Array.isArray(data) ? data : []); })
+      .then((data) => { setReports(Array.isArray(data.sessions) ? data.sessions : []); })
       .catch(() => setReports([]))
       .finally(() => setLoadingReports(false));
   }, [session]);

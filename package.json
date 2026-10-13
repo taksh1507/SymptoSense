@@ -11,7 +11,14 @@
     "db:studio": "prisma studio",
     "db:migrate": "prisma migrate dev",
     "db:reset": "prisma migrate reset --force",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "typecheck": "tsc --noEmit",
+    "test": "node --import ./scripts/register-typescript.mjs --test tests/*.test.ts",
+    "test:python": "node scripts/test-python.mjs",
+    "db:adopt": "node scripts/adopt-sqlite.mjs",
+    "test:integration": "node scripts/integration-smoke.mjs",
+    "db:deploy": "prisma migrate deploy",
+    "test:ml": "node scripts/test-ml.mjs"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.2",
@@ -33,6 +40,7 @@
     "next-auth": "^4.24.11",
     "react": "^19",
     "react-dom": "^19",
+    "recharts": "3.8.0",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {

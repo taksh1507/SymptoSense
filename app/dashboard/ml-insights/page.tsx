@@ -1,0 +1,79 @@
+'use client';
+import { useEffect, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, ReferenceLine } from 'recharts';
+import AppShell from '@/app/components/AppShell';
+import type { MLReport } from '@/lib/ml/report';
+const colors = ['#E53E3E', '#2563EB', '#15803D', '#9333EA', '#B45309'];
+const tabs = ['Dataset', 'Training', 'Evaluation', 'Explainability', 'Live Model'] as const;
+const format = (v: number) => v.toFixed(4);
+function ChartCard({ title, children, detail }: { title: string; children: ReactNode; detail?: string }) {
+  return <section className="card" style={{ padding: 22, minWidth: 0, borderRadius: 16 }}><h2 style={{ fontSize: 17 }}>{title}</h2>{detail && <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{detail}</p>}{children}<p style={{ fontSize: 11, color: 'var(--text-4)' }}>generated at training time from ml_report.json</p></section>;
+}
+function Bars({ data, name, series }: { data: object[]; name: string; series: string[] }) {
+  if (data.length >= 12) return <div style={{ maxHeight: 440, overflowY: 'auto' }}><div style={{ height: Math.max(340, data.length * 28) }}><ResponsiveContainer width="100%" height="100%"><BarChart data={data} layout="vertical" margin={{ right: 10 }}><CartesianGrid strokeDasharray="3 3" /><XAxis type="number" /><YAxis type="category" dataKey={name} width={150} interval={0} tick={{ fontSize: 10 }} tickFormatter={v => String(v).replace(/_/g, ' ').slice(0, 25)} /><Tooltip /><Legend />{series.map((key, i) => <Bar key={key} dataKey={key} fill={colors[i % colors.length]} />)}</BarChart></ResponsiveContainer></div></div>;
+  return <div style={{ height: 340 }}><ResponsiveContainer width="100%" height="100%"><BarChart data={data} margin={{ bottom: 60 }}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey={name} angle={-40} textAnchor="end" interval={0} height={80} tick={{ fontSize: 10 }} /><YAxis /><Tooltip /><Legend />{series.map((key, i) => <Bar key={key} dataKey={key} fill={colors[i % colors.length]} />)}</BarChart></ResponsiveContainer></div>;
+}
+function Lines({ data, x, series, probability = false }: { data: object[]; x: string; series: string[]; probability?: boolean }) {
+  return <div style={{ height: 320 }}><ResponsiveContainer width="100%" height="100%"><LineChart data={data}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey={x} type="number" domain={probability ? [0, 1] : ['auto', 'auto']} /><YAxis domain={probability ? [0, 1] : ['auto', 'auto']} /><Tooltip /><Legend />{series.map((key, i) => <Line key={key} dataKey={key} stroke={colors[i % colors.length]} dot={false} connectNulls />)}</LineChart></ResponsiveContainer></div>;
+}
+function Heatmap({ labels, matrix, correlation = false }: { labels: string[]; matrix: number[][]; correlation?: boolean }) {
+  const max = Math.max(1, ...matrix.flat());
+  return <div style={{ overflow: 'auto', maxHeight: 560 }}><div role="table" aria-label={correlation ? 'Symptom correlation matrix' : 'Confusion matrix; rows actual, columns predicted'} style={{ display: 'grid', gridTemplateColumns: '180px repeat(' + labels.length + ', 40px)', gap: 2, width: 'max-content', fontSize: 10 }}><span />{labels.map((label, i) => <span title={label} key={'col-' + label} style={{ padding: 4, overflow: 'hidden', height: 52 }}>{i + 1}</span>)}{matrix.map((row, i) => <div role="row" key={labels[i]} style={{ display: 'contents' }}><span style={{ padding: 8 }} title={labels[i]}>{i + 1}. {labels[i].replace(/_/g, ' ')}</span>{row.map((v, j) => <span role="cell" key={j} title={labels[i] + ' / ' + labels[j] + ': ' + v} style={{ padding: '10px 2px', textAlign: 'center', background: correlation ? 'rgba(' + (v < 0 ? '37,99,235,' : '229,62,62,') + (0.05 + Math.abs(v) * .65) + ')' : 'rgba(37,99,235,' + (.03 + v / max * .65) + ')', color: 'var(--text-1)' }}>{correlation ? v.toFixed(2) : v}</span>)}</div>)}</div><p style={{ fontSize: 11 }}>Column numbers follow the same label order as rows.</p></div>;
+}
+function Table({ headings, rows }: { headings: string[]; rows: (string | number)[][] }) {
+  return <div style={{ overflowX: 'auto' }}><table className="ml-insights-table"><thead><tr>{headings.map(v => <th key={v}>{v}</th>)}</tr></thead><tbody>{rows.map((row, i) => <tr key={i}>{row.map((value, j) => <td key={j}>{value}</td>)}</tr>)}</tbody></table></div>;
+}
+export default function MLInsightsPage() {
+  const [report, setReport] = useState<MLReport | null>(null);
+  const [tab, setTab] = useState<(typeof tabs)[number]>('Dataset');
+  const [error, setError] = useState('');
+  const [rocClass, setRocClass] = useState('all');
+  const [cvMetric, setCvMetric] = useState<keyof MLReport['training']['comparison'][number]['metrics']>('f1_macro');
+  useEffect(() => {
+    const controller = new AbortController();
+    void fetch('/api/ml/report', { signal: controller.signal }).then(async response => {
+      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'You do not have access to this page.' : 'Training report unavailable. Start the ML service and run train_pipeline.py.');
+      setReport(await response.json());
+    }).catch(e => { if (!controller.signal.aborted) setError(e.message); });
+    return () => controller.abort();
+  }, []);
+  const selectedRoc = report?.evaluation.roc.filter(v => rocClass === 'all' || v.disease === rocClass) ?? [];
+  return <AppShell><div className="mobile-padding" style={{ padding: '28px 24px', background: 'var(--bg)', color: 'var(--text-1)' }}><div style={{ maxWidth: 1200, margin: '0 auto' }}>
+    <h1 style={{ fontSize: 25 }}>ML Insights</h1><p>SymptoSense – ML-Based Symptom Triage and Disease Prediction System</p>
+    <p style={{ fontSize: 13, color: 'var(--text-3)' }}>Not a medical diagnosis. Disease probabilities support decisions; emergency red flags always retain High urgency.</p>
+    {error && <p role="alert" className="card" style={{ padding: 20 }}>{error}</p>}
+    {!report && !error && <p>Loading the training report…</p>}
+    {report && <><p style={{ fontSize: 12 }}>Generated: {new Date(report.generated_at).toLocaleString()} · Version: {report.model_version} · Winner: {report.training.winner}</p>
+    <div role="tablist" aria-label="ML report sections" style={{ display: 'flex', flexWrap: 'wrap', gap: 8, margin: '20px 0' }}>{tabs.map(name => <button key={name} role="tab" aria-selected={tab === name} aria-controls="ml-insights-content" className={'btn ' + (tab === name ? 'btn-primary' : 'btn-secondary')} onClick={() => setTab(name)}>{name}</button>)}</div>
+    <div role="tabpanel" id="ml-insights-content" className="ml-insights-grid">
+      {tab === 'Dataset' && <>
+        <ChartCard title="Dataset source and quality" detail={report.dataset.representation}><p><a href={report.dataset.source} target="_blank" rel="noreferrer">Public Kaggle source</a></p><Table headings={['Measure', 'Value']} rows={[[ 'Raw rows', report.dataset.raw_rows ], ['Distinct patterns', report.dataset.unique_rows], ['Repeated patterns removed', report.dataset.duplicate_patterns_removed], ['Disease classes', report.dataset.class_count], ['Symptoms', report.dataset.feature_count], ['Train / test rows', report.split.train_rows + ' / ' + report.split.test_rows]]} /><p style={{ fontSize: 12 }}>{report.dataset.missing_interpretation}</p><p style={{ overflowWrap: 'anywhere', fontSize: 11 }}>Dataset SHA-256: {report.dataset.sha256}</p></ChartCard>
+        <ChartCard title="Class distribution" detail="Raw rows and distinct symptom patterns per disease."><Bars data={report.dataset.class_distribution} name="disease" series={['count', 'unique_count']} /></ChartCard>
+        <ChartCard title="Most frequent symptoms"><Bars data={report.dataset.top_symptoms} name="symptom" series={['count']} /></ChartCard>
+        <ChartCard title="Symptom correlation" detail="Pearson correlation for the 15 most frequent binary symptoms."><Heatmap labels={report.dataset.correlation.labels} matrix={report.dataset.correlation.matrix} correlation /></ChartCard>
+        <ChartCard title="Missing values"><Table headings={['Source column', 'Empty slots']} rows={report.dataset.missing_values.map(v => [v.column, v.count])} /></ChartCard>
+        <ChartCard title="First 10 source rows"><Table headings={['Disease label', 'Listed symptoms']} rows={report.dataset.sample.map(v => [v.disease, v.symptoms.join(', ')])} /></ChartCard>
+      </>}
+      {tab === 'Training' && <>
+        <ChartCard title="Five-fold model comparison" detail="Accuracy, macro precision/recall/F1 and top-3 accuracy. Selection uses training folds only."><Bars data={report.training.comparison.map(v => ({ model: v.model, ...Object.fromEntries(Object.entries(v.metrics).map(([k, metric]) => [k, metric.mean])) }))} name="model" series={['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'top3_accuracy']} /></ChartCard>
+        <ChartCard title="Per-fold scores"><label>Metric: <select value={cvMetric} onChange={e => setCvMetric(e.target.value as typeof cvMetric)}>{['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'top3_accuracy'].map(v => <option key={v}>{v}</option>)}</select></label><Lines data={[0, 1, 2, 3, 4].map(i => ({ fold: i + 1, ...Object.fromEntries(report.training.comparison.map(v => [v.model, v.metrics[cvMetric].folds[i]])) }))} x="fold" series={report.training.comparison.map(v => v.model)} /></ChartCard>
+        <ChartCard title="Learning curve" detail="Training and validation macro F1; each subset retains every training disease class."><Lines data={report.training.learning_curve} x="train_size" series={['train_f1', 'validation_f1']} /></ChartCard>
+        <ChartCard title="Cross-validation mean and standard deviation"><Table headings={['Model', 'Metric', 'Mean', 'Std']} rows={report.training.comparison.flatMap(v => Object.entries(v.metrics).map(([metric, score]) => [v.model, metric, format(score.mean), format(score.std)]))} /></ChartCard>
+        <ChartCard title="Hyperparameter search" detail={'Selected: ' + report.training.winner + ' · ' + JSON.stringify(report.training.best_parameters)}><Table headings={['Model', 'Parameters', 'Mean macro F1', 'Std', 'Rank']} rows={report.training.hyperparameters.map(v => [v.model, JSON.stringify(v.parameters), format(v.mean_f1), format(v.std_f1), v.rank])} /></ChartCard>
+      </>}
+      {tab === 'Evaluation' && <>
+        <ChartCard title="Held-out results" detail="Distinct patterns excluded from all fitting, tuning and calibration."><Table headings={['Metric', 'Calibrated model']} rows={Object.entries(report.evaluation.metrics).map(([k, v]) => [k, format(v)])} /><p>Multiclass Brier before: {format(report.calibration.brier_before)}; after: {format(report.calibration.brier_after)}</p><p style={{ fontSize: 12 }}>{report.calibration.brier_definition}. Calibration is not guaranteed to improve this small test set.</p></ChartCard>
+        <ChartCard title="Confusion matrix" detail="Rows: actual disease. Columns: predicted disease."><Heatmap labels={report.classes} matrix={report.evaluation.confusion_matrix} /></ChartCard>
+        <ChartCard title="One-vs-rest ROC" detail={'Macro AUC: ' + format(report.evaluation.macro_auc)}><label>Disease curve: <select value={rocClass} onChange={e => setRocClass(e.target.value)}><option value="all">All diseases</option>{report.classes.map(v => <option key={v}>{v}</option>)}</select></label><div style={{ height: 330 }}><ResponsiveContainer width="100%" height="100%"><LineChart><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="fpr" type="number" domain={[0, 1]} allowDuplicatedCategory={false} /><YAxis type="number" domain={[0, 1]} /><Tooltip /><ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="#94A3B8" />{selectedRoc.map((v, i) => <Line key={v.disease} data={v.points} dataKey="tpr" name={v.disease + ' AUC ' + format(v.auc)} stroke={colors[i % colors.length]} dot={false} />)}</LineChart></ResponsiveContainer></div></ChartCard>
+        <ChartCard title="Per-class held-out metrics"><Table headings={['Disease', 'Precision', 'Recall', 'F1', 'Support']} rows={report.evaluation.per_class.map(v => [v.disease, format(v.precision), format(v.recall), format(v.f1), v.support])} /></ChartCard>
+        <ChartCard title="Confidence calibration" detail="Top prediction probability versus observed correctness; calibration fitted on training rows only."><div style={{ height: 320 }}><ResponsiveContainer width="100%" height="100%"><LineChart><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="predicted" type="number" domain={[0, 1]} allowDuplicatedCategory={false} /><YAxis domain={[0, 1]} /><Tooltip /><Legend /><ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="#94A3B8" /><Line data={report.calibration.curve_before} dataKey="observed" name="Before calibration" stroke={colors[1]} /><Line data={report.calibration.curve_after} dataKey="observed" name="After calibration" stroke={colors[0]} /></LineChart></ResponsiveContainer></div></ChartCard>
+        <ChartCard title="Missing-symptom robustness" detail="Ten seeded repeats per expected percentage dropped; test rows only."><Lines data={report.evaluation.robustness} x="percent_dropped" series={['accuracy']} /><Table headings={['% dropped', 'Mean accuracy', 'Std']} rows={report.evaluation.robustness.map(v => [v.percent_dropped, format(v.accuracy), format(v.std)])} /></ChartCard>
+        <ChartCard title="Derived urgency classifier" detail={report.urgency.label_source}><p>Derived-label accuracy: {format(report.urgency.accuracy_against_derived_labels)}</p><p>Rule agreement: {format(report.urgency.rule_agreement)}; after red flags: {format(report.urgency.rule_agreement_after_red_flags)}</p><Heatmap labels={report.urgency.labels} matrix={report.urgency.confusion_matrix} /><p style={{ fontSize: 12 }}>{report.urgency.rule_context}</p></ChartCard>
+      </>}
+      {tab === 'Explainability' && <ChartCard title="Global SHAP: top 15 symptoms" detail={report.explainability.method}><Bars data={report.explainability.global_importance} name="symptom" series={['importance']} /><p>Units: {report.explainability.units}. Background rows: {report.explainability.background_rows}; explained held-out rows: {report.explainability.global_rows}.</p><p>Feature effects describe this model’s associations. They do not establish medical causation.</p></ChartCard>}
+      {tab === 'Live Model' && <section className="card" style={{ padding: 24 }}><h2>Live Model</h2><p>The existing Model Health page provides live confidence-service availability, latency, follow-ups and retraining status. Its legacy confidence model is separate from this disease classifier.</p><Link className="btn btn-primary" href="/dashboard/model-health">Open Model Health</Link><p>Disease model version: {report.model_version}</p></section>}
+    </div>
+    <section className="card" style={{ padding: 22, marginTop: 20 }}><h2 style={{ fontSize: 17 }}>Evaluation limits</h2><ul>{report.limitations.map(v => <li key={v} style={{ marginBottom: 8, fontSize: 13, lineHeight: 1.6 }}>{v}</li>)}</ul></section></>}
+  </div></div></AppShell>;
+}

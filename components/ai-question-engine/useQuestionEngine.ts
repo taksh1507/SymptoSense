@@ -14,62 +14,13 @@ import {
   type FlowStage,
 } from "./questionFlow";
 import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext, RiskSnapshot } from "./types";
-import { SCORING_DATASET } from "@/lib/ai-engine/scoring/rules";
+import { calculateRisk } from "@/lib/ai-engine/scoring/engine";
+import { collectSymptoms } from "@/lib/assessment/findings";
 
-const FEMALE_ONLY: string[] = [
-  'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
-  'pelvic_pain', 'pregnancy_symptoms', 'menstruation', 'period', 'ovarian',
-];
-const MALE_ONLY: string[] = [
-  'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
-  'erectile', 'penile',
-];
-
-// High-acuity symptom values selectable in Q2 that are treated as red flags
-// immediately (their free-text aliases are caught by SCORING_DATASET.redFlags).
-const RED_FLAG_SYMPTOM_VALUES: string[] = ["chest_pain", "breathlessness"];
-
-// Interim risk estimation from early answers (before severity/duration are asked).
-function computeInterimRisk(symptoms: string[], custom?: string): RiskSnapshot {
-  const values = [...symptoms, ...(custom ? [custom] : [])];
-  const text = values.join(" ").replace(/_/g, " ").toLowerCase();
-
-  const flaggedValue = symptoms.find((s) => RED_FLAG_SYMPTOM_VALUES.includes(s));
-  const flaggedText = flaggedValue
-    ? flaggedValue.replace(/_/g, " ")
-    : SCORING_DATASET.redFlags.find((flag) => text.includes(flag));
-
-  if (flaggedText) {
-    return {
-      urgency: "High",
-      score: 100,
-      isRedFlag: true,
-      factors: [`Red flag: ${flaggedText}`],
-    };
-  }
-
-  const primary = symptoms[0] ?? custom ?? "general";
-  const baseScore =
-    SCORING_DATASET.symptoms[primary] ??
-    SCORING_DATASET.symptoms[primary.replace(/_/g, " ")] ??
-    15;
-  const additional = symptoms[1];
-  const additionalScore = additional
-    ? SCORING_DATASET.additionalSymptoms[additional] ??
-      SCORING_DATASET.additionalSymptoms[additional.replace(/_/g, " ")] ??
-      SCORING_DATASET.symptoms[additional] ??
-      10
-    : symptoms.length > 1
-      ? 10
-      : 0;
-
-  const score = Math.min(100, baseScore + additionalScore);
-  const urgency = score >= 55 ? "High" : score >= 28 ? "Medium" : "Low";
-
-  const factors: string[] = [`${primary.replace(/_/g, " ")} (base ${baseScore})`];
-  if (additional) factors.push(`${additional.replace(/_/g, " ")} (${additionalScore})`);
-
-  return { urgency, score, isRedFlag: false, factors };
+function computeInterimRisk(symptoms: string[], custom?: string, labels: string[] = []): RiskSnapshot {
+  const findings = collectSymptoms(symptoms, custom, labels);
+  const result = calculateRisk({ symptom: findings[0] ?? custom ?? 'general', symptoms: findings.length ? findings : ['general'], severity: 'mild', duration: '< 1 day' });
+  return { urgency: result.urgency, score: result.score, isRedFlag: result.isRedFlag, factors: result.factors.map(f => f.label) };
 }
 
 export interface QuestionEngineAPI {
@@ -125,21 +76,6 @@ export function useQuestionEngine({
   const [riskSnapshot, setRiskSnapshot] = useState<RiskSnapshot | null>(null);
   const [redFlagPending, setRedFlagPending] = useState(false);
 
-  // Gender-symptom mismatch lookup tables
-  const checkGenderMismatch = useCallback((selectedSymptoms: string[], custom?: string): { symptom: string; gender: string } | null => {
-    if (!gender || gender === 'Other' || gender === 'Prefer not to say') return null;
-    const tokens = [...selectedSymptoms, custom || ''].join(' ').toLowerCase();
-    if (gender === 'Male') {
-      const hit = FEMALE_ONLY.find(s => tokens.includes(s));
-      if (hit) return { symptom: hit.replace(/_/g, ' '), gender: 'Male' };
-    }
-    if (gender === 'Female') {
-      const hit = MALE_ONLY.find(s => tokens.includes(s));
-      if (hit) return { symptom: hit.replace(/_/g, ' '), gender: 'Female' };
-    }
-    return null;
-  }, [gender]);
-
   const dismissMismatch = useCallback(() => setGenderMismatch(null), []);
 
   // Accumulated answers
@@ -193,21 +129,24 @@ export function useQuestionEngine({
   const loadAIQuestion = useCallback(async (
     aiStep: number,
     currentAiAnswers: AnswerMap,
-    prevQuestions: { question: string; answer: string; category?: string }[]
+    prevQuestions: { question: string; answer: string; category?: string }[],
+    overrides?: { symptoms: string[]; customSymptom?: string; riskSnapshot: RiskSnapshot }
   ) => {
+    const generation = ++questionGeneration.current;
     setIsLoading(true);
     const context: QuestionContext = {
       age,
-      symptoms,
-      customSymptom,
+      symptoms: overrides?.symptoms ?? symptoms,
+      customSymptom: overrides?.customSymptom ?? customSymptom,
       aiAnswers: currentAiAnswers,
       previousQuestions: prevQuestions,
       currentAiStep: aiStep,
       language,
       gender,
-      riskSnapshot: riskSnapshot ?? undefined,
+      riskSnapshot: overrides?.riskSnapshot ?? riskSnapshot ?? undefined,
     };
     const q = await fetchAIQuestion(context);
+    if (generation !== questionGeneration.current) return;
     setCurrentQuestion(q);
     setSelectedOptions([]);
     setCustomInput("");
@@ -215,6 +154,9 @@ export function useQuestionEngine({
     setShowCustomInput(false);
     setIsLoading(false);
   }, [age, symptoms, customSymptom, language, gender, riskSnapshot]);
+
+  const questionGeneration = useRef(0);
+  useEffect(() => () => { questionGeneration.current++; cancelRecording(); stop(); }, [cancelRecording, stop]);
 
   // Initial load
   useEffect(() => {
@@ -315,13 +257,6 @@ export function useQuestionEngine({
       if (selectedOptions.length === 0 && !customInput.trim()) return;
       const finalSymptoms = selectedOptions.filter((v) => v !== "other");
 
-      // Check for gender-symptom mismatch before proceeding
-      const mismatch = checkGenderMismatch(finalSymptoms, customInput.trim() || undefined);
-      if (mismatch) {
-        setGenderMismatch(mismatch);
-        return; // block progression — popup will show
-      }
-
       setSymptoms(finalSymptoms);
       if (customInput.trim()) setCustomSymptom(customInput.trim());
 
@@ -336,7 +271,7 @@ export function useQuestionEngine({
       setCurrentStep(2);
       setStage("ai_questions");
       setCurrentAiStep(0);
-      await loadAIQuestion(0, {}, []);
+      await loadAIQuestion(0, {}, [], { symptoms: finalSymptoms, customSymptom: customInput.trim() || undefined, riskSnapshot: interim });
 
     } else if (stage === "ai_questions") {
       if (selectedOptions.length === 0) return;
@@ -362,7 +297,8 @@ export function useQuestionEngine({
       setAiAnswerLabels((prev) => ({ ...prev, [key]: answerLabel }));
 
       // ── Re-check interim risk after each adaptive answer ────────
-      const interim = computeInterimRisk(symptoms, customSymptom);
+      const updatedLabels = { ...aiAnswerLabels, [key]: answerLabel };
+      const interim = computeInterimRisk(symptoms, customSymptom, Object.values(updatedLabels));
       if (interim.isRedFlag) {
         setRiskSnapshot(interim);
         setRedFlagPending(true);
@@ -378,7 +314,7 @@ export function useQuestionEngine({
       } else {
         setCurrentAiStep(nextAiStep);
         setCurrentStep(2 + nextAiStep);
-        await loadAIQuestion(nextAiStep, updatedAiAnswers, updatedPrevQuestions);
+        await loadAIQuestion(nextAiStep, updatedAiAnswers, updatedPrevQuestions, { symptoms, customSymptom, riskSnapshot: interim });
       }
 
     } else if (stage === "q9_duration") {
@@ -416,7 +352,7 @@ export function useQuestionEngine({
     currentQuestion, stage, selectedOptions, customInput, showCustomInput,
     validateCustomInput, stop, loadStaticQuestion, loadAIQuestion,
     aiAnswers, currentAiStep, age, symptoms, customSymptom, duration, severity, language,
-    onComplete, checkGenderMismatch, previousQuestions, aiAnswerLabels,
+    onComplete, previousQuestions, aiAnswerLabels,
   ]);
 
   // ── Voice toggle ──────────────────────────────────────────────
@@ -448,7 +384,12 @@ export function useQuestionEngine({
       }
     } else {
       setLocalError(null);
-      await startRecording(language);
+      const transcript = await startRecording(language);
+      if (transcript) {
+        const normalized = language !== 'en' ? await translate(transcript, language, 'en') : transcript;
+        const matched = matchVoiceToOption(normalized, currentQuestion);
+        if (matched) handleOptionToggle(matched); else setLocalError('Please choose from the options.');
+      }
     }
   }, [isRecording, currentQuestion, language, stopRecording, startRecording, translate, handleOptionToggle, speak]);
 
@@ -463,6 +404,8 @@ export function useQuestionEngine({
   }, [currentQuestion, language, speak]);
 
   const reset = useCallback(() => {
+    questionGeneration.current++;
+    cancelRecording(); stop();
     setStage("q1_age");
     setCurrentStep(0);
     setSelectedOptions([]);
@@ -483,7 +426,7 @@ export function useQuestionEngine({
     setRiskSnapshot(null);
     setRedFlagPending(false);
     loadStaticQuestion("q1_age");
-  }, [loadStaticQuestion]);
+  }, [loadStaticQuestion, cancelRecording, stop]);
 
   // ── Red-flag short-circuit: finish the assessment immediately ──
   // The deterministic engine already judged this High/emergency, so we skip
@@ -498,13 +441,13 @@ export function useQuestionEngine({
       customSymptom,
       aiAnswers,
       aiAnswerLabels,
-      "< 1 day",
-      "severe",
+      duration || "< 1 day",
+      severity || "mild",
       [],
       undefined,
       language
     ));
-  }, [age, symptoms, customSymptom, aiAnswers, aiAnswerLabels, language, onComplete]);
+  }, [age, symptoms, customSymptom, aiAnswers, aiAnswerLabels, language, duration, severity, onComplete]);
 
   const toggleLanguage = useCallback(() => {
     cancelRecording();

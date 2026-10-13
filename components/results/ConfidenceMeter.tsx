@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import { HelpCircle } from "lucide-react";
 
 interface ConfidenceMeterProps {
+  kind?: 'heuristic' | 'disease';
   score: number; // 0-100
   level: string; // Low | Medium | High
   explanation: string;
@@ -17,7 +18,7 @@ const levelColors: Record<string, string> = {
   unavailable: "#6B7280",
 };
 
-export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterProps) {
+export function ConfidenceMeter({ score, level, explanation, kind = 'heuristic' }: ConfidenceMeterProps) {
   const [displayed, setDisplayed] = useState(0);
   const unavailable = (level || "") === "unavailable";
   const color = levelColors[level] || "#22c55e";
@@ -85,11 +86,11 @@ export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterPr
       }}
     >
       {/* Tooltip Icon */}
-      <div style={{ position: "absolute", top: 16, right: 16, color: "var(--text-4)", cursor: "help" }} title="Confidence reflects how stable this result is based on your inputs.">
+      <div style={{ position: "absolute", top: 16, right: 16, color: "var(--text-4)", cursor: "help" }} title={kind === 'disease' ? 'Calibrated probability of the top dataset disease prediction. Not a medical diagnosis or a probability of clinical correctness.' : 'Heuristic input-pattern score. This is not a calibrated probability of assessment correctness.'}>
         <HelpCircle size={18} />
       </div>
 
-      <svg width={size} height={size} style={{ overflow: "visible" }}>
+      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ overflow: "visible", maxWidth: "100%", height: "auto" }}>
         <defs>
           <filter id="confGlow">
             <feGaussianBlur stdDeviation="4" result="blur" />
@@ -123,15 +124,15 @@ export function ConfidenceMeter({ score, level, explanation }: ConfidenceMeterPr
         )}
 
         <text x={cx} y={cy - 8} textAnchor="middle" dominantBaseline="middle" fill="var(--text-1)" fontSize="44" fontWeight="900" fontFamily="var(--font)" letterSpacing="-2">
-          {unavailable ? "N/A" : `${displayed}%`}
+          {unavailable ? "N/A" : kind === 'disease' ? `${displayed.toFixed(1)}%` : `${Math.round(displayed)}%`}
         </text>
         <text x={cx} y={cy + 26} textAnchor="middle" fill="var(--text-3)" fontSize="14" fontFamily="var(--font)" fontWeight="700">
-          {unavailable ? 'UNAVAILABLE' : (level || 'Medium').toUpperCase()}
+          {unavailable ? 'UNAVAILABLE' : kind === 'disease' ? 'TOP PREDICTION' : (level || 'Medium').toUpperCase()}
         </text>
       </svg>
 
       <div style={{ marginTop: 8, fontSize: 14, fontWeight: 800, color: "var(--text-1)", letterSpacing: "0.5px", textAlign: "center", textTransform: "uppercase" }}>
-        {unavailable ? 'Prediction Confidence' : `Prediction Quality: ${level || 'Medium'}`}
+        {kind === 'disease' ? 'Calibrated disease probability' : unavailable ? 'Model score' : `Heuristic model score: ${level || 'Medium'}`}
       </div>
       
       {explanation && (

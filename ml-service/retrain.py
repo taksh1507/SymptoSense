@@ -1,353 +1,136 @@
-"""Retraining job for the SymptoSense confidence model.
+"""Train only against independently reviewed assessment correctness.
 
-Merges the synthetic baseline dataset with real labeled samples collected
-from the app (PredictionLog + FollowUp outcome check-ins), trains a candidate
-RandomForest, evaluates it against the current champion model on a shared
-holdout, applies safety gates, and promotes the candidate only if it wins.
-
-Usage:
-    python retrain.py [--min-real 20] [--skip-gate] [--data synthetic_data.csv]
+Synthetic heuristic labels and symptom improvement are never treated as clinical
+correctness labels. A fixed patient-level holdout stays outside all training.
 """
 import argparse
+import hashlib
 import json
 import os
-import sqlite3
-from datetime import datetime, timezone
 from pathlib import Path
-
+from datetime import datetime, timezone
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import r2_score, mean_absolute_error
-from sklearn.model_selection import train_test_split
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import brier_score_loss, log_loss
+from sklearn.model_selection import GroupKFold
+from inference import FEATURE_COLUMNS, MODEL_PATH, PredictionInput
+from storage import ROOT, connect_db, database_path
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-DEFAULT_DATA_FILE = SCRIPT_DIR.parent / "synthetic_data.csv"
-DEFAULT_MODEL_FILE = SCRIPT_DIR / "confidence_model.joblib"
-DEFAULT_REPORT_FILE = SCRIPT_DIR / "retrain_report.json"
-DB_PATH = Path(
-    os.environ.get(
-        "SYMPTOSENSE_DB", SCRIPT_DIR.parent / "prisma" / "dev.db"
-    )
-)
+DEFAULT_REPORT_FILE = ROOT / 'ml-service' / 'retrain_report.json'
+MIN_REAL_ROWS = 50
 
-MIN_REAL_ROWS = 20
-RANDOM_STATE = 42
-FILTER_COLUMNS = {"instability_score"}
+def derive_label(outcome):
+    reviewed = outcome.get('reviewedCorrect')
+    return int(reviewed) if reviewed in (0, 1, False, True) and reviewed is not None else None
 
-
-def locate_db() -> Path:
-    candidates = [
-        Path(os.environ.get("SYMPTOSENSE_DB", "")) if os.environ.get("SYMPTOSENSE_DB") else None,
-        SCRIPT_DIR.parent / "prisma" / "dev.db",
-        SCRIPT_DIR.parent / "dev.db",
-    ]
-    for p in candidates:
-        if p and p.is_file():
-            return p
-    return candidates[-1]
-
-
-def load_synthetic(data_file: Path) -> pd.DataFrame:
-    df = pd.read_csv(data_file)
-    df = df.drop(columns=[c for c in FILTER_COLUMNS if c in df.columns])
-    return df
-
-
-def normalize_rule_score(value: float) -> float:
-    if value is None:
+def normalize_rule_score(value):
+    if value is None or not 0 <= float(value) <= 100:
         return None
-    if value > 1.0:
-        return round(value / 100.0, 4)
-    return round(float(value), 4)
+    return float(value) / 100.0
 
-
-def derive_label(follow_up: dict) -> float:
-    """Map an outcome check-in to a confidence target (0-1).
-
-    Recovered / resolved -> high trust in the assessment (low severity proved).
-    Worse / unresolved   -> the assessment underestimated the situation.
-    """
-    conf = 0.55
-    imp = follow_up.get("improved")
-    if imp == "worse":
-        conf = 0.25
-    elif imp == "same":
-        conf = 0.45
-    elif imp == "better":
-        conf = 0.70
-    elif imp == "recovered":
-        conf = 0.85
-
-    res = follow_up.get("resolved")
-    if res == "yes":
-        conf = 0.85
-    elif res == "no":
-        conf = min(conf, 0.35)
-    elif res == "partial":
-        conf = min(conf, 0.55)
-
-    if follow_up.get("contactedDoctor") and conf < 0.5:
-        conf = 0.55
-    return round(float(np.clip(conf, 0.15, 0.97)), 3)
-
-
-def load_real_rows(db_path: Path) -> list:
-    con = sqlite3.connect(str(db_path))
+def load_real_rows(db_path):
+    con = connect_db(db_path)
     try:
-        rows = con.execute(
-            """
-            SELECT pl.features, pl.ruleScore, fu.contactedDoctor,
-                   fu.resolved, fu.improved
-            FROM "PredictionLog" pl
-            JOIN "FollowUp" fu ON fu."testSessionId" = pl."testSessionId"
-            WHERE fu.status = 'responded'
-              AND pl."mlAvailable" = 1
-              AND pl."predictedConfidence" IS NOT NULL
-            """
-        ).fetchall()
-    finally:
-        con.close()
-    return rows
-
-
-def live_feature_stats(db_path: Path, feature_cols) -> dict:
-    """Mean of each feature across all real logged predictions."""
-    con = sqlite3.connect(str(db_path))
-    try:
-        rows = con.execute(
-            'SELECT features FROM "PredictionLog" WHERE "mlAvailable" = 1'
-        ).fetchall()
+        return con.execute('''
+          WITH ranked AS (
+            SELECT pl.*, ROW_NUMBER() OVER (PARTITION BY pl.testSessionId ORDER BY pl.createdAt DESC, pl.id DESC) AS rn
+            FROM PredictionLog pl WHERE pl.mlAvailable = 1
+          )
+          SELECT pl.features, fu.reviewedCorrect, COALESCE(ts.userId, ts.id), ts.id
+          FROM ranked pl JOIN FollowUp fu ON fu.testSessionId = pl.testSessionId
+          JOIN TestSession ts ON ts.id = pl.testSessionId
+          WHERE pl.rn = 1 AND ts.assessmentPayload IS NOT NULL AND ts.ruleVersion IS NOT NULL
+            AND pl.userId = ts.userId AND pl.ruleScore = ts.score AND pl.modelVersion IS ts.modelVersion
+            AND fu.status = 'responded' AND fu.reviewedCorrect IS NOT NULL AND fu.reviewedAt IS NOT NULL
+        ''').fetchall()
     finally:
         con.close()
 
-    sums = {c: 0.0 for c in feature_cols}
-    counts = {c: 0 for c in feature_cols}
-    for (features_json,) in rows:
-        try:
-            feats = json.loads(features_json)
-        except (TypeError, json.JSONDecodeError):
-            continue
-        if not isinstance(feats, dict):
-            continue
-        for c in feature_cols:
-            v = feats.get(c)
-            if isinstance(v, (int, float)):
-                if c == "rule_score" and v > 1.0:
-                    v = v / 100.0
-                sums[c] += float(v)
-                counts[c] += 1
-
-    stats = {}
-    for c in feature_cols:
-        stats[c] = {"count": counts[c], "mean": round(sums[c] / counts[c], 4) if counts[c] else None}
-    return stats
-
-
-def compute_drift(train_df: pd.DataFrame, feature_cols, live_stats: dict) -> list:
-    """Signed z-score of live mean vs training distribution per feature."""
-    drift = []
-    for c in feature_cols:
-        train_mean = float(train_df[c].mean())
-        train_std = float(train_df[c].std())
-        live = live_stats.get(c, {}).get("mean")
-        if live is None or train_std == 0:
-            continue
-        z = (live - train_mean) / train_std
-        drift.append({
-            "feature": c,
-            "train_mean": round(train_mean, 4),
-            "train_std": round(train_std, 4),
-            "live_mean": live,
-            "z": round(z, 3),
-            "flagged": abs(z) > 2.0,
-        })
-    return drift
-
-
-def build_real_dataframe(db_path: Path, synthetic_columns) -> pd.DataFrame:
-    rows = load_real_rows(db_path)
+def reviewed_dataframe(db_path):
     records = []
     skipped = 0
-    for features_json, rule_score, contacted, resolved, improved in rows:
+    for features_json, label, patient, session in load_real_rows(db_path):
         try:
-            feats = json.loads(features_json)
-        except (TypeError, json.JSONDecodeError):
+            validated = PredictionInput.model_validate(json.loads(features_json)).model_dump()
+            validated['rule_score'] /= 100
+            validated.update(target=int(label), patient=patient, session=session)
+            records.append(validated)
+        except (ValueError, TypeError):
             skipped += 1
-            continue
-        if not isinstance(feats, dict):
-            skipped += 1
-            continue
-        feats = {k: float(v) for k, v in feats.items() if isinstance(v, (int, float))}
-        norm = normalize_rule_score(feats.get("rule_score", rule_score) if feats.get("rule_score") is not None else rule_score)
-        if norm is None:
-            skipped += 1
-            continue
-        label = derive_label({"contactedDoctor": contacted, "resolved": resolved, "improved": improved})
-        record = dict(feats)
-        record["rule_score"] = norm
-        record["confidence"] = label
-        records.append(record)
+    return pd.DataFrame(records), skipped
 
-    if not records:
-        return pd.DataFrame(), 0
+def fixed_holdout(patient):
+    return int(hashlib.sha256(str(patient).encode()).hexdigest()[:8], 16) % 5 == 0
 
-    df = pd.DataFrame(records)
-    df = df[[c for c in df.columns if c in synthetic_columns or c == "confidence"]]
-    return df, skipped
-
-
-def train_candidate(X_train, y_train):
-    return RandomForestRegressor(
-        n_estimators=250,
-        max_depth=12,
-        min_samples_leaf=6,
-max_features="sqrt",
-        random_state=RANDOM_STATE,
-        n_jobs=-1,
-    ).fit(X_train, y_train)
-
-
-def safety_gate(y_true, y_pred, X_test, champion_metrics, candidate_metrics) -> list:
-    """Return list of failed gate messages (empty == pass)."""
+def safety_gate(y_true, y_pred, champion_metrics=None, baseline_brier=.25):
     failures = []
+    if not np.isfinite(y_pred).all() or ((y_pred < 0) | (y_pred > 1)).any():
+        return ['Invalid probabilities'], {'brier': None, 'logLoss': None}
+    metrics = {'brier': float(brier_score_loss(y_true, y_pred)), 'logLoss': float(log_loss(y_true, y_pred, labels=[0, 1]))}
+    if champion_metrics and metrics['brier'] >= champion_metrics['brier']:
+        failures.append('Candidate does not improve the reviewed holdout Brier score')
+    if metrics['brier'] >= min(.25, baseline_brier):
+        failures.append('Candidate does not beat the independent holdout baseline')
+    return failures, metrics
 
-    red_flag_mask = (X_test["chest_pain"] == 1) & (X_test["rule_score"] >= 0.55)
-    if red_flag_mask.any():
-        rf_preds = y_pred[red_flag_mask.values]
-        if float(np.median(rf_preds)) < 0.55:
-            failures.append(
-                f"red-flag safety gate failed: median confidence "
-                f"{np.median(rf_preds):.3f} < 0.55 for high-risk chest pain cases"
-            )
-
-    if champion_metrics is not None:
-        if candidate_metrics["mae"] > champion_metrics["mae"] * 1.03 + 0.005:
-            failures.append(
-                f"MAE regression: candidate {candidate_metrics['mae']:.4f} vs "
-                f"champion {champion_metrics['mae']:.4f}"
-            )
-        if candidate_metrics["r2"] < champion_metrics["r2"] - 0.01:
-            failures.append(
-                f"R2 regression: candidate {candidate_metrics['r2']:.4f} vs "
-                f"champion {champion_metrics['r2']:.4f}"
-            )
-
-    mid_zone = ((y_pred >= 0.55) & (y_pred < 0.80)).mean()
-    if mid_zone < 0.08:
-        failures.append(f"mid-zone under-populated: {mid_zone:.1%} of predictions in 0.55-0.80")
-
-    return failures
-
-
-def run_retrain(data_file: Path = DEFAULT_DATA_FILE, min_real: int = MIN_REAL_ROWS,
-                skip_gate: bool = False) -> dict:
-    t0 = datetime.now(timezone.utc)
-
-    synth = load_synthetic(data_file)
-    feature_cols = [c for c in synth.columns if c != "confidence"]
-
-    real_df, skipped = build_real_dataframe(DB_PATH, set(feature_cols))
-    n_real = len(real_df)
-    n_synth = len(synth)
-
-    report = {
-        "createdAt": t0.isoformat(),
-        "rows_synthetic": n_synth,
-        "rows_real": n_real,
-        "rows_real_skipped": skipped,
-        "db": str(DB_PATH),
-    }
-
-    train_df = synth
-    if n_real >= min_real:
-        cap = max(min_real * 10, 10000)
-        synth_sample = synth.sample(n=min(n_synth, cap), random_state=RANDOM_STATE)
-        merged = pd.concat([synth_sample, real_df], ignore_index=True)
-        # Drop any columns the real rows lack.
-        merged = merged[[c for c in feature_cols if c in merged.columns] + ["confidence"]]
-        train_df = merged
-        report["rows_real_used"] = n_real
-        report["rows_synth_used"] = len(synth_sample)
-    else:
-        report["rows_real_used"] = 0
-        report["rows_synth_used"] = n_synth
-        report["note"] = (
-            f"Fewer than {min_real} real labeled rows; trained on synthetic only."
-        )
-
-    X = train_df[feature_cols]
-    y = train_df["confidence"]
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=RANDOM_STATE
-    )
-
-    candidate = train_candidate(X_train, y_train)
-    cand_pred = candidate.predict(X_test)
-    cand_metrics = {
-        "r2": r2_score(y_test, cand_pred),
-        "mae": mean_absolute_error(y_test, cand_pred),
-    }
-
+def run_retrain(min_real=MIN_REAL_ROWS, model_path=MODEL_PATH, db_path=None):
+    db_path = db_path or database_path()
+    frame, skipped = reviewed_dataframe(db_path)
+    report = {'createdAt': datetime.now(timezone.utc).isoformat(), 'rows_real': len(frame), 'rows_real_skipped': skipped,
+              'rows_synthetic': 0, 'rows_synth_used': 0, 'scoreKind': 'reviewed_appropriateness_probability', 'promoted': False}
+    if len(frame) < min_real:
+        report['note'] = 'Insufficient independently reviewed outcomes; current heuristic model remains unchanged.'
+        report['gate'] = {'passed': False, 'failed': ['Reviewed outcome evidence is required']}
+        return report
+    holdout = frame['patient'].map(fixed_holdout)
+    train, test = frame[~holdout], frame[holdout]
+    if len(train) < 20 or len(test) < 10 or train.patient.nunique() < 3 or train.target.nunique() < 2 or test.target.nunique() < 2:
+        report['gate'] = {'passed': False, 'failed': ['Need sufficient patients and both outcome classes in training and fixed holdout']}
+        return report
+    splits = list(GroupKFold(3).split(train[FEATURE_COLUMNS], train.target, groups=train.patient))
+    if any(train.iloc[fit].target.nunique() < 2 or train.iloc[cal].target.nunique() < 2 for fit, cal in splits):
+        report['gate'] = {'passed': False, 'failed': ['Calibration folds require both outcome classes']}
+        return report
+    classifier = RandomForestClassifier(n_estimators=250, max_depth=12, min_samples_leaf=6, max_features='sqrt', random_state=42, n_jobs=-1)
+    candidate = CalibratedClassifierCV(classifier, method='sigmoid', cv=splits)
+    candidate.fit(train[FEATURE_COLUMNS], train.target)
+    prediction = candidate.predict_proba(test[FEATURE_COLUMNS])[:, list(candidate.classes_).index(1)]
     champion_metrics = None
-    champion_path = Path(DEFAULT_MODEL_FILE)
-    if champion_path.is_file():
+    metadata_path = Path(model_path).with_suffix('.json')
+    if metadata_path.exists() and json.loads(metadata_path.read_text()).get('scoreKind') == report['scoreKind']:
         try:
-            champion = joblib.load(str(champion_path))
-            champ_pred = champion.predict(X_test)
-            champion_metrics = {
-                "r2": r2_score(y_test, champ_pred),
-                "mae": mean_absolute_error(y_test, champ_pred),
-            }
-        except Exception as exc:
-            report["champion_error"] = str(exc)
-
-    report["candidate"] = cand_metrics
-    report["champion"] = champion_metrics
-
-    live_stats = live_feature_stats(DB_PATH, feature_cols)
-    report["drift"] = compute_drift(train_df, feature_cols, live_stats)
-
-    failures = safety_gate(X_test, cand_pred, X_test, champion_metrics, cand_metrics) if not skip_gate else []
-    report["gate"] = {"failed": failures, "passed": len(failures) == 0}
-
-    if len(failures) == 0:
-        joblib.dump(candidate, str(champion_path))
-        report["promoted"] = True
-        report["modelFile"] = str(champion_path)
-    else:
-        report["promoted"] = False
-
-    report["latency_s"] = round((datetime.now(timezone.utc) - t0).total_seconds(), 2)
+            champion = joblib.load(model_path)
+            probabilities = champion.predict_proba(test[FEATURE_COLUMNS])[:, list(champion.classes_).index(1)]
+            champion_metrics = {'brier': float(brier_score_loss(test.target, probabilities))}
+        except Exception:
+            report['champion_error'] = 'Current reviewed model could not be evaluated'
+            report['gate'] = {'passed': False, 'failed': ['Unable to compare candidate with current reviewed model']}
+            return report
+    baseline_brier = float(brier_score_loss(test.target, np.full(len(test), train.target.mean())))
+    failures, metrics = safety_gate(test.target, prediction, champion_metrics, baseline_brier)
+    report.update(candidate=metrics, champion=champion_metrics, baselineBrier=baseline_brier, rows_train=len(train), rows_holdout=len(test), gate={'passed': not failures, 'failed': failures})
+    if not failures:
+        path = Path(model_path)
+        temporary = path.with_suffix('.candidate')
+        joblib.dump(candidate, temporary)
+        version = hashlib.sha256(temporary.read_bytes()).hexdigest()[:16]
+        metadata_temp = metadata_path.with_suffix('.json.tmp')
+        metadata_temp.write_text(json.dumps({'scoreKind': report['scoreKind'], 'modelVersion': version, 'ruleVersion': '2026-10-13.1', 'metrics': metrics, 'createdAt': report['createdAt']}, indent=2), encoding='utf-8')
+        metadata_temp.replace(metadata_path)
+        temporary.replace(path)
+        report.update(promoted=True, modelVersion=version)
     return report
 
-
 def main():
-    parser = argparse.ArgumentParser(description="Retrain SymptoSense confidence model")
-    parser.add_argument("--data", type=Path, default=DEFAULT_DATA_FILE)
-    parser.add_argument("--min-real", type=int, default=MIN_REAL_ROWS)
-    parser.add_argument("--skip-gate", action="store_true", help="promote without safety gates")
-    parser.add_argument("--json", action="store_true", help="print report as JSON")
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--min-real', type=int, default=int(os.getenv('RETRAIN_MIN_REAL', str(MIN_REAL_ROWS))))
     args = parser.parse_args()
+    report = run_retrain(min_real=args.min_real)
+    DEFAULT_REPORT_FILE.write_text(json.dumps(report, indent=2), encoding='utf-8')
+    print(json.dumps(report, indent=2))
 
-    report = run_retrain(args.data, args.min_real, args.skip_gate)
-    with open(DEFAULT_REPORT_FILE, "w", encoding="utf-8") as f:
-        json.dump(report, f, indent=2)
-
-    if args.json:
-        print(json.dumps(report, indent=2))
-        return
-
-    print(f"Synthetic rows: {report['rows_synthetic']}")
-    print(f"Real labeled rows: {report['rows_real']}")
-    print(f"Candidate: {report.get('candidate')}")
-    print(f"Champion:  {report.get('champion')}")
-    print(f"Gates passed: {report['gate']['passed']}  failed: {report['gate']['failed']}")
-    print(f"Promoted: {report['promoted']}")
-    print(f"Report written to {DEFAULT_REPORT_FILE}")
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

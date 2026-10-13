@@ -10,6 +10,9 @@ export interface SurveyResult {
   duration: string;
   additional?: string;
   history?: string;
+  symptoms?: string[];
+  additionalSymptoms?: string[];
+  medicalHistory?: string[];
 }
 
 export interface RiskAnalysis {
@@ -61,13 +64,15 @@ export interface Answer {
 export interface ScoreResult {
   score: number;
   urgency: Urgency;
+  ruleVersion?: string;
   factors: Factor[];
   recommendation: string;
   primaryCategory: string;
   hasRedFlag: boolean;
   symptomCount: number;
   highestSeverity: string;
-  confidenceScore?: number;
+  confidenceScore?: number | null;
+  modelVersion?: string;
   confidenceLevel?: string;
   confidenceExplanation?: string;
   riskReasoning?: string;

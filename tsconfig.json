@@ -38,6 +38,8 @@
   ],
   "exclude": [
     "node_modules",
-    "SymptoSense-AI-Engine-main"
+    "SymptoSense-AI-Engine-main",
+    ".venv",
+    ".local"
   ]
 }

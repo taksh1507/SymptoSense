@@ -1,554 +1,149 @@
 'use client';
-
-import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
-import { useSession } from 'next-auth/react';
-import { calculateRisk } from '@/lib/ai-engine/scoring/engine';
-import { classifyUrgency } from '@/lib/ai-engine/scoring/thresholds';
-import type { SurveyResult } from '@/lib/ai-engine/scoring/types';
+import React, { createContext, useContext, useState, useRef, useEffect, ReactNode } from 'react';
 import type { FinalAssessmentPayload } from '@/components/ai-question-engine/types';
-import { mapAnswersToMLFeatures } from '@/lib/ml/featureMapper';
-import type { Factor, ScoreResult, Urgency } from '@/lib/ai-engine/scoring/types';
+import type { ScoreResult } from '@/lib/ai-engine/scoring/types';
+import { evaluateAssessment, assessmentContext } from '@/lib/assessment/evaluate';
+import type { DiseasePrediction } from '@/lib/ml/disease';
 
-// Dashboard-level screens only (triage flow)
-export type TriageScreen =
-  | 'dashboard'
-  | 'language'
-  | 'person'
-  | 'questions'
-  | 'loading'
-  | 'results';
-
+export type TriageScreen = 'dashboard' | 'language' | 'person' | 'questions' | 'loading' | 'results';
 export type Language = 'English' | 'Hindi' | 'Marathi';
 export type PersonType = 'self' | 'family';
 export type RiskLevel = 'High' | 'Medium' | 'Low';
 export type Relation = 'Parent' | 'Child' | 'Spouse' | 'Sibling' | 'Friend' | 'Other';
 export type Gender = 'Male' | 'Female' | 'Other' | 'Prefer not to say';
-
 export interface AppState {
-  triageScreen: TriageScreen;
-  language: Language | null;
-  personType: PersonType | null;
-  patientName: string;
-  relation: Relation | null;
-  gender: Gender | null;
-  currentQuestion: number;
-  totalQuestions: number;
-  selectedAnswers: Record<number, string>;
-  riskScore: number;
-  riskLevel: RiskLevel;
-  // Raw assessment inputs — used for dynamic reasoning on results page
-  assessmentPayload: {
-    primarySymptom: string;
-    severity: string;
-    duration: string;
-    additionalSymptoms: string[];
-    medicalHistory: string[];
-  } | null;
-  narrative?: {
-    en: string;
-    hi: string;
-    mr: string;
-  };
-  mlScore: number;
-  mlLevel: string;
-  mlExplanation: string;
-  riskReasoning: string;
-  riskFactors: string[];        // Groq-generated bullet factors for "Why this risk?"
-  recommendationSteps: string[]; // Groq-generated steps for "What you should do"
-  primaryAction: string;        // Groq-generated primary action line
-  keyInsights: string[];
+  triageScreen: TriageScreen; language: Language | null; personType: PersonType | null;
+  patientName: string; relation: Relation | null; gender: Gender | null;
+  currentQuestion: number; totalQuestions: number; selectedAnswers: Record<number, string>;
+  riskScore: number; riskLevel: RiskLevel;
+  assessmentPayload: { primarySymptom: string; severity: string; duration: string; additionalSymptoms: string[]; medicalHistory: string[] } | null;
+  narrative?: { en: string; hi: string; mr: string };
+  diseasePrediction: DiseasePrediction | null; diseaseStatus: 'idle' | 'loading' | 'ready' | 'unavailable'; diseaseError: string;
+  mlScore: number; mlLevel: string; mlExplanation: string; riskReasoning: string;
+  riskFactors: string[]; recommendationSteps: string[]; primaryAction: string; keyInsights: string[];
+  saveStatus: 'idle' | 'saving' | 'saved' | 'failed'; saveError: string; sessionId: string | null;
 }
-
 interface AppContextType extends AppState {
-  setTriageScreen: (screen: TriageScreen) => void;
-  setLanguage: (lang: Language) => void;
+  setTriageScreen: (screen: TriageScreen) => void; setLanguage: (lang: Language) => void;
   setPersonType: (type: PersonType) => void;
   setPatientInfo: (name: string, relation: Relation | null, gender: Gender | null) => void;
-  setAnswer: (qIndex: number, answer: string) => void;
-  goToPrevQuestion: () => void;
-  goToNextQuestion: () => void;
-  startTest: () => void;
-  cancelTest: () => void;
-  handleAIComplete: (data: FinalAssessmentPayload) => void;
+  setAnswer: (qIndex: number, answer: string) => void; goToPrevQuestion: () => void; goToNextQuestion: () => void;
+  startTest: () => void; cancelTest: () => void; handleAIComplete: (data: FinalAssessmentPayload) => void; retrySave: () => void;
 }
-
 const AppContext = createContext<AppContextType | null>(null);
-
-const RISK_ENCODING = { "Low": 0, "Medium": 1, "High": 2 } as const;
-
+const emptyResults = {
+  riskScore: 0, riskLevel: 'Low' as RiskLevel, assessmentPayload: null, narrative: undefined,
+  diseasePrediction: null, diseaseStatus: 'idle' as AppState['diseaseStatus'], diseaseError: '',
+  mlScore: 0, mlLevel: 'unavailable', mlExplanation: '', riskReasoning: '', riskFactors: [] as string[],
+  recommendationSteps: [] as string[], primaryAction: '', keyInsights: [] as string[],
+  saveStatus: 'idle' as AppState['saveStatus'], saveError: '', sessionId: null,
+};
 export function AppProvider({ children }: { children: ReactNode }) {
-  const { data: session } = useSession();
-  const isSavingRef = useRef(false);
   const [state, setState] = useState<AppState>({
-    triageScreen: 'dashboard',
-    language: null,
-    personType: 'self',
-    patientName: '',
-    relation: null,
-    gender: null,
-    currentQuestion: 0,
-    totalQuestions: 8,
-    selectedAnswers: {},
-    riskScore: 0,
-    riskLevel: 'Low',
-    assessmentPayload: null,
-    mlScore: 0,
-    mlLevel: 'High',
-    mlExplanation: '',
-    riskReasoning: '',
-    riskFactors: [],
-    recommendationSteps: [],
-    primaryAction: '',
-    keyInsights: [],
+    triageScreen: 'dashboard', language: null, personType: 'self', patientName: '', relation: null, gender: null,
+    currentQuestion: 0, totalQuestions: 11, selectedAnswers: {}, ...emptyResults,
   });
-
-  const setTriageScreen = (screen: TriageScreen) =>
-    setState((s) => ({ ...s, triageScreen: screen }));
-
-  const setLanguage = (lang: Language) =>
-    setState((s) => ({ ...s, language: lang }));
-
-  const setPersonType = (type: PersonType) =>
-    setState((s) => ({ ...s, personType: type }));
-
-  const setPatientInfo = (name: string, relation: Relation | null, gender: Gender | null) =>
-    setState((s) => ({ ...s, patientName: name, relation, gender }));
-
-  const setAnswer = (qIndex: number, answer: string) =>
-    setState((s) => ({
-      ...s,
-      selectedAnswers: { ...s.selectedAnswers, [qIndex]: answer },
+  const generation = useRef(0);
+  const diseaseController = useRef<AbortController | null>(null);
+  const controller = useRef<AbortController | null>(null);
+  const pending = useRef<{ data: FinalAssessmentPayload; personName: string; isSelf: boolean; relation: Relation | null; gender: Gender | null; id: number; sessionId?: string } | null>(null);
+  const saving = useRef<number | null>(null);
+  useEffect(() => () => { generation.current++; controller.current?.abort(); diseaseController.current?.abort(); }, []);
+  const reset = (screen: TriageScreen) => {
+    generation.current++;
+    controller.current?.abort(); diseaseController.current?.abort(); pending.current = null;
+    setState(s => ({ ...s, ...emptyResults, triageScreen: screen, currentQuestion: 0, selectedAnswers: {}, personType: 'self', patientName: '', relation: null, gender: null }));
+  };
+  const applyResult = (result: ScoreResult) => {
+    setState(s => ({ ...s, riskScore: result.score, riskLevel: result.urgency,
+      narrative: result.narrative, mlScore: result.confidenceScore == null ? 0 : Math.round(result.confidenceScore * 100),
+      mlLevel: result.confidenceLevel ?? 'unavailable', mlExplanation: result.confidenceExplanation ?? '',
+      riskReasoning: result.riskReasoning ?? '', riskFactors: result.riskFactors ?? [],
+      recommendationSteps: result.recommendationSteps ?? [], primaryAction: result.primaryAction ?? '', keyInsights: result.keyInsights ?? [],
     }));
-
-  const goToPrevQuestion = () =>
-    setState((s) => ({
-      ...s,
-      currentQuestion: Math.max(0, s.currentQuestion - 1),
-    }));
-
-  // Save completed test to database
-  const saveTestToDatabase = async (
-    answers: Record<number, string>,
-    score: number,
-    urgency: RiskLevel,
-    factors: Factor[],
-    hasRedFlag: boolean,
-    userId?: string,
-    confidence?: {
-      score: number; level: string; explanation: string;
-      riskReason: string; riskSummary?: string; riskFactors?: string[];
-      primaryAction?: string; recommendationSteps?: string[]; insights: string[];
-    }
-  ) => {
+  };
+  const persist = async () => {
+    const request = pending.current;
+    if (!request || saving.current === request.id || request.id !== generation.current) return;
+    saving.current = request.id;
+    const activeController = new AbortController(); controller.current = activeController;
+    const timeout = setTimeout(() => activeController.abort(), 30000);
+    setState(s => ({ ...s, saveStatus: 'saving', saveError: '' }));
     try {
-      const symptoms = (answers[1] || "").split(",").filter(Boolean);
-      const primaryCategory = symptoms[0] || "general";
-
-      const getRecommendation = (s: number, l: Language | null) => {
-        const level = classifyUrgency(s);
-        if (level === 'High') {
-          if (l === 'Hindi') return 'तुरंत चिकित्सा सहायता लें।';
-          if (l === 'Marathi') return 'ताबडतोब वैद्यकीय मदत घ्या.';
-          return 'Seek emergency care immediately.';
-        }
-        if (level === 'Medium') {
-          if (l === 'Hindi') return '24 घंटे के भीतर अपने डॉक्टर से सलाह लें।';
-          if (l === 'Marathi') return '२४ तासांच्या आत डॉक्टरांचा सल्ला घ्या.';
-          return 'Consult your doctor within 24 hours.';
-        }
-        if (l === 'Hindi') return 'घर पर लक्षणों की निगरानी करें।';
-        if (l === 'Marathi') return 'घरीच लक्षणांचे निरीक्षण करा.';
-        return 'Monitor symptoms at home. See a doctor if they worsen.';
-      };
-
-      // Format answers as array for storage
-      const answersArray = Object.entries(answers).map(([qId, answer]) => ({
-        questionId: `q${qId}`,
-        answer,
-        timestamp: Date.now(),
-      }));
-
-      const payload = {
-        userId: userId || null,
-        personName: state.patientName || 'Myself',
-        isSelf: state.personType !== 'family',
-        relation: state.relation ?? null,
-        gender: state.gender ?? null,
-        language: state.language === 'Hindi' ? 'hi' : state.language === 'Marathi' ? 'mr' : 'en',
-        answers: answersArray,
-        result: {
-          score,
-          urgency,
-          factors,
-          primaryCategory,
-          recommendation: getRecommendation(score, state.language),
-          confidenceScore: confidence?.score !== undefined ? confidence.score / 100 : undefined,
-          confidenceLevel: confidence?.level,
-          confidenceExplanation: confidence?.explanation,
-          riskReasoning: confidence?.riskReason,
-          riskSummary: confidence?.riskSummary,
-          riskFactors: confidence?.riskFactors,
-          primaryAction: confidence?.primaryAction,
-          recommendationSteps: confidence?.recommendationSteps,
-          keyInsights: confidence?.insights,
-          hasRedFlag,
-          symptomCount: symptoms.length,
-          highestSeverity: urgency,
-        },
-      };
-
-      // Create session first, then complete it
-      const createRes = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: payload.userId,
-          personName: payload.personName,
-          isSelf: payload.isSelf,
-          relation: payload.relation,
-          gender: payload.gender,
-          language: payload.language,
-        }),
-      });
-
-      if (!createRes.ok) {
-        const err = await createRes.text();
-        console.error('[saveTest] Session create failed:', createRes.status, err);
-        return;
+      if (!request.sessionId) {
+        const created = await fetch('/api/sessions', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ personName: request.personName, isSelf: request.isSelf, relation: request.relation, gender: request.gender, language: request.data.language }), signal: activeController.signal });
+        if (!created.ok) throw new Error('Could not create the assessment record.');
+        const body = await created.json();
+        if (typeof body.sessionId !== 'string') throw new Error('Invalid assessment response.');
+        request.sessionId = body.sessionId;
       }
-
-      const createData = await createRes.json();
-      const sessionId = createData.sessionId;
-      if (!sessionId) {
-        console.error('[saveTest] No sessionId returned from POST /api/sessions');
-        return;
-      }
-
-      // Complete the session with answers and result
-      const patchRes = await fetch('/api/sessions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId, answers: payload.answers, result: payload.result }),
-      });
-
-      if (!patchRes.ok) {
-        const err = await patchRes.text();
-        console.error('[saveTest] Session complete failed:', patchRes.status, err);
-      } else {
-        console.log('[saveTest] Session saved successfully:', sessionId);
-      }
-    } catch (err) {
-      console.error('Failed to save test to database:', err);
-    }
+      const res = await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sessionId: request.sessionId, assessment: request.data }), signal: activeController.signal });
+      if (!res.ok) throw new Error('Could not save the assessment. Please retry.');
+      const body = await res.json();
+      if (request.id !== generation.current) return;
+      applyResult(body.result);
+      setState(s => ({ ...s, saveStatus: 'saved', saveError: '', sessionId: request.sessionId ?? null }));
+      // Reasoning is optional; the rule result and saved record are already available.
+      void fetch('/api/explanation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: request.sessionId }), signal: AbortSignal.timeout(8000) })
+        .then(r => r.ok ? r.json() : null).then(prose => { if (prose && request.id === generation.current) setState(s => ({ ...s, riskReasoning: prose.riskReasoning ?? s.riskReasoning, riskFactors: prose.riskFactors ?? s.riskFactors })); }).catch(() => {});
+    } catch (error) {
+      if (request.id === generation.current) setState(s => ({ ...s, saveStatus: 'failed', saveError: error instanceof Error ? error.message : 'Could not save the assessment.' }));
+    } finally { clearTimeout(timeout); if (saving.current === request.id) saving.current = null; }
   };
-
-  const goToNextQuestion = () => {
-    // Legacy function kept for compatibility — AI engine handles the flow now
-    setState((s) => {
-      const next = s.currentQuestion + 1;
-      if (next >= s.totalQuestions) {
-        return { ...s, triageScreen: 'results' };
-      }
-      return { ...s, currentQuestion: next };
-    });
-  };
-
-  // Called when AIQuestionEngine completes
-  const handleAIComplete = (data: FinalAssessmentPayload) => {
-    const primarySymptom = data.symptoms?.[0] || data.customSymptom || 'general';
-    // Use human-readable AI answer labels, not option_a-style codes,
-    // so additional-symptom text and the risk narrative stay legible.
-    const aiAnswerTexts = Object.values(data.aiAnswerLabels || {});
-    const additionalSymptoms = [
-      ...(data.symptoms?.slice(1) || []),
-      ...(data.customSymptom && !data.symptoms?.includes(data.customSymptom) ? [data.customSymptom] : []),
-      ...aiAnswerTexts.filter(v => v && v !== 'none'),
-    ];
-    const medicalHistory = data.medications?.filter(m => m !== 'none') || [];
-    const additionalSymptom = additionalSymptoms[0] || 'none';
-
-    const input: SurveyResult = {
-      symptom: primarySymptom,
-      severity: data.severity || 'mild',
-      duration: data.duration || '< 1 day',
-      additional: additionalSymptom,
-      history: medicalHistory[0] || 'none',
-    };
-
-    const result = calculateRisk(input);
-
-    // Finalize confidence with score context
-    const getFinalConfidence = async () => {
+  const runDisease = async (data: FinalAssessmentPayload, id: number) => {
+    diseaseController.current?.abort();
+    const active = new AbortController(); diseaseController.current = active;
+    const timer = setTimeout(() => active.abort(), 35000);
+    setState(s => ({ ...s, diseaseStatus: 'loading', diseaseError: '' }));
+    try {
+      const context = assessmentContext(data);
+      const raw = [...data.symptoms, ...(data.customSymptom ? [data.customSymptom] : []), ...context.adaptive];
+      let extracted: string[] = [];
+      // Extraction failure leaves the completed questionnaire as the source of symptoms.
       try {
-        const features = {
-          ...mapAnswersToMLFeatures(data),
-          rule_score: result.score,
-          risk_level: RISK_ENCODING[result.urgency as keyof typeof RISK_ENCODING] || 0
-        };
-
-        // Hard 12-second timeout to handle Vercel serverless cold starts
-        const mlController = new AbortController();
-        const mlTimeoutId = setTimeout(() => mlController.abort(), 12000);
-        const mlRequestStart = performance.now();
-        let res: Response;
-        try {
-          res = await fetch('/api/ml/predict', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(features),
-            signal: mlController.signal,
-          });
-        } finally {
-          clearTimeout(mlTimeoutId);
-        }
-        const mlResult = await res.json();
-        const mlUnavailable = mlResult?.confidence == null;
-
-        // Log this inference for the continuous-retraining loop (fire-and-forget).
-        // Numeric feature vector only — no free text, safe to store anonymously.
-        try {
-          fetch('/api/ml/log', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              features,
-              ruleScore: result.score,
-              predictedConfidence: mlUnavailable ? null : mlResult.confidence,
-              confidenceLevel: mlUnavailable ? 'unavailable' : mlResult.confidenceLevel,
-              mlAvailable: !mlUnavailable,
-              latencyMs: Math.round(performance.now() - mlRequestStart),
-            }),
-          }).catch(err => console.warn('[ml-log] Failed to log prediction:', err));
-        } catch (err) {
-          console.warn('[ml-log] Failed to log prediction:', err);
-        }
-
-        // Fetch dynamic reasoning from Groq — pass real symptom context
-        let reasonData: any = {};
-        try {
-          const reasonRes = await fetch('/api/explanation', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              features: {
-                ...features,
-                confidence_score: mlUnavailable ? undefined : Math.round(mlResult.confidence * 100),
-              },
-              // Real clinical context for specific one-liners
-              clinicalContext: {
-                primarySymptom,
-                severity: data.severity,
-                duration: data.duration,
-                additionalSymptoms: additionalSymptoms.slice(0, 3),
-                medicalHistory,
-                riskLevel: result.urgency,
-                riskScore: result.score,
-              },
-              language: state.language
-            }),
-          });
-          reasonData = await reasonRes.json();
-        } catch (e) {
-          console.error("Reasoning Error:", e);
-          // Fallback: use local deterministic engine so output is still dynamic
-          const { generateRiskExplanation, generateRecommendations } = await import('@/lib/report/reasoningEngine');
-          const localInput = {
-            primarySymptom,
-            severity: data.severity || 'mild',
-            duration: data.duration || '< 1 day',
-            additionalSymptoms,
-            medicalHistory,
-            riskLevel: result.urgency as 'High' | 'Medium' | 'Low',
-            riskScore: result.score,
-          };
-          const localReasoning = generateRiskExplanation(localInput);
-          const localRecs = generateRecommendations(localInput);
-          reasonData = {
-            confidenceReasoning: mlResult.confidence > 0.8
-              ? "Consistent inputs with clear symptom pattern."
-              : "Some input inconsistency; interpret with caution.",
-            riskReasoning: `${result.urgency} risk based on ${primarySymptom.replace(/_/g, ' ')} with ${data.severity} severity.`,
-            riskSummary: localReasoning.summary,
-            riskFactors: localReasoning.factors,
-            primaryAction: localRecs.primaryAction,
-            recommendationSteps: localRecs.steps,
-            keyInsights: [
-              `${primarySymptom.replace(/_/g, ' ')} identified as primary concern`,
-              `${data.severity} severity with ${data.duration} duration`,
-              medicalHistory.length > 0 ? `Medical history: ${medicalHistory[0].replace(/_/g, ' ')}` : 'No significant medical history reported',
-            ],
-          };
-        }
-
-        setState(s => ({
-          ...s,
-          mlScore: mlUnavailable ? 0 : Math.round(mlResult.confidence * 100),
-          mlLevel: mlUnavailable ? 'unavailable' : mlResult.confidenceLevel,
-          mlExplanation: mlUnavailable
-            ? 'Confidence score unavailable right now — the ML service is offline. Your risk assessment above is still valid from our clinical rules engine.'
-            : reasonData.confidenceReasoning || "",
-          riskReasoning: reasonData.riskReasoning || "",
-          riskFactors: reasonData.riskFactors || [],
-          recommendationSteps: reasonData.recommendationSteps || [],
-          primaryAction: reasonData.primaryAction || "",
-          keyInsights: reasonData.keyInsights || []
-        }));
-        return {
-          score: mlUnavailable ? undefined : mlResult.confidence,
-          level: mlUnavailable ? 'unavailable' : mlResult.confidenceLevel,
-          explanation: mlUnavailable
-            ? 'Prediction confidence unavailable — ML service offline.'
-            : reasonData.confidenceReasoning,
-          riskReason: reasonData.riskReasoning,
-          riskSummary: reasonData.riskSummary,
-          riskFactors: reasonData.riskFactors,
-          primaryAction: reasonData.primaryAction,
-          recommendationSteps: reasonData.recommendationSteps,
-          insights: reasonData.keyInsights
-        };
-      } catch (e) {
-        console.error("Final ML Error:", e);
-        // Report that reliability estimation is unavailable instead of
-        // silently pretending the model returned 0.7 / Medium.
-        return {
-          score: undefined,
-          level: "unavailable",
-          explanation: "Confidence score unavailable — ML service offline.",
-          riskReason: `${result.urgency} risk based on ${primarySymptom.replace(/_/g, ' ')}.`,
-          riskSummary: undefined,
-          riskFactors: [],
-          primaryAction: undefined,
-          recommendationSteps: [],
-          insights: []
-        };
-      }
-    };
-
-    setState((s) => ({
-      ...s,
-      triageScreen: 'loading',
-      riskScore: result.score,
-      riskLevel: result.urgency as RiskLevel,
-      assessmentPayload: {
-        primarySymptom,
-        severity: data.severity || 'mild',
-        duration: data.duration || '< 1 day',
-        additionalSymptoms,
-        medicalHistory,
-      },
-      narrative: result.narrative
-        ? { en: result.narrative.en, hi: result.narrative.hi, mr: result.narrative.mr ?? result.narrative.en }
-        : undefined,
-    }));
-
-    getFinalConfidence().then((ml) => {
-      setTimeout(() => {
-        setState((s) => {
-          if (s.triageScreen === 'loading') {
-            if (!isSavingRef.current) {
-              isSavingRef.current = true;
-              const userId = (session?.user as any)?.id;
-              const answersRecord: Record<number, string> = {
-                0: data.age || 'adult',
-                1: data.symptoms?.join(',') || primarySymptom,
-                2: data.severity,
-                3: data.duration,
-                4: additionalSymptom,
-              };
-
-              const finalResult: ScoreResult = {
-                score: result.score,
-                urgency: result.urgency as Urgency,
-                factors: result.factors,
-                recommendation: result.recommendation.en,
-                primaryCategory: primarySymptom,
-                hasRedFlag: result.isRedFlag,
-                symptomCount: data.symptoms?.length || 0,
-                highestSeverity: result.urgency,
-                confidenceScore: ml?.score,
-                confidenceLevel: ml?.level,
-                confidenceExplanation: ml?.explanation,
-                riskReasoning: ml?.riskReason,
-                riskSummary: ml?.riskSummary,
-                riskFactors: ml?.riskFactors,
-                primaryAction: ml?.primaryAction,
-                recommendationSteps: ml?.recommendationSteps,
-                keyInsights: ml?.insights,
-                narrative: result.narrative ? {
-                  en: result.narrative.en,
-                  hi: result.narrative.hi,
-                  mr: result.narrative.hi ?? result.narrative.en
-                } : undefined
-              };
-
-              saveTestToDatabase(
-                answersRecord,
-                finalResult.score,
-                finalResult.urgency as RiskLevel,
-                finalResult.factors,
-                finalResult.hasRedFlag,
-                userId,
-                ml ? {
-                  score: Math.round(ml.score * 100),
-                  level: ml.level,
-                  explanation: ml.explanation,
-                  riskReason: ml.riskReason,
-                  riskSummary: ml.riskSummary,
-                  riskFactors: ml.riskFactors,
-                  primaryAction: ml.primaryAction,
-                  recommendationSteps: ml.recommendationSteps,
-                  insights: ml.insights
-                } : undefined
-              )
-                .finally(() => { isSavingRef.current = false; });
-            }
-            return { ...s, triageScreen: 'results' };
-          }
-          return s;
-        });
-      }, 2500);
-    });
+        const response = await fetch('/api/ml/extract', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: raw.join(', ').replace(/_/g, ' '), language: data.language }), signal: active.signal });
+        if (response.ok) { const body = await response.json(); if (Array.isArray(body.symptoms)) extracted = body.symptoms; }
+      } catch { /* Continue the existing question flow. */ }
+      if (id !== generation.current) return;
+      const prepared = { ...data, symptoms: [...new Set([...data.symptoms, ...extracted])] };
+      const ruleResult = evaluateAssessment(prepared);
+      if (pending.current?.id === id) pending.current.data = prepared;
+      applyResult(ruleResult);
+      setState(s => ({ ...s, assessmentPayload: assessmentContext(prepared) }));
+      void persist();
+      const symptoms = [...new Set([...context.selected, ...context.adaptive, ...extracted])].filter(s => s.length <= 100).slice(0, 132);
+      const response = await fetch('/api/ml/disease', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Assessment-Language': data.language }, body: JSON.stringify({ symptoms, age_group: data.age, severity: data.severity, duration: data.duration }), signal: active.signal });
+      const prediction = await response.json();
+      if (!response.ok) throw new Error(response.status === 422 ? 'No supported dataset symptoms were found. Continue with the questionnaire triage and consult a doctor.' : 'Disease model unavailable. The rule triage result remains available.');
+      if (id !== generation.current) return;
+      setState(s => ({ ...s, diseasePrediction: prediction as DiseasePrediction, diseaseStatus: 'ready', diseaseError: '' }));
+    } catch (error) {
+      if (id === generation.current) setState(s => ({ ...s, diseasePrediction: null, diseaseStatus: 'unavailable', diseaseError: error instanceof Error ? error.message : 'Disease model unavailable.' }));
+    } finally { clearTimeout(timer); }
   };
-
-  const startTest = () =>
-    setState((s) => ({ ...s, triageScreen: 'language', personType: 'self', patientName: '', relation: null, gender: null }));
-
-  const cancelTest = () =>
-    setState((s) => ({
-      ...s,
-      triageScreen: 'dashboard',
-      currentQuestion: 0,
-      selectedAnswers: {},
-      personType: 'self',
-      patientName: '',
-      relation: null,
-      gender: null,
-      assessmentPayload: null,
+  const handleAIComplete = (data: FinalAssessmentPayload) => {
+    controller.current?.abort(); generation.current++;
+    const result = evaluateAssessment(data);
+    const context = assessmentContext(data);
+    pending.current = { data, personName: state.patientName || 'Myself', isSelf: state.personType !== 'family', relation: state.relation, gender: state.gender, id: generation.current };
+    setState(s => ({ ...s, ...emptyResults, triageScreen: 'results', language: data.language === 'hi' ? 'Hindi' : data.language === 'mr' ? 'Marathi' : 'English',
+      riskScore: result.score, riskLevel: result.urgency, assessmentPayload: context,
+      narrative: result.narrative, riskReasoning: result.riskReasoning ?? '', riskFactors: result.riskFactors ?? [],
+      primaryAction: result.primaryAction ?? '', recommendationSteps: result.recommendationSteps ?? [],
+      mlExplanation: 'Model score pending. This heuristic score is not a probability that the assessment is correct.', saveStatus: 'saving',
     }));
-
-  return (
-    <AppContext.Provider
-      value={{
-        ...state,
-        setTriageScreen,
-        setLanguage,
-        setPersonType,
-        setPatientInfo,
-        setAnswer,
-        goToPrevQuestion,
-        goToNextQuestion,
-        startTest,
-        cancelTest,
-        handleAIComplete,
-      }}
-    >
-      {children}
-    </AppContext.Provider>
-  );
+    void runDisease(data, generation.current);
+  };
+  return <AppContext.Provider value={{ ...state,
+    setTriageScreen: screen => screen === 'dashboard' || screen === 'language' ? reset(screen) : setState(s => ({ ...s, triageScreen: screen })),
+    setLanguage: language => setState(s => ({ ...s, language })), setPersonType: personType => setState(s => ({ ...s, personType })),
+    setPatientInfo: (patientName, relation, gender) => setState(s => ({ ...s, patientName, relation, gender })),
+    setAnswer: (index, answer) => setState(s => ({ ...s, selectedAnswers: { ...s.selectedAnswers, [index]: answer } })),
+    goToPrevQuestion: () => setState(s => ({ ...s, currentQuestion: Math.max(0, s.currentQuestion - 1) })),
+    goToNextQuestion: () => setState(s => ({ ...s, currentQuestion: Math.min(s.totalQuestions - 1, s.currentQuestion + 1) })),
+    startTest: () => reset('language'), cancelTest: () => reset('dashboard'), handleAIComplete, retrySave: () => { void persist(); },
+  }}>{children}</AppContext.Provider>;
 }
-
-export function useApp() {
-  const ctx = useContext(AppContext);
-  if (!ctx) throw new Error('useApp must be used within AppProvider');
-  return ctx;
-}
+export function useApp() { const value = useContext(AppContext); if (!value) throw new Error('useApp must be used within AppProvider'); return value; }

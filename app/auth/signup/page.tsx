@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, getProviders } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 const UserIcon = () => (
@@ -44,6 +44,8 @@ export default function SignupPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  useEffect(() => { void getProviders().then(p => setGoogleAvailable(!!p?.google)).catch(() => {}); }, []);
 
   const strength = (() => {
     let s = 0;
@@ -61,6 +63,7 @@ export default function SignupPage() {
     if (password !== confirmPassword) { setError('Passwords do not match.'); return; }
     setLoading(true);
 
+    try {
     const registerRes = await fetch('/api/auth/register', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -76,12 +79,14 @@ export default function SignupPage() {
 
     const result = await signIn('credentials', { email, password, redirect: false });
     setLoading(false);
-    if (result?.error) {
+    if (!result?.ok) {
       setError('Account created! Please sign in.');
       router.push('/auth/login');
     } else {
       router.push('/dashboard');
     }
+    } catch { setError('Could not complete sign-up. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -148,7 +153,9 @@ export default function SignupPage() {
           {/* Google */}
           <button
             type="button"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            disabled={!googleAvailable || loading}
+            title={googleAvailable ? undefined : 'Google sign-in unavailable'}
+            onClick={() => { void signIn('google', { callbackUrl: '/dashboard' }).catch(() => setError('Could not sign in. Please try again.')); }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '13px', marginBottom: '20px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '10px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#1a1a1a', fontFamily: 'inherit' }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24">

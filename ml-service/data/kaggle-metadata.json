@@ -1,0 +1,6 @@
+﻿{
+    "title":  "Disease Symptom  Prediction",
+    "licenseName":  "CC BY-SA 4.0",
+    "licenses":  null,
+    "description":  "\n### Context\n\nA dataset to provide the  students a source to create a healthcare related system.\nA project on the same using double Decision Tree Classifiication is available at : https://github.com/itachi9604/healthcare-chatbot\n\nGet_dummies processed file will be available at https://www.kaggle.com/rabisingh/symptom-checker?select=Training.csv\n\n### Content\n\nThere are  columns containing diseases, their symptoms , precautions to be taken, and their weights.\nThis dataset can be easily cleaned by using file handling in any language. The user only needs to understand how rows and coloumns are arranged.\n\n**The data in this CSV sheet is for reference and training purposes only, and actual data may vary.**\n\n### Acknowledgements\n\nI have created this dataset with help of a friend Pratik Rathod. As there was an existing dataset like this which was difficult to clean. \n"
+}

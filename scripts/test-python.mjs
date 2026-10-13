@@ -1,0 +1,10 @@
+import { spawnSync } from 'node:child_process';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+const root = fileURLToPath(new URL('../', import.meta.url));
+const local = path.join(root, process.platform === 'win32' ? '.venv/Scripts/python.exe' : '.venv/bin/python');
+const python = process.env.PYTHON ?? (existsSync(local) ? local : 'python');
+const result = spawnSync(python, ['-m', 'unittest', 'discover', '-s', 'ml-service', '-p', 'test_*.py'], { cwd: root, windowsHide: true, stdio: 'inherit' });
+if (result.error) console.error(result.error.message);
+process.exit(result.status ?? 1);

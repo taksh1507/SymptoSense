@@ -41,6 +41,7 @@ export function useSarvamTranslate(): UseSarvamTranslateReturn {
       try {
         const response = await fetch("/api/sarvam/translate", {
           method: "POST",
+          signal: AbortSignal.timeout(12000),
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             text,

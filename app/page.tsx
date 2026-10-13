@@ -109,7 +109,7 @@ export default function LandingPage() {
             fontSize: '19px', color: 'var(--text-3)', lineHeight: '1.65',
             marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px',
           }}>
-            Identify potential health risks instantly. Use our weighted 8-question algorithm to understand the urgency of your symptoms—available in 3 languages.
+            Identify potential health risks instantly. Use our adaptive questionnaire and weighted rules to understand the urgency of your symptoms—available in 3 languages.
           </p>
 
           <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>

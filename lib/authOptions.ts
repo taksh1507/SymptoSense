@@ -4,6 +4,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/db/prisma";
 import { compare } from "bcryptjs";
+import { allowRequest } from "@/lib/rateLimit";
 
 const secret = process.env.NEXTAUTH_SECRET;
 if (!secret) {
@@ -15,25 +16,28 @@ if (!secret) {
 export const authOptions: AuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    GoogleProvider({
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET ? [GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID ?? "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
-      allowDangerousEmailAccountLinking: true,
-    }),
+      allowDangerousEmailAccountLinking: false,
+    })] : []),
     CredentialsProvider({
       name: "Email",
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
+        const ip = process.env.TRUST_PROXY === "true" || process.env.VERCEL === "1" ? String(req.headers?.["x-forwarded-for"] ?? "unknown").split(",")[0].trim() : "unknown";
+        if (!await allowRequest(new Request("http://localhost/auth"), "login:" + ip, 10)) throw new Error("Too many login attempts");
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Email and password required");
         }
 
+        if (typeof credentials.email !== "string" || typeof credentials.password !== "string" || credentials.email.length > 254 || Buffer.byteLength(credentials.password) > 72) throw new Error("Invalid email or password");
         // Find user by email
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+          where: { email: credentials.email.trim().toLowerCase() },
         });
 
         if (!user || !user.password) {

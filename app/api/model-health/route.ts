@@ -1,4 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdmin } from "@/lib/admin";
+import { allowRequest } from "@/lib/rateLimit";
+import { readJson } from "@/lib/http";
+import { prisma } from "@/lib/db/prisma";
+import { record, text, InputError } from "@/lib/assessment/contracts";
 import { getServerSession } from "next-auth";
 import type { Session } from "next-auth";
 import { authOptions } from "@/lib/authOptions";
@@ -8,15 +13,7 @@ function getUserId(session: Session | null): string | undefined {
   return (session?.user as { id?: string } | undefined)?.id;
 }
 
-function isAdmin(session: Session | null): boolean {
-  const email = session?.user?.email?.toLowerCase();
-  const allowlist = (process.env.ADMIN_EMAILS || "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  if (allowlist.length === 0) return true;
-  return !!email && allowlist.includes(email);
-}
+
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -47,13 +44,21 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const body = await req.json().catch(() => ({}));
+    if (!await allowRequest(req, "admin-actions:" + getUserId(session), 3, 3600000)) return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+    const body = record(await readJson(req, 2000));
+    if (body.action === "review") {
+      if (typeof body.reviewedCorrect !== "boolean") return NextResponse.json({ error: "reviewedCorrect must be boolean" }, { status: 400 });
+      const reviewed = await prisma.followUp.update({ where: { id: text(body.followUpId, "followUpId", 100), status: "responded" }, data: { reviewedCorrect: body.reviewedCorrect, reviewedAt: new Date(), reviewedBy: getUserId(session) } });
+      return NextResponse.json({ success: true, id: reviewed.id });
+    }
     if (body.action === "retrain") {
       const result = await triggerMlRetrain();
       return NextResponse.json(result, { status: result.ok ? 200 : 502 });
     }
     return NextResponse.json({ error: "Unknown action" }, { status: 400 });
   } catch (e) {
+    if (e instanceof InputError) return NextResponse.json({ error: e.message }, { status: 400 });
+    if ((e as { code?: string }).code === "P2025") return NextResponse.json({ error: "Check-in not found" }, { status: 404 });
     console.error("[POST /api/model-health] Error:", e);
     return NextResponse.json({ error: "Failed to trigger action" }, { status: 500 });
   }

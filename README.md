@@ -1,237 +1,87 @@
-# SymptoSense 🩺
+# SymptoSense – ML-Based Symptom Triage and Disease Prediction System
 
-**SymptoSense** is a high-fidelity, professional-grade healthcare SaaS platform designed for smart symptom triage, health monitoring, and confidence-driven clinical decision support. Built with a focus on visual excellence, clinical reliability, and cross-platform accessibility, SymptoSense provides users with an instant, data-driven assessment of their health risks combined with AI-generated reasoning.
+SymptoSense is a symptom-triage prototype built with Next.js, React, Prisma/SQLite, and a FastAPI model service. It supports English, Hindi, Marathi, voice input, assessments for yourself or a family member, saved reports, and optional outcome reminders.
 
----
+The rule score describes triage urgency on a **0–100** scale. The new classical disease model uses public disease labels and displays calibrated top-three probabilities and SHAP explanations. The retained legacy confidence service uses synthetic heuristics and is separately labeled; it is not the disease classifier. **Not a medical diagnosis.** This repository does not establish clinical diagnostic accuracy.
 
-## 🏗️ System Architecture
+## Architecture
 
-The following diagram illustrates the data flow and integration between the Next.js frontend, the PostgreSQL database, the FastAPI machine learning service, and third-party AI APIs (Groq and Sarvam AI):
+The questionnaire provides canonical symptom selections and human-readable adaptive answers. Shared code extracts affirmed findings, checks all emergency indicators, and aggregates all selected symptoms and medical conditions. Emergency findings override the score to 100. Other scores are capped at 100; Medium starts at 28 and High at 55. Age is recorded and used by the legacy confidence model. Age, intensity and duration are not features of the disease dataset; the disease model does not claim to learn effects absent from its data. The current rule engine does not apply age-specific weights.
 
-```mermaid
-graph TD
-    User([User]) -->|Interacts with Web UI| NextJS[Next.js 15 Frontend]
-    NextJS -->|Session & Assessment History| PostgreSQL[(PostgreSQL Database / Prisma)]
-    NextJS -->|Triage Inputs| TriageEngine[Clinical Triage Engine]
-    TriageEngine -->|Base Risk Score 0-30| NextJS
-    NextJS -->|Symptom & Behavioral Features| MLProxy[ML API Proxy]
-    MLProxy -->|JSON Payload| FastAPI[FastAPI ML Service]
-    FastAPI -->|Prediction Features| RandomForest[Random Forest Regressor Model]
-    RandomForest -->|Continuous Confidence Score 0-1| FastAPI
-    FastAPI -->|JSON Response| MLProxy
-    NextJS -->|Clinical Context & Language| GroqProxy[AI Explanation Proxy]
-    GroqProxy -->|Prompt| Groq[Groq API: LLaMA-3.3-70B]
-    Groq -->|Structured JSON clinical explanation| GroqProxy
-    NextJS -->|Voice / Translation Request| Sarvam[Sarvam AI STT/TTS/Translation]
-```
+The browser shows the deterministic result immediately. Groq then extracts explicitly affirmed symptoms into the fixed dataset vocabulary. The rule engine checks the extracted findings before the augmented assessment is saved. Extraction failure continues with the completed questionnaire; Groq never diagnoses. Disease inference supplies calibrated probabilities and SHAP, and Groq may explain this structured output without changing urgency. The authenticated assessment API recalculates it, obtains optional model output with a deadline, and atomically saves the complete questionnaire, result, version metadata, linked prediction log, and unique outcome check-in. Saving status and retry are visible. Optional Groq prose is loaded separately and cannot replace urgency or the fixed care action. Model outages return unavailable, never a fabricated percentage.
 
----
+Standalone and serverless inference share ml-service/inference.py and ml-service/confidence_model.joblib. API rule_score is always raw 0–100 and is normalized once in Python. Historical results store their rule/model version and full assessment payload.
 
-## ✨ Key Features
+## Local setup
 
-### 🧠 Advanced Triage Engine
-- **8-Question Weighted Algorithm**: Evaluates age, symptoms, severity, duration, progression, and clinical indicators to calculate a precise risk score (0-30).
-- **Multilingual Support**: Fully localized interface and engine supporting **English**, **Hindi (हिन्दी)**, and **Marathi (मराठी)**.
-- **Family Profiles**: Manage assessments for yourself or managed family members, each with distinct health histories.
+Use Node.js 24+ (the regression loader and database adoption script use its built-in APIs), Python 3.14, and npm. The checked-in model was serialized with scikit-learn 1.8.0; use the pinned Python environment.
 
-### 🤖 Machine Learning Confidence Engine
-- **Random Forest Regressor**: Predicts the statistical reliability (0-1) of the triage assessment.
-- **Dynamic Feature Set**: Analyzes patient demographics, symptoms, and dynamic behavioral features (symptom intensity, consistency, progression, answer confidence proxy, and ambiguity score).
-- **Shortcut Prevention**: Trained using feature dropout on the rule-based risk score to ensure the model makes independent clinical evaluations.
-- **Tiered Confidence Levels**: Translates predicted scores into actionable levels: **High** ($\ge 0.80$), **Medium** ($0.55\text{--}0.80$), and **Low** ($< 0.55$).
+1. Copy .env.example to .env. Set a random NEXTAUTH_SECRET, for example using node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))". Do not commit the resulting .env. Leave optional vendor credentials blank to exercise fallbacks.
+2. Run npm ci.
+3. For a fresh database, run npm run db:deploy. For an existing SQLite database created by db push, run npm run db:adopt. Adoption makes an ignored local backup, refuses destructive schema reconciliation and duplicate check-ins, and records the repaired baseline without deleting records.
+4. Create a virtual environment: python -m venv .venv. On Windows install with .venv\Scripts\python.exe -m pip install -r ml-service/requirements.lock.txt. On other systems use the virtual environment's Python executable.
+5. Generate/refresh the disease artifacts: run `cd ml-service` followed by `python train_pipeline.py` using the virtual environment, then return to the repository root. The public CSV files are included under `ml-service/data/`. Training also regenerates the matching Next.js symptom vocabulary.
+6. Start the model service with .venv\Scripts\python.exe ml-service/server.py. It binds to 127.0.0.1:8000 by default and resolves model/database paths relative to the project, independent of the working directory.
+7. Run npm run dev and open http://localhost:3000. Register with email/password. Google sign-in requires configured GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.
 
-### 💬 AI Clinical Reasoning (Groq Integration)
-- **Llama 3.3 (70B) Model**: Generates language-specific clinical reasoning, risk summaries, contributing factors, and next steps.
-- **Resilient Fallback System**: Seamlessly switches to local, language-aware rule engines if API limits or timeouts are reached.
-- **Zero Diagnosis Policy**: Strictly structured to guide patients on urgency and next steps without making medical claims or prescribing drugs.
+DATABASE_URL=file:./dev.db resolves to prisma/dev.db. The Python service uses the same path unless SYMPTOSENSE_DB explicitly overrides it. The legacy nested prisma/prisma/dev.db file is not the configured database; retain it locally until any records that need recovery have been reviewed. Operational database files and local backups are ignored by Git.
 
-### 🎙️ Voice & Accessibility (Sarvam AI Integration)
-- **Speech-to-Text (STT)**: Allows hands-free symptom reporting in native languages.
-- **Text-to-Speech (TTS)**: Reads assessments aloud for visually impaired users.
-- **Translation Services**: Translates responses dynamically to ensure seamless localized experiences.
+The migration history has been replaced with a consistent SQLite baseline because the old SQL and lockfile targeted PostgreSQL. Existing databases with an already-recorded migration history require a reviewed migration plan; do not reset a database containing needed records. The adoption script is intended for the checked-in local databases, which had no migration ledger.
 
----
+## Verification
 
-## 🛠️ Technology Stack
+- npm run typecheck
+- npm run lint
+- npm test
+- npm run test:python
+- python -m pytest ml-service/tests -q
+- python ml-service/execute_notebook.py
+- npm run build
+- npm run test:integration (starts disposable local services and a separate fixture database)
 
-### Frontend & Core
-- **Framework**: Next.js 15 (App Router)
-- **Styling**: Vanilla CSS (Custom "Deep Crimson" design system) + Tailwind CSS (Utility classes)
-- **Database ORM**: Prisma (configured for SQLite/PostgreSQL)
-- **State Management**: React Context API (`AppContext`)
+Tests exercise canonical/multilingual/negated danger signs, all-answer scoring, feature validation, legacy/full-payload report reconstruction, voice matching, request limits, admin permissions, actual model inference, deployment parity, unavailable models, migrations, reminder dates and opt-in handling, and reviewed-outcome retraining gates. Integration fixtures never use operational patient records or real notification credentials.
 
-### Machine Learning Service
-- **Framework**: FastAPI (Python)
-- **Modeling**: scikit-learn (RandomForestRegressor), pandas, numpy, joblib
-- **Visualization**: matplotlib (for checking prediction distributions)
+## Production configuration
 
----
+Configure NEXTAUTH_SECRET, NEXTAUTH_URL, a durable database volume appropriate for SQLite, and a trusted reverse proxy. SQLite is the implemented provider; migrating to PostgreSQL requires changing the schema, migration history, and Python storage layer deliberately.
 
-## ⚙️ Machine Learning Engine Details
+Production API limits require RATE_LIMIT_REST_URL and RATE_LIMIT_REST_TOKEN for a Redis-compatible REST pipeline service. Requests fail closed if those are missing or the service fails. Development uses bounded per-process limits. Set TRUST_PROXY=true only when a trusted proxy overwrites incoming forwarding headers. Production instances must share the rate-limit store.
 
-The ML service assesses how "confident" the system is in the triage outcome. For example, if a patient reports highly inconsistent symptoms, high ambiguity, and rapid symptom progression, the confidence score drops, signaling that they should consult a physician regardless of the computed risk level.
+Use ML_SERVICE_URL as the model service base URL. The legacy ML_SERVER_URL can specify a full prediction endpoint and is normalized for administrative calls. The root requirements.txt and .python-version describe serverless inference dependencies. vercel.json excludes local data and development files from the Python bundle. Serverless code parity is tested locally; a live Vercel deployment is not verified. SQLite assessment storage requires a durable writable volume, so the full application is not ready for deployment on ephemeral serverless storage. On Vercel, prediction can use the serverless entry point, but administrative retraining/reminders require a separately hosted persistent Python service configured via ML_SERVICE_URL.
 
-### Model Architecture & Hyperparameters
-The model is a **Random Forest Regressor** optimized for covering high-confidence and boundary regions:
-- **Estimators (`n_estimators`)**: 250 trees
-- **Max Depth (`max_depth`)**: 12 levels
-- **Min Samples Leaf (`min_samples_leaf`)**: 6 samples
-- **Max Features (`max_features`)**: `'sqrt'` (square root of total features)
+Set ADMIN_EMAILS to a comma-separated allowlist and a nonempty RETRAIN_TOKEN shared by the web app and Python service. Missing values deny administrative access. The retrain/report endpoints require the token. A single active job is allowed. Model updates replace weights and version metadata; serving verifies their hash matches and returns unavailable during an incomplete promotion. Updates are reloaded without restarting prediction serving.
 
-### Input Features
-The model takes 18 input features:
-1. **Demographics**: `age_group` (0=child, 1=adult, 2=senior)
-2. **Clinical Severity/Duration**: `severity` (1-3), `duration` (1-3)
-3. **Core Symptoms**: `fever`, `cough`, `chest_pain`, `dizziness`, `fatigue` (binary flags)
-4. **Comorbidities**: `diabetes`, `heart_disease` (binary flags)
-5. **Rule Score**: `rule_score` (normalized score between 0.0 and 1.0)
-6. **Risk Level**: `risk_level` (0=LOW, 1=MEDIUM, 2=HIGH)
-7. **Behavioral Features**:
-   - `symptom_intensity_score` (1.0 - 3.0 scale)
-   - `symptom_consistency_score` (0.0 - 1.0 based on symptom similarity over time)
-   - `symptom_progression` (0=improving, 1=stable, 2=worsening)
-   - `answer_confidence_proxy` (0.0 - 1.0, user's self-assessed accuracy)
-   - `ambiguity_score` (0.0 - 1.0, reflecting conflicting or vague inputs)
-   - `multi_symptom_density` (fraction of active symptoms from the pool)
+Reminders are disabled by default (SCHEDULER_DISABLED=1). Enable the scheduler explicitly and configure SMTP or WhatsApp credentials. Each account must opt in to the corresponding channel in Settings. Users can disable reminders or clear their phone number. Times are stored and compared as Prisma-compatible epoch milliseconds, and a short reservation prevents concurrent deliveries. Preview with python ml-service/followup_reminders.py --dry-run before enabling delivery.
 
-### Preventing Shortcut Learning
-To ensure the ML model doesn't just memorize the rule score, training implements a **10% feature dropout** on `rule_score`, replacing it with a sentinel value of `-1.0`. This forces the Random Forest to learn decision patterns from the behavioral and secondary symptom features.
+## Disease ML pipeline and evaluation
 
----
+Source: [Kaggle Disease Symptom Prediction](https://www.kaggle.com/datasets/itachi9604/disease-symptom-description-dataset). The downloaded `dataset.csv` contains `Disease` and `Symptom_1` through `Symptom_17`. Disease labels are retained from the public CSV; they are never generated from a feature formula. Empty slots mean no additional symptom. `data/SOURCE.md` records provenance, and `reports/ml_report.json` records the source hash.
 
-## 📊 Clinical Triage Algorithm & Scoring Weights
+`ml-service/train_pipeline.py` is the single entry point. It deduplicates identical symptom patterns **before** a seeded stratified train/test split, then compares Logistic Regression, Bernoulli Naive Bayes, Random Forest and XGBoost with five-fold stratified CV. Imputation and scaling are inside scikit-learn Pipelines. GridSearchCV tunes the two leading models using training folds only. The held-out test is excluded from fitting, tuning and calibration. Rare classes have too few distinct training patterns for every validation fold to contain every disease; the report discloses this and uses a supported fold count for calibration.
 
-SymptoSense uses a deterministic, rule-weighted clinical triage algorithm to calculate a patient's risk score (0–100) and classify their urgency level. 
+The single report contains EDA, fold scores with mean/std, search results, held-out classification metrics, top-three accuracy, confusion matrix, per-class metrics, one-vs-rest ROC and macro AUC, learning curve, multiclass Brier before/after calibration, confidence reliability, symptom-dropping robustness, global SHAP and rule agreement. All dashboard metric values come from this report, with no hardcoded performance claims. Calibration can worsen the measured Brier score; both values are shown.
 
-### 1. Emergency Red Flags (Auto-Override to 100)
-If the assessment primary/additional symptoms or severity strings contain any of the following critical indicators, the algorithm immediately overrides the score to **100** and assigns **High** urgency:
-* **Cardiorespiratory**: "chest pain", "difficulty breathing", "shortness of breath", "palpitations"
-* **Neurological**: "unconsciousness", "confusion", "dizziness"
-* **Acute**: "severe bleeding", "bleeding"
-* *Multi-lingual overrides included (Hindi & Marathi terms like "behosh", "chakkar", "सीने में दर्द", etc.)*
+Artifacts are in `ml-service/artifacts/`: best and calibrated models, label encoder, urgency model, symptom list, red flags and a training-only SHAP background. Key figures are in `ml-service/reports/figures/`. The executable notebook `ml-service/notebooks/SymptoSense_ML.ipynb` walks through the completed report and actual model, and can optionally rerun the full training entry point.
 
-### 2. Base Symptom Scores
-If no red flags are triggered, the algorithm assigns points based on the primary symptom reported:
-* **High-Risk (35–40 pts)**: Chest Pain (40), Breathlessness / Shortness of breath (35), Sudden Severe Headache (40)
-* **Moderate-Risk (18–25 pts)**: Bleeding (22), Palpitations (25), Dizziness (18), Fever (18), Piles (18)
-* **Low-Risk (10–14 pts)**: Headache (12), Cough (12), Stomach Pain (14), Vomiting (14), Nausea (10), Fatigue (10), Rash (10), Pain (14)
+The disease dataset has **no clinical urgency labels**. A separate research classifier uses disease averages of the supplied symptom-severity weights, calculated from training rows only, with relative tercile targets. This is a derived-label proxy, not clinician-supervised urgency. Rule agreement uses the actual existing TypeScript engine with mild severity, short duration and no history; it is not a clinical validity measure. Red flags always override to High, regardless of the predicted condition or confidence.
 
-### 3. Severity Adjustments
-* **Critical**: +50 pts (e.g., cannot get out of bed)
-* **Severe**: +40 pts
-* **Moderate**: +18 pts
-* **Mild**: +0 pts
+The public data supplies a small set of repeated symptom-disease associations, not independently verified patient records. Deduplication leaves limited per-class test support. Results on that holdout do not establish external generalization, causal symptom importance, safety, or medical diagnostic accuracy. Missing age, duration and intensity cannot be learned. SHAP explains calibrated model probability, including contributions from absent symptoms; it does not establish medical causation.
 
-### 4. Duration Adjustments
-* **> 1 week**: +25 pts
-* **4-7 days**: +18 pts
-* **1-3 days**: +10 pts
-* **< 1 day**: +0 pts
+Authenticated routes: `POST /api/ml/extract`, `POST /api/ml/disease`; admin-only report proxy: `GET /api/ml/report`. FastAPI exposes `POST /predict-disease` and `GET /ml-report`. Unknown symptoms are ignored only when other known symptoms remain; otherwise the request is rejected with the ignored list. Explicit aliases and unambiguous close spellings are mapped. Service failures return unavailable, never invented predictions. The default uncertain threshold is configurable through `DISEASE_CONFIDENCE_THRESHOLD`.
 
-### 5. Comorbidities & Medical History
-* **Heart Disease**: +25 pts
-* **Blood Thinners**: +20 pts
-* **Diabetes / Hypertension / Asthma / Kidney Disease / Liver Disease**: +15 pts
+The questionnaire result page shows top-three possibilities, calibrated probability, a SHAP panel and the consult-a-doctor uncertainty state. `/dashboard/ml-insights` provides Dataset, Training, Evaluation, Explainability and Live Model tabs. Access follows the Model Health admin allowlist; set `ADMIN_EMAILS` to your own registered account to view the report. Disease results are displayed for the current assessment; existing saved reports continue to retain the original rule and legacy confidence fields.
 
-### 6. Secondary Accompanying Symptoms
-* **Blood in stool / Rectal Bleeding**: +25 pts
-* **Breathlessness**: +22 pts
-* **Bleeding**: +20 pts
-* **Vomiting**: +14 pts
-* **Chills**: +10 pts
-* **Sweating**: +8 pts
+## Retained legacy confidence and reviewed-outcome evaluation
 
-### 7. Urgency Thresholds
-The total score is capped at **100** and classified into risk levels:
-* **🔴 High Urgency**: Score $\ge 55$
-* **🟡 Medium Urgency**: Score $28\text{--}54$
-* **🟢 Low Urgency**: Score $< 28$
+The synthetic generator uses a fixed seed and the current shared rule weights/thresholds for the supported model symptom subset. It generates heuristic targets, not clinical correctness labels. Regenerating the dataset and model is an explicit development operation:
 
----
+- python ml-service/generate_dataset.py
+- python ml-service/train_model.py
 
-## 🚀 Installation & Setup
+Severity and duration each retain four distinct levels. The legacy generated dataset has no augmented copies before splitting. These commands replace development training artifacts; preserve/version artifacts that need comparison first. The model metadata identifies synthetic_heuristic as the target kind.
 
-### 1. Set Up Environment Variables
-Create a `.env.local` file in the project root:
-```env
-# Database Connections
-DATABASE_URL="file:./dev.db"
+Outcome improvement or recovery alone is never treated as evidence that triage was correct. An authorized reviewer must explicitly verify appropriateness before an outcome can be used for retraining, through POST /api/model-health with action=review, followUpId, and reviewedCorrect. Assign that privilege only to suitable reviewers. Editing the patient's check-in clears its prior review.
 
-# Authentication
-NEXTAUTH_SECRET="your-nextauth-secret-key"
-NEXTAUTH_URL="http://localhost:3000"
+Retraining requires at least 50 reviewed samples, enough distinct patients, both correctness classes, patient-separated calibration folds, and a fixed patient-level holdout. Synthetic labels are not mixed into that target. Promotion requires valid probabilities, improvement over the reviewed champion when present, and a Brier score better than both the constant 0.5 baseline and a baseline using the training prevalence. These engineering gates do not constitute clinical validation or deployment approval.
 
-# AI Integrations
-GROQ_API_KEY="your-groq-api-key"
-SARVAM_API_KEY="your-sarvam-api-key"
-
-# Machine Learning Service URL
-ML_SERVER_URL="http://localhost:8000/predict-confidence"
-```
-
-### 2. Next.js Frontend Installation
-```bash
-# Install dependencies
-npm install
-
-# Run database migrations
-npx prisma db push
-
-# Start the Next.js development server
-npm run dev
-```
-Open [http://localhost:3000](http://localhost:3000) to view the web application.
-
-### 3. FastAPI ML Service Installation
-Ensure you have Python 3.9+ installed:
-```bash
-# Navigate to ML service directory
-cd ml-service
-
-# Install python dependencies
-pip install -r requirements.txt
-
-# Run the FastAPI server
-python server.py
-```
-The ML server will run on `http://localhost:8000`. You can access the automatic documentation at `http://localhost:8000/docs`.
-
----
-
-## 📂 Project Directory Structure
-
-```
-SymptoSense/
-├── api/                      # Vercel Python Serverless Functions
-│   ├── predict-confidence.py # Python FastAPI endpoint
-│   ├── requirements.txt      # Python dependencies for serverless runtime
-│   └── confidence_model.joblib # Copied ML model file for bundling
-├── app/                      # Next.js App Router Pages & Layouts
-│   ├── api/                  # Node.js API routes (ML Proxy, Groq, Sarvam AI)
-│   ├── auth/                 # Sign-up & Login pages
-│   ├── components/           # Main application screens (Dashboard, Results, etc.)
-│   └── context/              # React Context for state management (AppContext)
-├── components/               # Reusable UI widgets and component panels
-│   ├── ai-question-engine/   # Voice-enabled, dynamic QA logic
-│   └── dashboard/            # Profile dropdown, sidebar, and history charts
-├── lib/                      # Business logic, engines, and utilities
-│   ├── ai-engine/            # Triage scoring algorithm & clinical rules
-│   └── db/                   # Prisma database adapters
-├── ml-service/               # FastAPI ML Model Service (for local development/training)
-│   ├── server.py             # FastAPI entrypoint
-│   ├── train_model.py        # Model training script
-│   ├── generate_dataset.py   # Synthetic data generation engine
-│   └── confidence_model.joblib # Trained model file
-├── prisma/                   # Database schema definitions
-└── public/                   # Static icons, symptom definitions, and manifests
-```
-
----
-
-## ⚠️ Disclaimer
-**SymptoSense is a decision support tool and is not a replacement for professional medical advice, diagnosis, or treatment.** In case of a medical emergency, please contact local emergency services or visit a hospital immediately.
-
----
-
-## 📄 License
-This project is licensed under the MIT License .
+The manifest supplies a valid SVG icon. Offline operation and a service worker are not implemented. Family assessments store patient/relation metadata; persistent independent family health profiles are not implemented.

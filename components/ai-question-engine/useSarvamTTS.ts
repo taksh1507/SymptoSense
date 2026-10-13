@@ -7,7 +7,7 @@
 
 "use client";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useRef, useState, useEffect } from "react";
 import type { Language } from "./types";
 
 // Map our internal language code to Sarvam language codes
@@ -37,11 +37,15 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
   // Keep a ref to current AudioContext so we can stop mid-playback
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const audioCtxRef = useRef<AudioContext | null>(null);
+  const generationRef = useRef(0);
+  const requestRef = useRef<AbortController | null>(null);
   
   // Prevent infinite retry loops if API is consistently failing
   const lastFailedAtRef = useRef<number | null>(null);
 
   const stop = useCallback(() => {
+    generationRef.current++;
+    requestRef.current?.abort();
     // Stop Sarvam audio
     if (audioSourceRef.current) {
       try {
@@ -58,6 +62,8 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
     setIsSpeaking(false);
   }, []);
 
+  useEffect(() => () => { stop(); void audioCtxRef.current?.close(); }, [stop]);
+
   const speakViaBrowser = useCallback(
     (text: string, language: Language): Promise<void> => {
       return new Promise((resolve) => {
@@ -66,6 +72,7 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
           return;
         }
 
+        const id = generationRef.current;
         window.speechSynthesis.cancel(); // cancel any ongoing speech
 
         const utterance = new SpeechSynthesisUtterance(text);
@@ -80,9 +87,9 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
           if (hindiVoice) utterance.voice = hindiVoice;
         }
 
-        utterance.onstart = () => setIsSpeaking(true);
+        utterance.onstart = () => { if (id === generationRef.current) setIsSpeaking(true); };
         utterance.onend = () => {
-          setIsSpeaking(false);
+          if (id === generationRef.current) setIsSpeaking(false);
           resolve();
         };
         utterance.onerror = () => {
@@ -98,11 +105,17 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
 
   const speakViaSarvam = useCallback(
     async (text: string, language: Language): Promise<void> => {
-      const response = await fetch("/api/sarvam/tts", {
+      const id = generationRef.current;
+      const controller = new AbortController(); requestRef.current = controller;
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      let response: Response;
+      try { response = await fetch("/api/sarvam/tts", {
+        signal: controller.signal,
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text, language: SARVAM_LANG_CODE[language] }),
-      });
+      }); } finally { clearTimeout(timeout); }
+      if (id !== generationRef.current) return;
 
       if (!response.ok) {
         throw new Error(`TTS API error: ${response.status}`);
@@ -124,6 +137,7 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
       }
       const ctx = audioCtxRef.current;
       const audioBuffer = await ctx.decodeAudioData(bytes.buffer);
+      if (id !== generationRef.current) return;
       const source = ctx.createBufferSource();
       source.buffer = audioBuffer;
       source.connect(ctx.destination);
@@ -132,8 +146,8 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
 
       return new Promise((resolve) => {
         source.onended = () => {
-          setIsSpeaking(false);
-          audioSourceRef.current = null;
+          if (id === generationRef.current) setIsSpeaking(false);
+          if (audioSourceRef.current === source) audioSourceRef.current = null;
           resolve();
         };
         source.start();
@@ -151,6 +165,7 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
       stop();
       setError(null);
 
+      const id = generationRef.current;
       try {
         if (lastFailedAtRef.current !== null) {
           const timeSinceFailure = Date.now() - lastFailedAtRef.current;
@@ -165,11 +180,12 @@ export function useSarvamTTS(): UseSarvamTTSReturn {
           lastFailedAtRef.current = null;
         }
       } catch (sarvamErr) {
+        if (id !== generationRef.current) return;
         const timeSinceFailure = lastFailedAtRef.current ? Date.now() - lastFailedAtRef.current : 0;
         if (lastFailedAtRef.current === null || timeSinceFailure >= 30000) {
           console.warn("[TTS] Sarvam failed, falling back to browser:", sarvamErr);
         }
-        lastFailedAtRef.current = Date.now();
+        if (timeSinceFailure >= 30000 || lastFailedAtRef.current === null) lastFailedAtRef.current = Date.now();
         
         setError("Using browser TTS (Sarvam unavailable)");
         try {

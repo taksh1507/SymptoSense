@@ -1,5 +1,1 @@
-pandas
-scikit-learn
-fastapi
-joblib
-numpy
+-r ../ml-service/inference-requirements.txt

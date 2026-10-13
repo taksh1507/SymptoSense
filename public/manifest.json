@@ -1,25 +1,21 @@
 {
   "name": "SymptoSense",
   "short_name": "SymptoSense",
-  "description": "Smart medical symptom triage system",
+  "description": "Symptom triage support",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#070D1A",
-  "theme_color": "#00C9A7",
-  "orientation": "portrait-primary",
+  "background_color": "#FFFFFF",
+  "theme_color": "#E53E3E",
   "icons": [
     {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png"
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ],
-  "categories": ["health", "medical"],
+  "categories": [
+    "health"
+  ],
   "lang": "en"
 }

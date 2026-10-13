@@ -4,13 +4,19 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_absolute_error
 import joblib
+import os
+from storage import ROOT
+os.environ.setdefault('MPLCONFIGDIR', str(ROOT / '.local' / 'matplotlib'))
 import matplotlib
 matplotlib.use('Agg')  # non-interactive backend — safe for headless environments
 import matplotlib.pyplot as plt
+from pathlib import Path
+import json
+import hashlib
 
 # Configuration
-DATASET_FILE = "synthetic_data.csv"
-MODEL_FILE = "confidence_model.joblib"
+DATASET_FILE = ROOT / "synthetic_data.csv"
+MODEL_FILE = ROOT / "ml-service" / "confidence_model.joblib"
 
 def train():
     print(f"Loading dataset from {DATASET_FILE}...")
@@ -149,11 +155,14 @@ def train():
     axes[1].legend()
 
     plt.tight_layout()
-    plt.savefig('confidence_distribution.png', dpi=120)
+    plt.savefig(ROOT / 'confidence_distribution.png', dpi=120)
     print("\nDistribution plot saved to confidence_distribution.png")
 
     # Save model
-    joblib.dump(model, MODEL_FILE)
+    temporary = MODEL_FILE.with_suffix(".candidate")
+    joblib.dump(model, temporary)
+    MODEL_FILE.with_suffix(".json").write_text(json.dumps({"scoreKind": "synthetic_heuristic", "ruleVersion": "2026-10-13.1", "modelVersion": hashlib.sha256(temporary.read_bytes()).hexdigest()[:16], "datasetHash": hashlib.sha256(DATASET_FILE.read_bytes()).hexdigest(), "featureContract": 2}), encoding="utf-8")
+    temporary.replace(MODEL_FILE)
     print(f"Model saved to {MODEL_FILE}")
 
 if __name__ == "__main__":

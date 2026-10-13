@@ -2,7 +2,7 @@
 // questionFlow.ts
 // Static questions: Q1 (Age), Q2 (Symptoms), Q9 (Duration),
 // Q10 (Severity), Q11 (Medications).
-// Q3-Q8 are generated dynamically by Gemini AI.
+// Q3-Q8 are generated dynamically by Groq AI.
 // ============================================================
 
 import type { QuestionStep, FinalAssessmentPayload, AnswerMap } from "./types";
@@ -113,7 +113,7 @@ export const Q11_MEDICATIONS: QuestionStep = {
 export type FlowStage =
   | "q1_age"
   | "q2_symptoms"
-  | "ai_questions"   // Q3-Q8 (Gemini)
+  | "ai_questions"   // Q3-Q8 (Groq)
   | "q9_duration"
   | "q10_severity"
   | "q11_medications"

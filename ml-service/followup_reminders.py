@@ -20,48 +20,33 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from pathlib import Path
 from urllib.request import Request, urlopen
+from html import escape
+from storage import connect_db, database_path, epoch_ms
 
-SCRIPT_DIR = Path(__file__).resolve().parent
-try:
-    from dotenv import load_dotenv
-    load_dotenv(SCRIPT_DIR.parent / ".env")  # optional, does not override existing vars
-except Exception:
-    pass
-DB_PATH = Path(os.environ.get("SYMPTOSENSE_DB", SCRIPT_DIR.parent / "prisma" / "dev.db"))
-APP_URL = os.environ.get("APP_URL", "http://localhost:3000")
-
-MAX_REMINDERS = int(os.environ.get("FOLLOWUP_MAX_REMINDERS", "3"))
-REMINDER_MIN_DAYS = float(os.environ.get("FOLLOWUP_REMINDER_MIN_DAYS", "1"))
-
-
+APP_URL = os.environ.get('APP_URL', 'http://localhost:3000')
+MAX_REMINDERS = int(os.environ.get('FOLLOWUP_MAX_REMINDERS', '3'))
+REMINDER_MIN_DAYS = float(os.environ.get('FOLLOWUP_REMINDER_MIN_DAYS', '1'))
 def locate_db():
-    candidates = [
-        Path(os.environ.get("SYMPTOSENSE_DB", "")) if os.environ.get("SYMPTOSENSE_DB") else None,
-        SCRIPT_DIR.parent / "prisma" / "dev.db",
-        SCRIPT_DIR.parent / "dev.db",
-    ]
-    for p in candidates:
-        if p and p.is_file():
-            return p
-    return candidates[-1]
-
+    return database_path()
 
 def find_due(db_path: Path, now: datetime):
-    con = sqlite3.connect(str(db_path))
-    cutoff = (now - timedelta(days=REMINDER_MIN_DAYS)).isoformat()
+    con = connect_db(db_path)
+    cutoff = epoch_ms(now - timedelta(days=REMINDER_MIN_DAYS))
     rows = con.execute(
         """
         SELECT f.id, f."testSessionId", f."scheduledAt", f."reminderCount",
-               ts."primaryCategory", ts.urgency, u.email, u.name
+               ts."primaryCategory", ts.urgency, u.email, u.name, u.phone, u.emailReminders, u.whatsappReminders
         FROM "FollowUp" f
         JOIN "TestSession" ts ON ts.id = f."testSessionId"
         LEFT JOIN "User" u ON u.id = ts."userId"
         WHERE f.status = 'pending'
           AND f."scheduledAt" <= ?
           AND f."reminderCount" < ?
+          AND (u.emailReminders = 1 OR u.whatsappReminders = 1)
           AND (f."lastRemindedAt" IS NULL OR f."lastRemindedAt" < ?)
+          AND (f."reminderClaimedAt" IS NULL OR f."reminderClaimedAt" < ?)
         """,
-        (now.isoformat(), MAX_REMINDERS, cutoff),
+        (epoch_ms(now), MAX_REMINDERS, cutoff, epoch_ms(now - timedelta(minutes=15))),
     ).fetchall()
     con.close()
     return rows
@@ -73,10 +58,14 @@ def _send_email(recipient: str, name: str, symptom: str, urgency: str, report_ur
     pwd = os.environ.get("SMTP_PASS")
     from_addr = os.environ.get("SMTP_FROM") or user
     if not (host and user and pwd and from_addr):
-        print(f"    [email] not configured - would send to {recipient} (report {report_url})")
+        print("    [email] not configured; skipped")
         return False
 
     subject = "SymptoSense: how did it go?"
+    name = escape(name or "there")
+    symptom = escape(symptom or "a health concern")
+    urgency = escape(urgency or "assessed")
+    report_url = escape(report_url, quote=True)
     urgency_color = {"high": "#E53E3E", "medium": "#DD6B20", "low": "#38A169"}.get((urgency or "").lower(), "#718096")
     urgency_label = (urgency or "assessed").capitalize()
     html = f"""
@@ -142,7 +131,7 @@ def _send_email(recipient: str, name: str, symptom: str, urgency: str, report_ur
             server.sendmail(from_addr, [recipient], msg.as_string())
         return True
     except Exception as e:
-        print(f"    [email] failed for {recipient}: {e}")
+        print("    [email] delivery failed")
         return False
 
 
@@ -151,7 +140,7 @@ def _send_whatsapp(phone: str, symptom: str, urgency: str, report_url: str) -> b
     number_id = os.environ.get("WHATSAPP_PHONE_NUMBER_ID")
     template = os.environ.get("WHATSAPP_TEMPLATE", "symptosense_followup")
     if not (token and number_id and phone):
-        print(f"    [whatsapp] not configured - would message {phone or 'n/a'} (report {report_url})")
+        print("    [whatsapp] not configured; skipped")
         return False
     url = f"https://graph.facebook.com/v21.0/{number_id}/messages"
     payload = {
@@ -186,6 +175,7 @@ def _send_whatsapp(phone: str, symptom: str, urgency: str, report_url: str) -> b
 def run_reminders(db_path: Path = None, dry_run: bool = False, now: datetime = None) -> int:
     db_path = db_path or locate_db()
     now = now or datetime.now(timezone.utc)
+    # Serialize concurrent reminder scans using a SQLite write reservation.
     due = find_due(db_path, now)
     sent = 0
 
@@ -194,24 +184,36 @@ def run_reminders(db_path: Path = None, dry_run: bool = False, now: datetime = N
         return 0
 
     con = sqlite3.connect(str(db_path))
-    for fup_id, session_id, scheduled, count, symptom, urgency, email, name in due:
+    for fup_id, session_id, scheduled, count, symptom, urgency, email, name, phone, email_opt_in, whatsapp_opt_in in due:
         report_url = f"{APP_URL}/dashboard/reports/{session_id}"
-        print(f"[{fup_id}] {symptom or 'general'} ({urgency or 'n/a'} risk) -> {email or 'no email'}")
+        print("Processing due check-in")
         if dry_run:
             print("    would send follow-up email")
             continue
+        claimed = con.execute(
+            'UPDATE FollowUp SET reminderClaimedAt = ? WHERE id = ? AND status = ? AND (reminderClaimedAt IS NULL OR reminderClaimedAt < ?) AND (lastRemindedAt IS NULL OR lastRemindedAt < ?)',
+            (epoch_ms(now), fup_id, 'pending', epoch_ms(now - timedelta(minutes=15)), epoch_ms(now - timedelta(days=REMINDER_MIN_DAYS))),
+        ).rowcount
+        con.commit()
+        if not claimed:
+            continue
         delivered = False
-        if email:
+        if email and email_opt_in:
             delivered = _send_email(email, name, symptom, urgency, report_url) or delivered
+        if phone and whatsapp_opt_in:
+            delivered = _send_whatsapp(phone, symptom, urgency, report_url) or delivered
         if delivered:
             new_count = count + 1
             new_status = "dismissed" if new_count >= MAX_REMINDERS else "pending"
             con.execute(
-                'UPDATE "FollowUp" SET "reminderCount" = ?, "lastRemindedAt" = ?, status = ?, "updatedAt" = ? WHERE id = ?',
-                (new_count, now.isoformat(), new_status, now.isoformat(), fup_id),
+                'UPDATE "FollowUp" SET "reminderCount" = ?, "lastRemindedAt" = ?, status = ?, "updatedAt" = ?, "reminderClaimedAt" = NULL WHERE id = ?',
+                (new_count, epoch_ms(now), new_status, epoch_ms(now), fup_id),
             )
             sent += 1
             print(f"    sent (reminder #{new_count}/{MAX_REMINDERS}); status now {new_status}")
+        else:
+            con.execute("UPDATE FollowUp SET reminderClaimedAt = NULL WHERE id = ?", (fup_id,))
+        con.commit()
 
     con.commit()
     con.close()

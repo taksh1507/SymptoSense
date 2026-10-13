@@ -2,7 +2,7 @@ import type { QuestionContext, QuestionStep } from "@/components/ai-question-eng
 
 /**
  * Question Service
- * Calls Gemini AI to generate dynamic follow-up questions (Q3-Q8).
+ * Calls Groq AI to generate dynamic follow-up questions (Q3-Q8).
  * Falls back to a generic static question if AI fails.
  */
 
@@ -125,7 +125,7 @@ export async function fetchAIQuestion(
     const question: QuestionStep = await response.json();
 
     if (question?.question?.en && question?.options?.length > 0) {
-      // Ensure mr field exists (Gemini might miss it)
+      // Ensure mr field exists (Groq might miss it)
       if (!question.question.mr) question.question.mr = question.question.hi;
       question.options = question.options.map((o) => ({
         ...o,

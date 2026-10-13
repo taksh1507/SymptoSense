@@ -181,6 +181,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           onClick={() => { router.push('/dashboard/model-health'); setIsMobileMenuOpen(false); }}
         />
 
+        <NavLink id="nav-ml-insights" icon={<Icons.Activity />} label="ML Insights" active={pathname === '/dashboard/ml-insights'} onClick={() => { router.push('/dashboard/ml-insights'); setIsMobileMenuOpen(false); }} />
+
         {isTestActive && (
           <div style={{ marginTop: '12px', padding: '12px 13px', borderRadius: '10px', background: '#FFF5F5', border: '1.5px solid #FEB2B2' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '7px', marginBottom: '8px' }}>

@@ -13,6 +13,7 @@ import {
 } from '@/lib/report/reasoningEngine';
 import { COLOR_THRESHOLDS } from '@/lib/ai-engine/scoring/thresholds';
 import type { Urgency } from '@/lib/ai-engine/scoring/types';
+import { parseStoredAssessment } from '@/lib/report/parseAnswers';
 
 interface ReportDetail {
   id: string;
@@ -26,6 +27,8 @@ interface ReportDetail {
   primaryCategory: string;
   recommendation: string;
   factors: string;              // JSON
+  assessmentPayload?: string;
+  language?: string;
   answers: string;              // JSON
   // Groq-generated fields (stored at assessment time)
   riskReasoning?: string;
@@ -52,27 +55,6 @@ interface FollowUpRecord {
 }
 
 // ── Parse stored answers into usable fields ───────────────────
-function parseAnswers(answersJson: string) {
-  try {
-    const arr: { questionId: string; answer: string }[] = JSON.parse(answersJson || '[]');
-    const map: Record<string, string> = {};
-    arr.forEach((a) => { map[a.questionId] = a.answer; });
-    return {
-      primarySymptom: (map['q1'] || map['q0'] || '').split(',')[0] || 'general',
-      allSymptoms: (map['q1'] || map['q0'] || '').split(',').filter(Boolean),
-      severity: map['q2'] || 'mild',
-      duration: map['q3'] || '< 1 day',
-      additionalSymptoms: (map['q4'] || '').split(',').filter(s => s && s !== 'none'),
-      medicalHistory: Object.entries(map)
-        .filter(([k]) => !['q0','q1','q2','q3','q4'].includes(k))
-        .map(([, v]) => v)
-        .filter(v => v && v !== 'none'),
-    };
-  } catch {
-    return { primarySymptom: 'general', allSymptoms: [], severity: 'mild', duration: '< 1 day', additionalSymptoms: [], medicalHistory: [] };
-  }
-}
-
 // ── Warning signs based on symptoms/risk ─────────────────────
 function getWarningSigns(primarySymptom: string, additionalSymptoms: string[], riskLevel: string): string[] {
   const signs = ['Watch for any sudden worsening of symptoms.'];
@@ -108,17 +90,6 @@ function getDrugWarnings(onBloodThinners: boolean, symptomTokens: string[]): str
 }
 
 // Parse the raw answer map (questionId -> value) once for meds/drug checks
-function parseAnswerMap(answersJson: string): Record<string, string> {
-  try {
-    const arr: { questionId: string; answer: string }[] = JSON.parse(answersJson || '[]');
-    const map: Record<string, string> = {};
-    arr.forEach((a) => { map[a.questionId] = a.answer; });
-    return map;
-  } catch {
-    return {};
-  }
-}
-
 export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const router = useRouter();
@@ -127,6 +98,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
 
   const [report, setReport] = useState<ReportDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [followUp, setFollowUp] = useState<FollowUpRecord | null>(null);
   const [showCheckInForm, setShowCheckInForm] = useState(false);
   const [checkInSubmitting, setCheckInSubmitting] = useState(false);
@@ -140,8 +112,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
     if (!id) return;
     Promise.all([
       fetch(`/api/sessions?sessionId=${id}`)
-        .then((r) => r.json())
-        .catch(() => null),
+        .then(r => { if (!r.ok) throw new Error(r.status === 404 ? 'Report not found.' : r.status === 401 ? 'Please sign in to view this report.' : 'Could not load this report.'); return r.json(); }),
       fetch(`/api/followups?sessionId=${id}`)
         .then((r) => (r.ok ? r.json() : []))
         .catch(() => []),
@@ -152,6 +123,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
           setFollowUp(followUpData[0]);
         }
       })
+      .catch(e => { setLoadError(e.message); setReport(null); })
       .finally(() => setLoading(false));
   }, [id]);
 
@@ -198,7 +170,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
     return (
       <AppShell>
         <div style={{ padding: '40px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-3)', marginBottom: '16px' }}>Report not found.</p>
+          <p style={{ color: 'var(--text-3)', marginBottom: '16px' }}>{loadError || 'Report not found.'}</p>
           <button className="btn btn-primary" onClick={() => router.push('/dashboard/reports')}>
             Back to Reports
           </button>
@@ -213,7 +185,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const riskColor = score >= COLOR_THRESHOLDS.high ? 'var(--red)' : score >= COLOR_THRESHOLDS.medium ? '#B45309' : '#15803D';
   const riskBg    = score >= COLOR_THRESHOLDS.high ? 'var(--red-light)' : score >= COLOR_THRESHOLDS.medium ? '#FFFBEB' : '#F0FDF4';
 
-  const parsed = parseAnswers(report.answers);
+  const parsed = parseStoredAssessment(report.answers, report.assessmentPayload);
   const { primarySymptom, severity, duration, additionalSymptoms, medicalHistory } = parsed;
 
   const isLegacy = report.confidenceScore == null;
@@ -269,8 +241,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   })();
 
   // ── Doctor-visit note data ───────────────────────────────────
-  const answerMap = parseAnswerMap(report.answers);
-  const medRaw = answerMap['q11'] ? answerMap['q11'].split(',').map((s) => s.trim()).filter(Boolean) : [];
+  const medRaw = parsed.medicalHistory;
   const onBloodThinners = medRaw.includes('blood_thinners') || medRaw.includes('blood_thinner') || medRaw.includes('blood thinner');
   const drugWarnings = getDrugWarnings(onBloodThinners, [...parsed.allSymptoms, ...parsed.additionalSymptoms, ...parsed.medicalHistory]);
 
@@ -349,7 +320,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                 </p>
                 <div style={{ height: '18px' }} />
                 <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                  Confidence tells <span style={{ color: 'var(--text-1)' }}>HOW</span> reliable
+                  Model score reflects input patterns
                 </p>
                 <div style={{ width: '1px', height: '32px', background: 'var(--border-faint)', marginTop: '10px' }} />
               </div>
@@ -364,9 +335,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                 ) : (
                   <div style={{ padding: '28px 20px', background: 'var(--bg)', borderRadius: '20px', border: '1.5px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', maxWidth: '220px' }}>
                     <div style={{ fontSize: '28px', marginBottom: '12px' }}>📊</div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px' }}>Prediction Reliability</div>
+                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px' }}>Heuristic model score</div>
                     <div style={{ fontSize: '12px', color: 'var(--text-4)', lineHeight: '1.5' }}>
-                      Not available for this report. New assessments include confidence scores.
+                      Not available for this report. The urgency result remains available.
                     </div>
                   </div>
                 )}
@@ -627,7 +598,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
                   { label: 'Severity', value: severity.replace(/^./, (c) => c.toUpperCase()) },
                   { label: 'Duration', value: duration },
                   { label: 'Risk level', value: `${urgency} (score ${score}/100)` },
-                  { label: 'Report confidence', value: !isLegacy && report.confidenceScore != null ? `${Math.round(report.confidenceScore * 100)}% (${report.confidenceLevel})` : 'Not available' },
+                  { label: 'Heuristic model score', value: !isLegacy && report.confidenceScore != null ? `${Math.round(report.confidenceScore * 100)}% (${report.confidenceLevel})` : 'Not available' },
                   { label: 'Medications / history', value: medRaw.length ? medRaw.map((m) => m.replace(/_/g, ' ')).join(', ') : 'None reported' },
                   { label: 'Follow-up', value: followUp ? (followUp.status === 'responded' ? 'Check-in recorded' : 'Pending check-in') : 'Not scheduled' },
                 ].map((f) => (

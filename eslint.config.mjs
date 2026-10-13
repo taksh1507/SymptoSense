@@ -8,6 +8,8 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      ".venv/**",
+      ".local/**",
       "out/**",
       "build/**",
       "next-env.d.ts",

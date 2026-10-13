@@ -1,4 +1,10 @@
 import { NextResponse } from "next/server";
+import { requireUser } from "@/lib/apiGuard";
+import { readJson } from "@/lib/http";
+import { record, text, choices, InputError } from "@/lib/assessment/contracts";
+import { calculateRisk } from "@/lib/ai-engine/scoring/engine";
+import { collectSymptoms } from "@/lib/assessment/findings";
+import { validateQuestion } from "@/lib/questionSchema";
 import { QuestionContext, QuestionStep } from "../../../components/ai-question-engine/types";
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
@@ -6,13 +12,24 @@ const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
 const GROQ_MODEL = "llama-3.3-70b-versatile"; // Fast, high quality, generous free tier
 
 export async function POST(req: Request) {
+  const auth = await requireUser(req, "questions", 30); if (auth.response) return auth.response;
   try {
-    if (!GROQ_API_KEY) {
-      throw new Error("Missing GROQ_API_KEY in environment");
-    }
-
-    const context: QuestionContext = await req.json();
-    const { age, symptoms, customSymptom, aiAnswers, previousQuestions, currentAiStep, language, gender, riskSnapshot } = context;
+    const b = record(await readJson(req, 12000));
+    if (!Number.isInteger(b.currentAiStep) || Number(b.currentAiStep) < 0 || Number(b.currentAiStep) > 5) throw new InputError('Invalid step');
+    if (!Array.isArray(b.symptoms) || b.symptoms.length > 20 || !Array.isArray(b.previousQuestions) || b.previousQuestions.length > 6) throw new InputError('Invalid question context');
+    const context: QuestionContext = {
+      age: choices(b.age, 'age', ['child', 'teen', 'adult', 'elderly']), symptoms: b.symptoms.map(s => text(s, 'symptom')),
+      customSymptom: b.customSymptom ? text(b.customSymptom, 'custom symptom') : undefined,
+      aiAnswers: Object.fromEntries(Object.entries(record(b.aiAnswers ?? {})).slice(0, 6).map(([k, v]) => [text(k, 'key', 80), text(v, 'answer')])),
+      previousQuestions: b.previousQuestions.map(p => { const item = record(p); return { question: text(item.question, 'question'), answer: text(item.answer, 'answer'), category: item.category ? text(item.category, 'category', 80) : undefined }; }),
+      currentAiStep: Number(b.currentAiStep), language: choices(b.language, 'language', ['en', 'hi', 'mr']) as QuestionContext['language'],
+      gender: b.gender ? text(b.gender, 'gender', 40) : undefined,
+    };
+    const affirmed = collectSymptoms(context.symptoms, context.customSymptom, context.previousQuestions.map(p => p.answer));
+    const interim = calculateRisk({ symptom: affirmed[0] ?? "general", symptoms: affirmed, severity: "mild", duration: "< 1 day" });
+    context.riskSnapshot = { score: interim.score, urgency: interim.urgency, isRedFlag: interim.isRedFlag, factors: interim.factors.map(f => f.label) };
+    if (!GROQ_API_KEY) throw new Error("Question generation unavailable");
+    const { age, symptoms, customSymptom, previousQuestions, currentAiStep, language, gender, riskSnapshot } = context;
 
     const symptomsStr = [
       ...(symptoms || []),
@@ -23,33 +40,7 @@ export async function POST(req: Request) {
       : language === "mr" ? "Marathi (Devanagari script)"
       : "English";
 
-    // ── Gender-symptom clinical mismatch detection ────────────────
-    // Detects anatomically impossible combinations and injects a note
-    // so Groq avoids generating irrelevant or misleading follow-up questions.
-    const FEMALE_ONLY_SYMPTOMS = [
-      'delayed_periods', 'missed_period', 'menstrual_pain', 'vaginal_discharge',
-      'pelvic_pain', 'pregnancy_symptoms', 'menstruation', 'period', 'ovarian',
-    ];
-    const MALE_ONLY_SYMPTOMS = [
-      'testicular_torsion', 'testicular_pain', 'scrotal_pain', 'prostate',
-      'erectile', 'penile',
-    ];
-
-    const allSymptomTokens = [symptomsStr, ...(Object.values(aiAnswers || {}))].join(' ').toLowerCase();
-
-    let genderClinicalNote = '';
-
-    if (gender === 'Male') {
-      const mismatch = FEMALE_ONLY_SYMPTOMS.find(s => allSymptomTokens.includes(s));
-      if (mismatch) {
-        genderClinicalNote = `⚠️ CLINICAL NOTE: The patient is recorded as Male, but the symptom "${mismatch}" is anatomically specific to females. Do NOT generate follow-up questions about this symptom. Focus on other reported symptoms instead.`;
-      }
-    } else if (gender === 'Female') {
-      const mismatch = MALE_ONLY_SYMPTOMS.find(s => allSymptomTokens.includes(s));
-      if (mismatch) {
-        genderClinicalNote = `⚠️ CLINICAL NOTE: The patient is recorded as Female, but the symptom "${mismatch}" is anatomically specific to males. Do NOT generate follow-up questions about this symptom. Focus on other reported symptoms instead.`;
-      }
-    }
+    const genderClinicalNote = '';
 
     // Build a rich Q&A history string so Groq knows exactly what was asked and answered
     const historyStr = previousQuestions && previousQuestions.length > 0
@@ -161,6 +152,7 @@ Respond with ONLY this JSON:
         "Content-Type": "application/json",
         "Authorization": `Bearer ${GROQ_API_KEY}`,
       },
+      signal: AbortSignal.timeout(6000),
       body: JSON.stringify({
         model: GROQ_MODEL,
         messages: [
@@ -174,8 +166,7 @@ Respond with ONLY this JSON:
     });
 
     if (!response.ok) {
-      const err = await response.text();
-      console.error("[Groq API Error]", response.status, err);
+      console.error("[Groq API Error]", response.status);
       throw new Error(`Groq API failed: ${response.status}`);
     }
 
@@ -184,7 +175,7 @@ Respond with ONLY this JSON:
 
     if (!resultText) throw new Error("Empty response from Groq");
 
-    const question: QuestionStep = JSON.parse(resultText);
+    const question: QuestionStep = validateQuestion(JSON.parse(resultText), currentAiStep);
 
     if (!question?.question?.en || !question?.options?.length) {
       throw new Error("Invalid question structure from Groq");
@@ -201,14 +192,13 @@ Respond with ONLY this JSON:
       },
     }));
 
-    console.log(`[QuestionGen] Groq question for step ${currentAiStep + 1}: "${question.question.en}"`);
     return NextResponse.json(question);
 
   } catch (error) {
     console.error("[QuestionGen API] Error:", error instanceof Error ? error.message : error);
     return NextResponse.json(
       { error: "Failed to generate question" },
-      { status: 500 }
+      { status: error instanceof InputError ? 400 : 503 }
     );
   }
 }

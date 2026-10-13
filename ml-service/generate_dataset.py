@@ -1,9 +1,12 @@
 import pandas as pd
 import numpy as np
 import random
+from storage import ROOT
+random.seed(42)
+np.random.seed(42)
 
 # Configuration
-OUTPUT_FILE = "synthetic_data.csv"
+OUTPUT_FILE = ROOT / "synthetic_data.csv"
 PERTURBATIONS_PER_SAMPLE = 40
 TOTAL_TARGET = 30000
 
@@ -23,20 +26,19 @@ def score_engine(features, noisy=False):
         if noisy: return random.uniform(90, 100), "HIGH"
         return 100, "HIGH"
 
-    symptom_scores = {'fever': 15, 'cough': 12, 'dizziness': 15, 'fatigue': 8}
+    symptom_scores = {'fever': 18, 'cough': 12, 'dizziness': 18, 'fatigue': 10}
     for s, val in symptom_scores.items():
         if features.get(s, 0) == 1:
             score += val
 
-    score += {1: 0, 2: 15, 3: 35}[features['severity']]
-    score += {1: 0, 2: 10, 3: 20}[features['duration']]
+    score += {1: 0, 2: 18, 3: 40, 4: 50}[features['severity']]
+    score += {1: 0, 2: 10, 3: 18, 4: 25}[features['duration']]
 
     if features.get('diabetes', 0) == 1:    score += 15
     if features.get('heart_disease', 0) == 1: score += 25
 
-    score += {0: 10, 1: 0, 2: 25}[features['age_group']]
     score = min(100, score)
-    level = "HIGH" if score >= 61 else ("MEDIUM" if score >= 31 else "LOW")
+    level = "HIGH" if score >= 55 else ("MEDIUM" if score >= 28 else "LOW")
     return score, level
 
 
@@ -50,7 +52,7 @@ def perturb_sample(sample):
     elif key == 'age_group':
         perturbed[key] = random.randint(0, 2)
     else:
-        perturbed[key] = random.randint(1, 3)
+        perturbed[key] = random.randint(1, 4)
     return perturbed
 
 
@@ -81,18 +83,18 @@ while len(raw_data) < TOTAL_TARGET:
     if random.random() < 0.15:
         sample['chest_pain'] = 1
     sample['age_group'] = random.choices([0, 1, 2], weights=[0.2, 0.7, 0.1])[0]
-    sample['severity']   = random.choices([1, 2, 3], weights=[0.5, 0.4, 0.1])[0]
+    sample['severity']   = random.choices([1, 2, 3, 4], weights=[0.5, 0.3, 0.15, 0.05])[0]
     sample['duration']   = random.choices([1, 2, 3], weights=[0.5, 0.4, 0.1])[0]
 
     instability, rule_score = get_instability(sample)
-    level_str = "HIGH" if rule_score >= 61 else ("MEDIUM" if rule_score >= 31 else "LOW")
+    level_str = "HIGH" if rule_score >= 55 else ("MEDIUM" if rule_score >= 28 else "LOW")
     level = RISK_ENCODING[level_str]
 
     if risk_counts[level] >= TOTAL_TARGET * (risk_target[level] + 0.05):
         continue
 
     # ── Dynamic feature generation ────────────────────────────
-    intensity = float(np.clip(sample['severity'] + np.random.normal(0, 0.5), 1, 3))
+    intensity = float(np.clip(sample['severity'] + np.random.normal(0, 0.5), 1, 4))
 
     prog_weights = [0.3, 0.4, 0.3]
     if level == 2: prog_weights = [0.1, 0.3, 0.6]
@@ -122,8 +124,8 @@ while len(raw_data) < TOTAL_TARGET:
         0.9 - (ambiguity * 0.35) + np.random.normal(0, noise_scale), 0.0, 1.0
     ))
 
-    active_count = sum(sample[k] for k in symptom_pool) + (1 if sample['chest_pain'] else 0)
-    density = active_count / len(symptom_pool)
+    active_count = sum(sample[k] for k in ['fever', 'cough', 'dizziness', 'fatigue', 'chest_pain'])
+    density = active_count / 8
 
     # ── STEP 1: Add noise to rule_score to reduce model dependency ──
     rule_score_noisy = float(np.clip(rule_score + random.uniform(-5, 5), 0, 100))
@@ -133,8 +135,7 @@ while len(raw_data) < TOTAL_TARGET:
 
     # ── STEP 3: Feature dropout — mask rule_score for ~10% of samples ──
     # Use sentinel value -1 (out of normal range) so model learns to ignore it
-    if random.random() < 0.10:
-        rule_score_norm = -1.0
+    # Inference uses the complete authoritative rule score; no out-of-range sentinel.
 
     row = sample.copy()
     row.update({
@@ -190,7 +191,7 @@ for row in raw_data:
     conf *= (0.87 + 0.13 * proxy)
 
     # Boundary penalty (softened): near risk-level thresholds
-    if 28 <= raw_score_approx <= 34 or 58 <= raw_score_approx <= 64:
+    if 25 <= raw_score_approx <= 31 or 52 <= raw_score_approx <= 58:
         conf *= random.uniform(0.78, 0.92)
 
     # Low-info penalty (softened)
@@ -253,29 +254,8 @@ def report_dist(dataframe, tag=""):
 
 report_dist(df, "Before rebalancing — ")
 
-# Oversample under-represented bands to hit targets
-for band, (lo, hi, target_frac) in TARGET_DIST.items():
-    current = df[(df['confidence'] >= lo) & (df['confidence'] < hi)]
-    current_frac = len(current) / len(df)
-    needed = int(len(df) * target_frac) - len(current)
-
-    if needed > 0 and len(current) > 0:
-        oversampled = current.sample(n=needed, replace=True, random_state=42).copy()
-        # Jitter continuous features so they're not exact duplicates
-        for col in ['symptom_consistency_score', 'answer_confidence_proxy',
-                    'ambiguity_score', 'confidence']:
-            oversampled[col] = np.clip(
-                oversampled[col] + np.random.normal(0, 0.015, len(oversampled)),
-                0.0, 1.0
-            )
-        # Keep confidence within the band after jitter
-        oversampled['confidence'] = np.clip(oversampled['confidence'], lo, hi - 0.001)
-        df = pd.concat([df, oversampled], ignore_index=True)
-        print(f"  Oversampled '{band}' band: +{len(oversampled)} rows "
-              f"(was {current_frac:.1%}, target {target_frac:.0%})")
-
-report_dist(df, "After rebalancing  — ")
+# Keep independently generated rows intact; do not augment before a holdout split.
 
 # ── Save ─────────────────────────────────────────────────────
-df.to_csv(OUTPUT_FILE, index=False)
+df.to_csv(OUTPUT_FILE, index=False, lineterminator='\n')
 print(f"\nDataset saved to '{OUTPUT_FILE}'. Total rows: {len(df)}")

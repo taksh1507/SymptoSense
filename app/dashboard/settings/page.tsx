@@ -103,26 +103,26 @@ export default function SettingsPage() {
   const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
 
   const [phone, setPhone] = useState('');
+  const [emailReminders, setEmailReminders] = useState(false);
+  const [whatsappReminders, setWhatsappReminders] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
   useEffect(() => {
     fetch('/api/profile')
-      .then(async (r) => (r.ok ? ((await r.json()) as { phone?: string }) : {}))
+      .then(async (r) => (r.ok ? ((await r.json()) as { phone?: string; emailReminders?: boolean; whatsappReminders?: boolean }) : {}))
       .then((p) => {
         if (p && typeof p.phone === 'string') setPhone(p.phone);
+        setEmailReminders(!!p.emailReminders); setWhatsappReminders(!!p.whatsappReminders);
       })
       .catch(() => {});
   }, []);
 
   const savePhone = async () => {
     const digits = phone.replace(/[\s().-]/g, '');
-    if (!digits) {
-      setError(t.phoneEmpty);
-      return;
-    }
-    if (!/^\+?[0-9]{8,15}$/.test(digits)) {
+
+    if (digits && !/^\+[1-9][0-9]{7,14}$/.test(digits)) {
       setError(t.phoneInvalid);
       return;
     }
@@ -132,7 +132,7 @@ export default function SettingsPage() {
       const res = await fetch('/api/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, emailReminders, whatsappReminders }),
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
@@ -188,6 +188,11 @@ export default function SettingsPage() {
           <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
             <h2 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{t.notifications}</h2>
             <p style={{ fontSize: '13px', color: 'var(--text-3)', margin: '0 0 18px 0' }}>{t.notifSub}</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
+              <label><input type="checkbox" checked={emailReminders} onChange={e => { setEmailReminders(e.target.checked); setSaved(false); }} /> {langKey === 'hi' ? 'ईमेल रिमाइंडर सक्षम करें' : langKey === 'mr' ? 'ईमेल स्मरणपत्रे सुरू करा' : 'Enable email check-in reminders'}</label>
+              <label><input type="checkbox" checked={whatsappReminders} onChange={e => { setWhatsappReminders(e.target.checked); setSaved(false); }} /> {langKey === 'hi' ? 'व्हाट्सएप रिमाइंडर सक्षम करें' : langKey === 'mr' ? 'व्हॉट्सॲप स्मरणपत्रे सुरू करा' : 'Enable WhatsApp check-in reminders'}</label>
+              <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{langKey === 'hi' ? 'फोन नंबर हटाने के लिए इसे खाली करके सहेजें।' : langKey === 'mr' ? 'फोन क्रमांक काढण्यासाठी रिकामा करून जतन करा.' : 'Clear and save the phone field to remove your number. Disable reminders here at any time.'}</p>
+            </div>
             <label htmlFor="phone" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>
               {t.phoneLabel}
             </label>

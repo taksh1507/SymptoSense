@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "functions": {
+    "api/predict-confidence.py": {
+      "excludeFiles": "{.local/**,.venv/**,node_modules/**,.next/**,tests/**,prisma/**/*.db,api/confidence_model.joblib,synthetic_data.csv,ml-service/test_*.py,ml-service/*train*.py,ml-service/generate_dataset.py,confidence_distribution.png}"
+    }
+  }
+}

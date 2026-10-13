@@ -3,6 +3,7 @@
 import { useApp } from '../context/AppContext';
 import { RiskGauge } from '@/components/results/RiskGauge';
 import { ConfidenceMeter } from '@/components/results/ConfidenceMeter';
+import { DiseaseResults } from '@/components/results/DiseaseResults';
 import { generateRiskExplanation, generateRecommendations } from '@/lib/report/reasoningEngine';
 import { COLOR_THRESHOLDS } from '@/lib/ai-engine/scoring/thresholds';
 import { Phone } from 'lucide-react';
@@ -11,9 +12,9 @@ import type { Urgency } from '@/lib/ai-engine/scoring/types';
 export default function ResultsPage() {
   const {
     language, riskScore, riskLevel, narrative, setTriageScreen,
-    mlScore, mlLevel, mlExplanation, riskReasoning, riskFactors,
+    mlScore, mlLevel, mlExplanation, riskReasoning, riskFactors, diseasePrediction, diseaseStatus, diseaseError,
     recommendationSteps, primaryAction, keyInsights,
-    patientName, relation, personType, assessmentPayload,
+    patientName, relation, personType, assessmentPayload, saveStatus, saveError, retrySave,
   } = useApp();
 
   const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
@@ -76,7 +77,7 @@ export default function ResultsPage() {
               {language === 'Hindi' ? 'मूल्यांकन सारांश' : language === 'Marathi' ? 'मूल्यांकन सारांश' : 'Assessment Summary'}
             </h2>
             <p style={{ fontSize: '12px', color: 'var(--text-4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Integrated Diagnostic Analysis
+              Symptom Triage Summary
             </p>
           </div>
 
@@ -91,11 +92,11 @@ export default function ResultsPage() {
             <div className="mobile-hide" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100px', textAlign: 'center', alignSelf: 'center' }}>
               <div style={{ width: '1px', height: '36px', background: 'var(--border-faint)', marginBottom: '10px' }} />
               <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                Risk tells <span style={{ color: 'var(--text-1)' }}>WHAT</span> it is
+                Risk indicates <span style={{ color: 'var(--text-1)' }}>URGENCY</span>
               </p>
               <div style={{ height: '20px' }} />
               <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                Confidence tells <span style={{ color: 'var(--text-1)' }}>HOW</span> reliable
+                Model score describes <span style={{ color: 'var(--text-1)' }}>INPUT</span> patterns
               </p>
               <div style={{ width: '1px', height: '36px', background: 'var(--border-faint)', marginTop: '10px' }} />
             </div>
@@ -104,6 +105,8 @@ export default function ResultsPage() {
             </div>
           </div>
         </div>
+
+        <DiseaseResults result={diseasePrediction} status={diseaseStatus} error={diseaseError} />
 
         {/* ── Why this risk level? ── */}
         {(displaySummary || displayFactors.length > 0) && (
@@ -153,7 +156,7 @@ export default function ResultsPage() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                 <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span>💊</span>
-                  {language === 'Hindi' ? 'एआई उपचार और सलाह' : language === 'Marathi' ? 'एआय उपचार आणि सल्ला' : 'AI Remedies & Recommendations'}
+                  {language === 'Hindi' ? 'एआई उपचार और सलाह' : language === 'Marathi' ? 'एआय उपचार आणि सल्ला' : 'Recommended next steps'}
                 </h3>
                 <span style={{ background: riskColor, color: 'white', padding: '3px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: '800' }}>
                   {riskLevel.toUpperCase()}
@@ -205,8 +208,10 @@ export default function ResultsPage() {
         {/* ── Footer ── */}
         <div style={{ textAlign: 'center', padding: '24px 0', borderTop: '1px solid var(--border-faint)' }}>
           <p style={{ fontSize: '13px', color: 'var(--text-4)', marginBottom: '12px' }}>
-            Full analysis saved to your secure patient record.
+            {saveStatus === 'saved' ? 'Assessment saved to your account.' : saveStatus === 'saving' ? 'Saving your assessment…' : 'Assessment has not been saved.'}
           </p>
+          {saveStatus === 'failed' && <div role="alert"><p>{saveError}</p><button className="btn btn-secondary" onClick={retrySave}>Retry saving</button></div>}
+          <p style={{ fontSize: '12px', color: 'var(--text-4)' }}>This assessment is not a diagnosis. The model score is a heuristic and has not been clinically validated.</p>
           <button
             onClick={() => window.location.href = '/dashboard/reports'}
             className="btn btn-ghost"

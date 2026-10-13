@@ -1,4 +1,1 @@
--- AlterTable
-ALTER TABLE "TestSession" ADD COLUMN     "confidenceExplanation" TEXT,
-ADD COLUMN     "confidenceLevel" TEXT,
-ADD COLUMN     "confidenceScore" DOUBLE PRECISION;
+-- Included in the SQLite baseline. Retained migration name for existing installations.

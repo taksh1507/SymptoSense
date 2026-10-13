@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import AppShell from '@/app/components/AppShell';
+import { retrainMetricCards, type RetrainMetrics } from '@/lib/ml/retrainMetrics';
 
 interface Stats {
   predictionCount: number;
@@ -29,8 +30,8 @@ interface MlReport {
   rows_real?: number;
   rows_real_used?: number;
   rows_real_skipped?: number;
-  candidate?: { r2: number; mae: number };
-  champion?: { r2: number; mae: number } | null;
+  candidate?: RetrainMetrics;
+  champion?: RetrainMetrics | null;
   gate?: { passed: boolean; failed: string[] };
   promoted?: boolean;
   drift?: DriftEntry[];
@@ -143,11 +144,11 @@ export default function ModelHealthPage() {
                   }}
                 >
                   <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: report ? '#10B981' : '#94A3B8', animation: report ? 'pulseDot 1.6s infinite' : 'none' }} />
-                  {report ? 'Retraining loop active' : 'Waiting for first retrain'}
+                  {report ? 'Latest retraining report' : 'Waiting for first retrain'}
                 </span>
               </div>
               <p style={{ fontSize: '12.5px', color: 'var(--text-4)', margin: '4px 0 0 0' }}>
-                Live data feeding the continuous retraining loop.
+                Live confidence-service activity and independently reviewed outcome retraining.
               </p>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -171,7 +172,7 @@ export default function ModelHealthPage() {
               <Card title="Predictions" value={String(stats.predictionCount)} sub={`${stats.predictionCountToday} today`} />
               <Card title="ML unavailable" value={`${stats.mlUnavailableRate}%`} tone={stats.mlUnavailableRate > 5 ? 'amber' : 'green'} />
               <Card title="Avg latency" value={`${stats.avgLatencyMs}ms`} />
-              <Card title="Avg confidence" value={stats.avgConfidence ? Math.round(stats.avgConfidence * 100) + '%' : '—'} />
+              <Card title="Avg model score" value={stats.avgConfidence ? Math.round(stats.avgConfidence * 100) + '%' : '—'} />
               <Card title="Follow-ups" value={String(stats.followUpTotal)} sub={`${stats.followUpResponded} responded`} tone={stats.followUpDuePending > 0 ? 'amber' : 'green'} />
               <Card title="Due pending" value={String(stats.followUpDuePending)} sub="check-ins awaiting response" />
             </div>
@@ -191,12 +192,10 @@ export default function ModelHealthPage() {
                 </span>
               )}
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
-                <Card title="Candidate R²" value={report.candidate.r2.toFixed(3)} />
-                <Card title="Candidate MAE" value={report.candidate.mae.toFixed(4)} />
+                {retrainMetricCards(report.candidate, 'Candidate').map(metric => <Card key={metric.title} title={metric.title} value={metric.value} />)}
                 {report.champion ? (
                   <>
-                    <Card title="Champion R²" value={report.champion.r2.toFixed(3)} />
-                    <Card title="Champion MAE" value={report.champion.mae.toFixed(4)} />
+                    {retrainMetricCards(report.champion, 'Champion').map(metric => <Card key={metric.title} title={metric.title} value={metric.value} />)}
                   </>
                 ) : (
                   <Card title="Champion" value="None" sub="first training run" />

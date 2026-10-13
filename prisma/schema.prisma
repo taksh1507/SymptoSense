@@ -15,6 +15,8 @@ model User {
   name          String?
   email         String?   @unique
   emailVerified DateTime?
+  emailReminders Boolean @default(false)
+  whatsappReminders Boolean @default(false)
   phone         String?   // WhatsApp-enabled number (opt-in, E.164) for follow-up reminders
   image         String?
   password      String?   // For email/password authentication
@@ -69,6 +71,9 @@ model TestSession {
   gender          String?  // e.g. Male, Female, Other, Prefer not to say
   language        String   @default("en")
   answers         String   // JSON string of Answer[]
+  assessmentPayload String? // Versioned full questionnaire payload
+  ruleVersion String?
+  modelVersion String?
   score           Int?
   urgency         String?
   factors         String?  // JSON string of Factor[]
@@ -91,9 +96,8 @@ model TestSession {
   followUps       FollowUp[]
 }
 
-// Machine-learning inference log — one row per real /api/ml/predict call.
-// Stores ONLY the numeric feature vector + prediction result, no free text,
-// so anonymous (guest) triages can feed the retraining loop without PII.
+// Server-recorded inference for a completed, owned assessment.
+// Numeric features and the actual prediction result are linked transactionally.
 model PredictionLog {
   id                  String       @id @default(cuid())
   testSessionId       String?
@@ -113,11 +117,14 @@ model PredictionLog {
   @@index([createdAt])
 }
 
-// Scheduled outcome check-in for a completed assessment — the ground-truth
-// labels that make continuous retraining meaningful.
+// A unique outcome check-in for a completed assessment.
+// Only independently reviewed appropriateness labels can feed retraining.
 model FollowUp {
   id              String      @id @default(cuid())
-  testSessionId   String
+  testSessionId   String @unique
+  reviewedCorrect Boolean? // Set only after an authorized reviewer verifies triage appropriateness
+  reviewedAt DateTime?
+  reviewedBy String?
   status          String      @default("pending") // pending | responded | dismissed
   scheduledAt     DateTime    // earliest time the user is prompted
   respondedAt     DateTime?
@@ -126,6 +133,7 @@ model FollowUp {
   resolved        String?     // yes | no | partial
   improved        String?     // worse | same | better | recovered
   notes           String?
+  reminderClaimedAt DateTime? // Short reservation to prevent concurrent delivery
   lastRemindedAt  DateTime?   // last reminder sent (drives daily rate limiting)
   reminderCount   Int         @default(0) // reminders sent so far (cap = 3)
   createdAt       DateTime    @default(now())

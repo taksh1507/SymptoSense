@@ -1,23 +1,15 @@
 import type { Metadata } from "next";
-import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AppProvider } from "./context/AppContext";
 import { Providers } from "./providers";
 
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-});
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-mono",
-});
 
 export const metadata: Metadata = {
   title: "SymptoSense – Smart Symptom Triage System",
-  description: "AI-powered smart symptom triage system built on Flask, PostgreSQL and Next.js. Decision support for health assessment.",
-  keywords: "symptom checker, triage, health assessment, medical, flask, nextjs",
+  description: "AI-powered smart symptom triage system built with FastAPI, SQLite and Next.js. Decision support for health assessment.",
+  manifest: "/manifest.json",
+  icons: { icon: "/icon.svg" },
+  keywords: "symptom checker, triage, health assessment, medical, fastapi, nextjs",
 };
 
 export default function RootLayout({
@@ -27,7 +19,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${jetbrainsMono.variable}`}>
+      <body>
         <Providers>
           <AppProvider>
             {children}

@@ -23,13 +23,20 @@ export default function ReportsPage() {
   const router = useRouter();
   const [reports, setReports] = useState<Report[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    fetch('/api/sessions')
-      .then((r) => r.json())
-      .then((data) => setReports(Array.isArray(data) ? data : []))
-      .finally(() => setLoading(false));
-  }, [session]);
+    if (!session) { setLoading(false); return; }
+    let active = true; setLoading(true); setError('');
+    fetch('/api/sessions?page=' + page)
+      .then(r => { if (!r.ok) throw new Error('Could not load reports.'); return r.json(); })
+      .then(data => { if (active) { setReports(data.sessions ?? []); setTotal(data.total ?? 0); } })
+      .catch(e => { if (active) setError(e.message); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [session, page]);
 
   const urgencyColor = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#B45309' : '#15803D';
   const urgencyBg = (u: string) => u === 'High' ? 'var(--red-light)' : u === 'Medium' ? '#FFFBEB' : '#F0FDF4';
@@ -50,10 +57,11 @@ export default function ReportsPage() {
           <div style={{ marginBottom: '28px' }}>
             <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', letterSpacing: '-0.5px' }}>{t.title[langKey]}</h1>
             <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
-              {reports.length} {t.summary[langKey]}
+              {total} {t.summary[langKey]}
             </p>
           </div>
 
+          {error && <p role="alert">{error}</p>}
           {loading ? (
             <div style={{ textAlign: 'center', padding: '60px', color: 'var(--text-4)' }}>{t.loading[langKey]}</div>
           ) : reports.length === 0 ? (
@@ -104,6 +112,7 @@ export default function ReportsPage() {
               ))}
             </div>
           )}
+          {total > 20 && <div style={{ display: "flex", gap: 16, marginTop: 24 }}><button disabled={page === 1 || loading} onClick={() => setPage(p => p - 1)}>Previous</button><span>Page {page}</span><button disabled={page * 20 >= total || loading} onClick={() => setPage(p => p + 1)}>Next</button></div>}
         </div>
       </div>
     </AppShell>

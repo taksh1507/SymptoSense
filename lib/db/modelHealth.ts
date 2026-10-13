@@ -1,4 +1,5 @@
 import { prisma } from "./prisma";
+import { mlBaseUrl } from "@/lib/ml/service";
 
 export interface ModelHealthStats {
   predictionCount: number;
@@ -46,18 +47,17 @@ export async function getModelHealthStats(): Promise<ModelHealthStats> {
   };
 }
 
-export function getMlServerUrl(): string {
-  if (process.env.ML_SERVER_URL) return process.env.ML_SERVER_URL;
-  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
-  return "http://localhost:8000";
-}
+export function getMlServerUrl(): string { return mlBaseUrl(); }
 
 export async function fetchMlReport(timeoutMs = 5000): Promise<unknown | null> {
   try {
     const controller = new AbortController();
     const t = setTimeout(() => controller.abort(), timeoutMs);
     try {
+      const token = process.env.RETRAIN_TOKEN;
+      if (!token) return null;
       const res = await fetch(`${getMlServerUrl()}/api/retrain/report`, {
+        headers: { "X-Retrain-Token": token },
         signal: controller.signal,
       });
       if (!res.ok) return null;
@@ -72,8 +72,10 @@ export async function fetchMlReport(timeoutMs = 5000): Promise<unknown | null> {
 
 export async function triggerMlRetrain(): Promise<{ ok: boolean; detail?: string }> {
   const token = process.env.RETRAIN_TOKEN;
+  if (!token) return { ok: false, detail: "Retraining is not configured." };
   try {
     const res = await fetch(`${getMlServerUrl()}/api/retrain`, {
+      signal: AbortSignal.timeout(5000),
       method: "POST",
       headers: token ? { "X-Retrain-Token": token } : {},
     });

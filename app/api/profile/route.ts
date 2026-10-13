@@ -1,69 +1,32 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import type { Session } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
-import { prisma } from "@/lib/db/prisma";
-
-function getUserId(session: Session | null): string | undefined {
-  return (session?.user as { id?: string } | undefined)?.id;
+import { NextRequest, NextResponse } from 'next/server';
+import { requireUser } from '@/lib/apiGuard';
+import { prisma } from '@/lib/db/prisma';
+import { record, InputError } from '@/lib/assessment/contracts';
+import { readJson } from '@/lib/http';
+export async function GET(req: NextRequest) {
+  const auth = await requireUser(req, 'profile-read', 60); if (auth.response) return auth.response;
+  const user = await prisma.user.findUnique({ where: { id: auth.id }, select: { name: true, email: true, image: true, phone: true, emailReminders: true, whatsappReminders: true } });
+  return NextResponse.json(user ?? {});
 }
-
-function normalizePhone(raw: unknown): string | null {
-  if (typeof raw !== "string") return null;
-  const digits = raw.replace(/[\s().-]/g, "");
-  if (!digits) return null;
-  if (!/^\+?[0-9]{8,15}$/.test(digits)) return null;
-  return digits.startsWith("+") ? digits : `+${digits}`;
-}
-
-export async function GET() {
-  try {
-    const session = await getServerSession(authOptions);
-    const userId = getUserId(session);
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true, name: true, image: true, phone: true },
-    });
-    return NextResponse.json(user ?? {});
-  } catch (e) {
-    console.error("[GET /api/profile] Error:", e);
-    return NextResponse.json({ error: "Failed to load profile" }, { status: 500 });
-  }
-}
-
 export async function POST(req: NextRequest) {
+  const auth = await requireUser(req, 'profile-write', 10); if (auth.response) return auth.response;
   try {
-    const session = await getServerSession(authOptions);
-    const userId = getUserId(session);
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const b = record(await readJson(req, 2000));
+    const data: { phone?: string | null; emailReminders?: boolean; whatsappReminders?: boolean } = {};
+    if ('phone' in b) {
+      if (b.phone !== null && typeof b.phone !== 'string') throw new InputError('Invalid phone');
+      const phone = typeof b.phone === 'string' ? b.phone.replace(/[\s().-]/g, '') : '';
+      if (phone && !/^\+[1-9][0-9]{7,14}$/.test(phone)) throw new InputError('Use an international number beginning with +');
+      data.phone = phone || null;
     }
-
-    const body = await req.json();
-    if (!("phone" in body)) {
-      return NextResponse.json({ error: "phone required" }, { status: 400 });
+    for (const key of ['emailReminders', 'whatsappReminders'] as const) {
+      if (key in b) { if (typeof b[key] !== 'boolean') throw new InputError('Invalid notification preference'); data[key] = b[key] as boolean; }
     }
-
-    const phone = normalizePhone(body.phone as unknown);
-    if (!phone) {
-      return NextResponse.json(
-        { error: "Enter a valid phone number (8–15 digits, e.g. +91XXXXXXXXXX)" },
-        { status: 400 }
-      );
-    }
-
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: { phone },
-      select: { phone: true },
-    });
-
-    return NextResponse.json({ phone: user.phone });
-  } catch (e) {
-    console.error("[POST /api/profile] Error:", e);
-    return NextResponse.json({ error: "Failed to update profile" }, { status: 500 });
-  }
+    if (!Object.keys(data).length) throw new InputError('No preferences provided');
+    const existing = await prisma.user.findUniqueOrThrow({ where: { id: auth.id }, select: { phone: true, whatsappReminders: true } });
+    if (data.whatsappReminders && !(data.phone ?? existing.phone)) throw new InputError('A phone number is required for WhatsApp reminders');
+    if (data.phone === null) data.whatsappReminders = false;
+    const result = await prisma.user.update({ where: { id: auth.id }, data, select: { phone: true, emailReminders: true, whatsappReminders: true } });
+    return NextResponse.json(result);
+  } catch (e) { return NextResponse.json({ error: e instanceof InputError ? e.message : 'Could not update preferences' }, { status: e instanceof InputError ? 400 : 500 }); }
 }

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { signIn } from 'next-auth/react';
+import { useState, useEffect } from 'react';
+import { signIn, getProviders } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 
 const MailIcon = () => (
@@ -37,16 +37,20 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [googleAvailable, setGoogleAvailable] = useState(false);
+  useEffect(() => { void getProviders().then(p => setGoogleAvailable(!!p?.google)).catch(() => {}); }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     if (!email || !password) { setError('Please fill in all fields.'); return; }
     setLoading(true);
-    const result = await signIn('credentials', { email, password, redirect: false });
-    setLoading(false);
-    if (result?.error) setError('Invalid email or password. Try again.');
-    else router.push('/dashboard');
+    try {
+      const result = await signIn('credentials', { email, password, redirect: false });
+      if (!result?.ok) setError('Invalid email or password. Try again.');
+      else router.push('/dashboard');
+    } catch { setError('Could not sign in. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   return (
@@ -78,7 +82,7 @@ export default function LoginPage() {
               AI-powered health assessment. Understand your risk level in minutes.
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {['8-question adaptive triage engine', 'Risk scoring with weighted symptoms', 'Saved report history on your account', 'Multilingual: EN · हिन्दी · मराठी'].map((f) => (
+              {['Adaptive symptom triage engine', 'Risk scoring with weighted symptoms', 'Saved report history on your account', 'Multilingual: EN · हिन्दी · मराठी'].map((f) => (
                 <div key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
                   <div style={{ width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0, marginTop: '1px', background: 'rgba(185,28,28,0.25)', border: '1px solid rgba(185,28,28,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--red-muted)' }}>
                     <CheckIcon />
@@ -106,7 +110,9 @@ export default function LoginPage() {
           {/* Google */}
           <button
             type="button"
-            onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
+            disabled={!googleAvailable || loading}
+            title={googleAvailable ? undefined : 'Google sign-in unavailable'}
+            onClick={() => { void signIn('google', { callbackUrl: '/dashboard' }).catch(() => setError('Could not sign in. Please try again.')); }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', padding: '12px', marginBottom: '20px', background: '#fff', border: '1px solid #e2e8f0', borderRadius: '8px', cursor: 'pointer', fontSize: '14px', fontWeight: '600', color: '#1a1a1a', fontFamily: 'inherit' }}
           >
             <svg width="18" height="18" viewBox="0 0 24 24">
