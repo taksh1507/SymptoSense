@@ -49,7 +49,7 @@ def disease_safety_floor(top3):
 
 class DiseaseInput(BaseModel):
     model_config = ConfigDict(extra='forbid')
-    symptoms: list[StrictStr] = Field(min_length=1, max_length=132)
+    symptoms: list[StrictStr] = Field(max_length=132)
     age_group: StrictStr | None = Field(default=None, max_length=80)
     age: float | None = Field(default=None, ge=0, le=120)
     sex: StrictStr | None = Field(default=None, max_length=30)
@@ -147,8 +147,8 @@ def map_symptoms(raw, known, vocabulary=None):
 @router.post('/predict-disease', response_model=DiseaseOutput)
 def predict_disease(data: DiseaseInput):
     bundle = load_bundle()
-    if any(not symptom.strip() or len(symptom) > 100 for symptom in data.symptoms):
-        raise HTTPException(422, 'Symptoms must be non-empty strings of at most 100 characters')
+    if any(len(symptom) > 100 for symptom in data.symptoms):
+        raise HTTPException(422, {'error': 'Symptoms must be at most 100 characters', 'ignored_symptoms': []})
     used, ignored, mapped = map_symptoms(data.symptoms, bundle['known_tokens'], bundle['vocabulary'])
     red_config=bundle['red_flags']
     flags=set(red_config.get('evidence',red_config))

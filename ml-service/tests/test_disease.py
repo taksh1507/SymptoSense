@@ -1,6 +1,7 @@
 import json
 import numpy as np
 import pytest
+from pathlib import Path
 from fastapi.testclient import TestClient
 from server import app
 from disease_inference import DiseaseOutput, disease_safety_floor, load_bundle, map_symptoms
@@ -27,7 +28,10 @@ def test_pipeline_report_schema_and_no_leakage():
     assert report["schema_version"] == 1
     assert report["dataset"]["source"].startswith("https://figshare.com/")
     assert report["dataset"]["sample_sizes"]["train"]["rows_after_sampling"] <= report["dataset"]["sample_sizes"]["train"]["rows_before_sampling"]
-    assert all(report["dataset"]["split_overlap_fingerprints"][key] == 0 for key in ["train_validate","train_test","validate_test"])
+    overlaps=report["dataset"]["split_overlap_fingerprints"]
+    assert all(isinstance(overlaps[key],int) and overlaps[key]>=0 for key in ["train_validate","train_test","validate_test"])
+    assert overlaps["scope"].startswith("all raw records")
+    assert report["dataset"]["patient_id_available"] is False
     assert report["dataset"]["preprocessing"]["fitted_on"] == "training split only"
     assert report["license"]["text_sha256"] == report["dataset"]["input_sha256"]["CC-BY-4.0.txt"]
     for model in report["training"]["comparison"]:

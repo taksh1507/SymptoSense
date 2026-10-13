@@ -55,7 +55,7 @@ def train(train_limit=150000):
     eda_matrix=Xtr[:,top_ids].toarray(); corr=np.corrcoef(eda_matrix,rowvar=False) if len(top_ids)>1 else np.eye(len(top_ids)); corr=np.nan_to_num(corr,nan=0).tolist()
     enc=LabelEncoder().fit(ytr); yt=enc.transform(ytr); yval=enc.transform(yv); classes=np.arange(len(enc.classes_))
     cv=StratifiedKFold(5,shuffle=True,random_state=SEED)
-    specs={'Logistic Regression (SGD)':SGDClassifier(loss='log_loss',alpha=0.0001,max_iter=100,tol=1e-3,random_state=SEED,average=True,n_jobs=-1),
+    specs={'Logistic Regression (SGD)':SGDClassifier(loss='log_loss',alpha=0.001,max_iter=60,tol=1e-3,learning_rate='adaptive',eta0=0.001,random_state=SEED,average=True,n_jobs=-1),
            'Naive Bayes':MultinomialNB(alpha=0.1),
            'Random Forest':RandomForestClassifier(n_estimators=120,min_samples_leaf=2,max_features='sqrt',random_state=SEED,n_jobs=-1)}
     try:
@@ -74,7 +74,7 @@ def train(train_limit=150000):
     tuned=[]; candidates=[]
     for rank,row in enumerate(comparison[:2]):
         name=row['model']; base=specs[name]
-        if name=='Logistic Regression (SGD)': params={'alpha':[0.00003,0.0001,0.0003]}
+        if name=='Logistic Regression (SGD)': params={'alpha':[0.0003,0.001,0.003]}
         elif name=='Naive Bayes': params={'alpha':[.05,.1,.5,1]}
         elif name=='Random Forest': params={'n_estimators':[120,180], 'min_samples_leaf':[1,2,4]}
         else: params={'max_depth':[4,5,6], 'learning_rate':[.05,.1]}
@@ -193,20 +193,40 @@ def train(train_limit=150000):
     # Global feature importance: SHAP is attempted on a seeded background. Models
     # unsupported by Tree/Linear explainers fall back to native mean absolute effects.
     raw_imp=getattr(best,'feature_importances_',None)
+    if raw_imp is None and hasattr(best,'feature_log_prob_'):
+        # Naive Bayes has additive log-likelihood contributions; class spread
+        # gives a model-native global ranking when SHAP lacks a NB explainer.
+        raw_imp=np.std(best.feature_log_prob_,axis=0)
     try:
         background=Xtr[:128].toarray(); explained=Xte[:64].toarray()
         if hasattr(best,'feature_importances_'):
             shap_values=shap.TreeExplainer(best)(explained)
-        else:
+        elif hasattr(best,'coef_'):
             shap_values=shap.LinearExplainer(best,background)(explained)
-        sv=shap_values.values if hasattr(shap_values,'values') else shap_values
-        if isinstance(sv,list): raw_imp=np.mean(np.abs(np.stack(sv,axis=-1)),axis=(0,2))
-        elif np.ndim(sv)==3: raw_imp=np.mean(np.abs(sv),axis=(0,2))
-        else: raw_imp=np.mean(np.abs(sv),axis=0)
-        shap_method='SHAP TreeExplainer' if hasattr(best,'feature_importances_') else 'SHAP LinearExplainer'
+        else:
+            candidate_idx=np.argsort(raw_imp)[::-1][:15]
+            background_subset=background[:,candidate_idx]
+            baseline=np.mean(background,axis=0)
+            def predict_subset(values):
+                full=np.tile(baseline,(len(values),1)); full[:,candidate_idx]=values
+                return best.predict_proba(full)
+            explainer=shap.PermutationExplainer(predict_subset,background_subset,feature_names=[columns[i] for i in candidate_idx],seed=SEED)
+            shap_values=explainer(explained[:24,candidate_idx],max_evals=2*len(candidate_idx)+1)
+            sv=shap_values.values
+            subset_imp=np.mean(np.abs(sv),axis=(0,2)) if np.ndim(sv)==3 else np.mean(np.abs(sv),axis=0)
+            raw_imp=np.zeros(len(columns)); raw_imp[candidate_idx]=subset_imp
+            shap_method='SHAP PermutationExplainer on 15 native-ranked features; other features fixed at seeded background mean'
+        if hasattr(best,'feature_importances_') or hasattr(best,'coef_'):
+            sv=shap_values.values if hasattr(shap_values,'values') else shap_values
+            if isinstance(sv,list): raw_imp=np.mean(np.abs(np.stack(sv,axis=-1)),axis=(0,2))
+            elif np.ndim(sv)==3: raw_imp=np.mean(np.abs(sv),axis=(0,2))
+            else: raw_imp=np.mean(np.abs(sv),axis=0)
+            shap_method='SHAP TreeExplainer' if hasattr(best,'feature_importances_') else 'SHAP LinearExplainer'
     except Exception as explain_error:
         raw_imp=getattr(best,'feature_importances_',None)
-        if raw_imp is None: raw_imp=np.mean(np.abs(best.coef_),axis=0)
+        if raw_imp is None and hasattr(best,'coef_'): raw_imp=np.mean(np.abs(best.coef_),axis=0)
+        if raw_imp is None and hasattr(best,'feature_log_prob_'): raw_imp=np.std(best.feature_log_prob_,axis=0)
+        if raw_imp is None: raise RuntimeError(f'No global explanation fallback for {type(best).__name__}') from explain_error
         shap_method='Native model importance fallback: '+str(explain_error)
     order=np.argsort(raw_imp)[::-1][:15]; global_importance=[{'symptom':columns[i],'importance':float(raw_imp[i])} for i in order]
     # Bundle with sparse-friendly inference artifacts.
@@ -229,12 +249,12 @@ def train(train_limit=150000):
     unique_pattern_counts=frames['train'].groupby('PATHOLOGY')['EVIDENCES'].nunique().to_dict()
     report={'schema_version':1,'generated_at':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),'model_version':'ddxplus-'+hashes['release_train_patients'][:12],
       'dataset':{'source':'https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374','representation':'DDXPlus patient evidence lists expanded into schema-defined sparse symptom and antecedent features; INITIAL_EVIDENCE excluded because not collected at inference','preprocessing':{'fitted_on':'training split only','method':'schema-fixed one-hot evidence encoding; no validation/test-fitted statistics','sex_mask_probability':0.20},'raw_rows':sizes['train']['rows_before_sampling'],'unique_rows':int(frames['train']['EVIDENCES'].nunique()),'duplicate_patterns_removed':int(len(frames['train'])-frames['train']['EVIDENCES'].nunique()),'feature_count':len(columns),'class_count':len(enc.classes_),'age_median':float(frames['train']['AGE'].median()),'class_distribution':[{'disease':k,'count':v,'unique_count':int(unique_pattern_counts.get(k,0))} for k,v in sizes['train']['class_distribution'].items()],'top_symptoms':[{'symptom':columns[i],'count':int(feature_counts[i])} for i in top_ids[:10]],'correlation':{'labels':eda_names,'matrix':corr},'missing_values':[{'column':c,'count':int(frames['train'][c].isna().sum())} for c in frames['train'].columns],'missing_interpretation':'Empty evidence tokens mean evidence not reported; original DDXPlus data are synthetic.','sample':[{'disease':str(r.PATHOLOGY),'symptoms':__import__('ml_pipeline.ddxplus_data',fromlist=['parse_evidence']).parse_evidence(r.EVIDENCES)[:12]} for r in frames['train'].head(10).itertuples()] ,'sha256':hashes['release_train_patients'],'input_sha256':hashes,'sample_sizes':sizes,'split_overlap_fingerprints':overlaps,'patient_id_available':False,'exact_duplicate_evidence_patterns':int(frames['train']['EVIDENCES'].duplicated().sum()),'sampled_train_rows':len(frames['train']),'feature_memory_bytes':int(Xtr.data.nbytes+Xtr.indices.nbytes+Xtr.indptr.nbytes),'training_seconds':float(time.perf_counter()-started)},
-      'symptoms':[x['code'] for x in sym],'classes':enc.classes_.tolist(),'split':{'train_rows':len(Xtr),'validation_rows':len(Xv),'test_rows':len(Xte),'overlap_fingerprints':overlaps},
+      'symptoms':[x['code'] for x in sym if not x['is_antecedent']],'evidence_codes':[x['code'] for x in sym],'classes':enc.classes_.tolist(),'split':{'train_rows':Xtr.shape[0],'validation_rows':Xv.shape[0],'test_rows':Xte.shape[0],'overlap_fingerprints':overlaps},
       'training':{'winner':winner,'comparison':comparison,'hyperparameters':tuned,'best_parameters':next(x['parameters'] for x in tuned if x['model']==winner),'learning_curve':learning_curve,'training_seconds':float(time.perf_counter()-cv_started)},
       'evaluation':{'metrics':metrics,'topk':topk,'confusion_matrix':cm,'per_class':[{'disease':str(enc.classes_[i]),'precision':float(p[i]),'recall':float(r[i]),'f1':float(f[i]),'support':int(np.sum(yte==i))} for i in classes],'macro_auc':auc,'roc':roc_data,'robustness':robustness,'train_test_accuracy_gap':train_accuracy-acc},
       'baselines':{'majority_class':{'accuracy':majority_accuracy,'test_rows':min(5000,len(yte)),'class':str(enc.classes_[majority])},'nearest_neighbour':nearest_baseline,'interpretation':'Majority-class score is a naive floor; nearest-neighbour tests whether local evidence-pattern similarity beats the selected classical models. Nearest-neighbour evaluation uses a deterministic bounded slice for laptop memory.'},
       'noise_robustness':noise_robustness,'calibration':{'method':calibration['method'],'validation':calibration['validation'],'brier_before':bs_raw,'brier_after':calibration['validation'].get(calibration['method'],{}).get('brier',bs_raw),'brier_definition':'Validation multiclass Brier score is mean sum of squared class-probability errors.','curve_before':calibration['curve_before'],'curve_after':calibration['curve_after']},
-      'explainability':{'method':shap_method,'global_importance':global_importance,'units':'mean absolute SHAP value (model output contribution); not causal effect','background_rows':128,'global_rows':min(64,len(Xte))},
+      'explainability':{'method':shap_method,'global_importance':global_importance,'units':'mean absolute SHAP value (model output contribution); not causal effect','background_rows':128,'global_rows':min(64,Xte.shape[0])},
       'urgency':{'labels':sorted(set(urgency_by_disease.values()),key=RANK.get),'label_source':'DDXPlus per-pathology severity; synthetic dataset-defined proxy, not clinician-validated. Lower severity number means more severe.','accuracy_against_derived_labels':float(accuracy_score(utest,upred)),'per_class_recall':{lab:float(precision_recall_fscore_support(utest,upred,labels=[lab],average=None,zero_division=0)[1][0]) for lab in sorted(set(utest))},'high_recall':float(precision_recall_fscore_support(utest,upred,labels=['High'],average=None,zero_division=0)[1][0]),'rule_agreement':rule_agreement,'rule_agreement_after_red_flags':rule_agreement_after,'confusion_matrix':confusion_matrix(utest,upred,labels=['Low','Medium','High']).tolist(),'severity_table':severity_table,'severity_aliases':{},'duplicate_severity_entries':[],'rule_context':rule_context},
       'severity_table':severity_table,'license':{'name':'CC BY 4.0','source':'https://creativecommons.org/licenses/by/4.0/legalcode','text_sha256':hashes.get('CC-BY-4.0.txt'),'dataset_page':'https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374'},'artifacts':artifact_hashes,'limitations':['DDXPlus is synthetic and not clinical validation.','Sampling limits training to the configured row budget; validation/test samples are proportional.','No patient identifier is distributed, so split checks use exact-row fingerprints only.','Age 50 is assigned to elderly to resolve overlapping app questionnaire ranges.','Urgency labels derive from dataset severity and are not clinician-validated.','Project safety choices are not clinical guidelines.','Learning curve is estimated on a seeded training subset capped at 30,000 rows to fit laptop memory.'],'deployment':{'uncertainty_threshold':float(os.getenv('DISEASE_CONFIDENCE_THRESHOLD','0.5')),'probability_mode':f'{calibration["method"]} calibrated predict_proba' if calibration['method']!='none' else 'uncalibrated predict_proba'},'disclaimer':'This is not a medical diagnosis. Consult a qualified clinician.'}
     REPORT_PATH.parent.mkdir(parents=True,exist_ok=True); REPORT_PATH.write_text(json.dumps(report,indent=2),encoding='utf-8')
