@@ -1,1 +1,29 @@
-["chest_pain", "chest_tightness", "shortness_of_breath", "difficulty_breathing", "loss_of_consciousness", "fainting", "severe_bleeding", "coughing_blood", "vomiting_blood", "stroke_symptoms", "sudden_severe_headache", "paralysis", "face_drooping", "arm_weakness", "weakness_of_one_body_side", "altered_sensorium", "loss_of_balance", "breathlessness", "coughing_of_blood", "speech_difficulty", "severe_chest_pressure", "heart_palpitations_severe", "anaphylaxis", "severe_allergic_reaction", "unresponsive", "seizure", "suicidal_thoughts", "severe_abdominal_pain", "high_fever_infant", "breathlessness", "confusion"]
+{
+  "evidence": {
+    "E_128": "Have you ever felt like you were suffocating for a very short time associated with inability to breathe or speak?",
+    "E_14": "Do you have chest pain even at rest?",
+    "E_156": "Have you had weakness or paralysis on one side of the face, which may still be present or completely resolved?",
+    "E_159": "Did you lose consciousness?",
+    "E_194": "Have you noticed a high pitched sound when breathing in?",
+    "E_210": "Have you recently thrown up blood or something resembling coffee beans?",
+    "E_39": "Have you felt confused or disorientated lately?",
+    "E_43": "Have you lost consciousness associated with violent and sustained muscle contractions or had an absence episode?",
+    "E_45": "Have you been coughing up blood?",
+    "E_63": "Do you have difficulty articulating words/speaking?",
+    "E_64": "Do you feel out of breath with minimal physical effort?",
+    "E_66": "Are you experiencing shortness of breath or difficulty breathing in a significant way?",
+    "E_75": "Do you feel like you are (or were) choking or suffocating?"
+  },
+  "conditional": [
+    {
+      "requires": "E_151",
+      "and_one_of": [
+        "E_152_@_V_32",
+        "E_152_@_V_61",
+        "E_152_@_V_115",
+        "E_152_@_V_162"
+      ],
+      "reason": "swelling involving mouth, above tongue, uvula or under tongue"
+    }
+  ]
+}
