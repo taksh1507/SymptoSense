@@ -12,6 +12,7 @@ from pydantic import BaseModel, ConfigDict, Field, StrictStr
 from ml_pipeline.data import SERVICE, normalize
 from ml_pipeline.ddxplus_data import encode_patient, feature_schema, age_group
 from ml_pipeline.explain import explain_input
+from ml_pipeline.model_input import predict, predict_proba
 
 router = APIRouter()
 REPORT_PATH = SERVICE / 'reports' / 'ml_report.json'
@@ -171,10 +172,11 @@ def predict_disease(data: DiseaseInput):
     col_index = {name:i for i,name in enumerate(bundle['feature_columns'])}
     for name, value in values.items(): vector[col_index[name]] = value
     with _lock:
-        probability = bundle['model'].predict_proba(vector.reshape(1, -1))[0]
+        # Models were trained on sparse matrices; always predict on the same representation.
+        probability = predict_proba(bundle['model'], vector)[0]
         order = np.argsort(probability)[::-1][:3]
         confidence = float(probability[order[0]])
-        model_urgency = str(bundle['urgency'].predict(vector.reshape(1, -1))[0])
+        model_urgency = str(predict(bundle['urgency'], vector)[0])
         contributions = explain_input(bundle['model'], bundle['background'], bundle['feature_columns'], vector, int(order[0]))
     try:
         threshold = float(os.getenv('DISEASE_CONFIDENCE_THRESHOLD', str(bundle['report']['deployment']['uncertainty_threshold'])))
