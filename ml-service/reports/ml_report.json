@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-10-13T13:22:09.171435+00:00",
+  "generated_at": "2026-10-14T13:05:19.555437+00:00",
   "model_version": "ddxplus-93933e9a9a7a",
   "dataset": {
     "source": "https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374",
@@ -11,8 +11,8 @@
       "sex_mask_probability": 0.2
     },
     "raw_rows": 1025602,
-    "unique_rows": 126906,
-    "duplicate_patterns_removed": 23094,
+    "unique_evidence_patterns": 126906,
+    "duplicate_evidence_patterns_kept": 23094,
     "feature_count": 980,
     "class_count": 49,
     "age_median": 38.0,
@@ -128,7 +128,7 @@
         "unique_count": 3799
       },
       {
-        "disease": "Guillain-Barré syndrome",
+        "disease": "Guillain-Barr\u00e9 syndrome",
         "count": 3344,
         "unique_count": 515
       },
@@ -816,7 +816,7 @@
           "Ebola": 109,
           "Epiglottitis": 2518,
           "GERD": 3799,
-          "Guillain-Barré syndrome": 3344,
+          "Guillain-Barr\u00e9 syndrome": 3344,
           "HIV (initial infection)": 4242,
           "Influenza": 3920,
           "Inguinal hernia": 2960,
@@ -871,7 +871,7 @@
           "Ebola": 17,
           "Epiglottitis": 329,
           "GERD": 500,
-          "Guillain-Barré syndrome": 374,
+          "Guillain-Barr\u00e9 syndrome": 374,
           "HIV (initial infection)": 562,
           "Influenza": 524,
           "Inguinal hernia": 385,
@@ -926,7 +926,7 @@
           "Ebola": 19,
           "Epiglottitis": 346,
           "GERD": 517,
-          "Guillain-Barré syndrome": 381,
+          "Guillain-Barr\u00e9 syndrome": 381,
           "HIV (initial infection)": 571,
           "Influenza": 519,
           "Inguinal hernia": 402,
@@ -966,7 +966,7 @@
     "exact_duplicate_evidence_patterns": 23094,
     "sampled_train_rows": 150000,
     "feature_memory_bytes": 27832540,
-    "training_seconds": 2151.0555093000294
+    "training_seconds": 3468.433241699997
   },
   "symptoms": [
     "E_103",
@@ -1328,7 +1328,7 @@
     "Ebola",
     "Epiglottitis",
     "GERD",
-    "Guillain-Barré syndrome",
+    "Guillain-Barr\u00e9 syndrome",
     "HIV (initial infection)",
     "Influenza",
     "Inguinal hernia",
@@ -1369,6 +1369,7 @@
   },
   "training": {
     "winner": "XGBoost",
+    "selection_metric": "validation macro-F1 after RandomizedSearchCV on the training split (test split untouched)",
     "comparison": [
       {
         "model": "XGBoost",
@@ -1660,7 +1661,7 @@
         "validation_f1": 0.9927699184206367
       }
     ],
-    "training_seconds": 2076.12737370003
+    "training_seconds": 3296.64815969998
   },
   "evaluation": {
     "metrics": {
@@ -4338,7 +4339,7 @@
         "support": 517
       },
       {
-        "disease": "Guillain-Barré syndrome",
+        "disease": "Guillain-Barr\u00e9 syndrome",
         "precision": 1.0,
         "recall": 1.0,
         "f1": 1.0,
@@ -14378,7 +14379,7 @@
         ]
       },
       {
-        "disease": "Guillain-Barré syndrome",
+        "disease": "Guillain-Barr\u00e9 syndrome",
         "auc": 1.0,
         "points": [
           {
@@ -26635,42 +26636,42 @@
     "robustness": [
       {
         "percent_dropped": 0,
-        "accuracy": 0.05051839804838382,
-        "accuracy_std": 0.0,
-        "top3_accuracy": 0.0825371010367961,
+        "accuracy": 0.9970522463915431,
+        "accuracy_std": 1.1102230246251565e-16,
+        "top3_accuracy": 1.0,
         "top3_std": 0.0,
         "repeats": 10
       },
       {
         "percent_dropped": 10,
-        "accuracy": 0.05051839804838382,
-        "accuracy_std": 0.0,
-        "top3_accuracy": 0.0825371010367961,
-        "top3_std": 0.0,
+        "accuracy": 0.9809463305549908,
+        "accuracy_std": 0.0010515519367931146,
+        "top3_accuracy": 0.9990241919089247,
+        "top3_std": 0.0002247747955630756,
         "repeats": 10
       },
       {
         "percent_dropped": 20,
-        "accuracy": 0.05051839804838382,
-        "accuracy_std": 0.0,
-        "top3_accuracy": 0.0825371010367961,
-        "top3_std": 0.0,
+        "accuracy": 0.9583807684488717,
+        "accuracy_std": 0.0011896244267110311,
+        "top3_accuracy": 0.9963407196584673,
+        "top3_std": 0.00025714801058496635,
         "repeats": 10
       },
       {
         "percent_dropped": 30,
-        "accuracy": 0.05051839804838382,
-        "accuracy_std": 0.0,
-        "top3_accuracy": 0.0825371010367961,
-        "top3_std": 0.0,
+        "accuracy": 0.932135596665989,
+        "accuracy_std": 0.001772569111153241,
+        "top3_accuracy": 0.9913549501931287,
+        "top3_std": 0.0006369971011678986,
         "repeats": 10
       },
       {
         "percent_dropped": 40,
-        "accuracy": 0.05051839804838382,
-        "accuracy_std": 0.0,
-        "top3_accuracy": 0.0825371010367961,
-        "top3_std": 0.0,
+        "accuracy": 0.8957359219353528,
+        "accuracy_std": 0.0015666865868874183,
+        "top3_accuracy": 0.9817086806261436,
+        "top3_std": 0.0007443320348407396,
         "repeats": 10
       }
     ],
@@ -26695,33 +26696,66 @@
   "noise_robustness": [
     {
       "percent_wrong_evidence": 0,
-      "accuracy": 0.05051839804838382,
-      "accuracy_std": 0.0,
-      "top3_accuracy": 0.0825371010367961,
-      "top3_std": 0.0,
-      "repeats": 10
-    },
-    {
-      "percent_wrong_evidence": 5,
-      "accuracy": 0.05051839804838382,
-      "accuracy_std": 0.0,
-      "top3_accuracy": 0.0825371010367961,
+      "accuracy": 0.9970522463915431,
+      "accuracy_std": 1.1102230246251565e-16,
+      "top3_accuracy": 1.0,
       "top3_std": 0.0,
       "repeats": 10
     },
     {
       "percent_wrong_evidence": 10,
-      "accuracy": 0.05051839804838382,
-      "accuracy_std": 0.0,
-      "top3_accuracy": 0.0825371010367961,
-      "top3_std": 0.0,
+      "accuracy": 0.9951819475503152,
+      "accuracy_std": 0.0002970449114901948,
+      "top3_accuracy": 0.999969505997154,
+      "top3_std": 2.4898249062635412e-05,
+      "repeats": 10
+    },
+    {
+      "percent_wrong_evidence": 20,
+      "accuracy": 0.9930117910144338,
+      "accuracy_std": 0.0005906231701995364,
+      "top3_accuracy": 0.9998678593210002,
+      "top3_std": 6.098800569223629e-05,
+      "repeats": 10
+    },
+    {
+      "percent_wrong_evidence": 30,
+      "accuracy": 0.9909229518194757,
+      "accuracy_std": 0.0006754725645796339,
+      "top3_accuracy": 0.9996747306363083,
+      "top3_std": 7.938859194862841e-05,
       "repeats": 10
     },
     {
       "variant": "noise_augmented_model",
-      "percent_wrong_evidence": 5,
-      "accuracy": 0.9970014230534662,
+      "percent_wrong_evidence": 0,
+      "accuracy": 0.9973063630819272,
       "top3_accuracy": 1.0,
+      "repeats": 1,
+      "augmented_training_rows": 50000
+    },
+    {
+      "variant": "noise_augmented_model",
+      "percent_wrong_evidence": 10,
+      "accuracy": 0.997357186420004,
+      "top3_accuracy": 1.0,
+      "repeats": 1,
+      "augmented_training_rows": 50000
+    },
+    {
+      "variant": "noise_augmented_model",
+      "percent_wrong_evidence": 20,
+      "accuracy": 0.9962898963203903,
+      "top3_accuracy": 1.0,
+      "repeats": 1,
+      "augmented_training_rows": 50000
+    },
+    {
+      "variant": "noise_augmented_model",
+      "percent_wrong_evidence": 30,
+      "accuracy": 0.9961374263061598,
+      "top3_accuracy": 0.9999491766619232,
+      "repeats": 1,
       "augmented_training_rows": 50000
     }
   ],
@@ -26830,67 +26864,67 @@
     ]
   },
   "explainability": {
-    "method": "SHAP TreeExplainer",
+    "method": "SHAP TreeExplainer (tree-path-dependent, raw margin units; zeros passed as missing to match sparse training)",
     "global_importance": [
       {
         "symptom": "symptom:E_53",
-        "importance": 0.4354119598865509
+        "importance": 0.2774485647678375
       },
       {
         "symptom": "symptom:E_57:@:V_123",
-        "importance": 0.22325174510478973
+        "importance": 0.16193166375160217
+      },
+      {
+        "symptom": "symptom:E_151",
+        "importance": 0.13128727674484253
       },
       {
         "symptom": "symptom:E_131:@:V_10",
-        "importance": 0.19100356101989746
+        "importance": 0.11811583489179611
       },
       {
-        "symptom": "symptom:E_135:@:V_10",
-        "importance": 0.1347561925649643
-      },
-      {
-        "symptom": "symptom:E_216",
-        "importance": 0.13433033227920532
+        "symptom": "symptom:E_130:@:V_138",
+        "importance": 0.08134754002094269
       },
       {
         "symptom": "symptom:E_130:@:V_156",
-        "importance": 0.12681610882282257
+        "importance": 0.07417554408311844
       },
       {
-        "symptom": "symptom:E_166",
-        "importance": 0.11541732400655746
-      },
-      {
-        "symptom": "symptom:E_129",
-        "importance": 0.10909634083509445
-      },
-      {
-        "symptom": "symptom:E_152:@:V_123",
-        "importance": 0.10773339867591858
-      },
-      {
-        "symptom": "symptom:E_54:@:V_192",
-        "importance": 0.10273411124944687
-      },
-      {
-        "symptom": "symptom:E_54:@:V_179",
-        "importance": 0.09543591737747192
+        "symptom": "antecedent:E_196",
+        "importance": 0.06608401238918304
       },
       {
         "symptom": "symptom:E_201",
-        "importance": 0.09290142357349396
+        "importance": 0.06304381042718887
       },
       {
-        "symptom": "symptom:E_54:@:V_183",
-        "importance": 0.09221363812685013
+        "symptom": "antecedent:E_120",
+        "importance": 0.059861697256565094
       },
       {
-        "symptom": "symptom:E_211",
-        "importance": 0.09188711643218994
+        "symptom": "symptom:E_194",
+        "importance": 0.0570739321410656
       },
       {
-        "symptom": "symptom:E_130:@:V_11",
-        "importance": 0.09122321009635925
+        "symptom": "antecedent:E_146",
+        "importance": 0.05110177770256996
+      },
+      {
+        "symptom": "symptom:E_155",
+        "importance": 0.04924692586064339
+      },
+      {
+        "symptom": "symptom:E_92",
+        "importance": 0.04876048117876053
+      },
+      {
+        "symptom": "symptom:E_157",
+        "importance": 0.04743736982345581
+      },
+      {
+        "symptom": "symptom:E_66",
+        "importance": 0.04597515985369682
       }
     ],
     "units": "mean absolute SHAP value (model output contribution); not causal effect",
@@ -26977,7 +27011,7 @@
         "urgency": "High"
       },
       {
-        "disease": "Guillain-Barré syndrome",
+        "disease": "Guillain-Barr\u00e9 syndrome",
         "severity": 2,
         "urgency": "High"
       },
@@ -27228,7 +27262,7 @@
       "urgency": "High"
     },
     {
-      "disease": "Guillain-Barré syndrome",
+      "disease": "Guillain-Barr\u00e9 syndrome",
       "severity": 2,
       "urgency": "High"
     },
@@ -27438,7 +27472,7 @@
     "best_model.joblib": "ad38a22866369390852421d8ea8a687d254175f7c89b5726d3a017184468fc92",
     "feature_columns.json": "6eb1121bb67eb729c9179672b3add71ac65859cfa9e7fabaf478c0bb5916baab",
     "label_encoder.joblib": "1f5a7f48f3b201d25fa17452a96ab027a929ef67276d20ea61de99d3a12b96e6",
-    "red_flags.json": "d42c3f6137b76bdb505605f7966d8de93af4d281eed1974cbf8dccc05f4647e7",
+    "red_flags.json": "d3e0ba564e9ebcc98206630362fb38ac17abf6e72d0aaad6d5e26c84b0a65f4e",
     "shap_background.joblib": "f366caa1a98af5d33bdace01dbaef8dae485a8647ec42661e231a5da0b73e4a0",
     "symptom_list.json": "fab0eb5c3adebc01f8ed1ea81299fb29d43525ba74ddd8044028c8263df7a31c",
     "urgency_model.joblib": "0dc66436bdb8652ef06ddcb05edbfff713279824cb42423162e56c99b12534dc"

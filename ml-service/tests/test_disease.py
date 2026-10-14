@@ -43,7 +43,7 @@ def test_pipeline_report_schema_and_no_leakage():
     assert len(report["evaluation"]["confusion_matrix"]) == 49
     assert len(report["evaluation"]["per_class"]) == 49
     assert [x["percent_dropped"] for x in report["evaluation"]["robustness"]] == [0,10,20,30,40]
-    assert [x["percent_wrong_evidence"] for x in report["noise_robustness"][:3]] == [0,5,10]
+    assert [x["percent_wrong_evidence"] for x in report["noise_robustness"][:4]] == [0,10,20,30]
     assert len(report["explainability"]["global_importance"]) == 15
 
 def test_valid_prediction_contract(client):
