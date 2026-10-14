@@ -21,6 +21,7 @@ from sklearn.calibration import calibration_curve
 from sklearn.base import clone
 from sklearn.neighbors import NearestNeighbors
 from scipy.sparse import vstack, csr_matrix
+from .model_input import to_sparse, explain_matrix, predict_proba as sparse_predict_proba
 from .ddxplus_data import DATA, SERVICE, SEED, load_metadata, load_splits, vocabulary, feature_schema, encode_rows
 
 ART = SERVICE/'artifacts'; REPORT_PATH=SERVICE/'reports'/'ml_report.json'; FIG=SERVICE/'reports'/'figures'
@@ -147,32 +148,36 @@ def train(train_limit=150000):
                 for row in noisy:
                     ids=np.flatnonzero(row[8:]); n=round(len(ids)*pct/100)
                     if n: row[8+rng.choice(ids,size=min(n,len(ids)),replace=False)]=0
-            probs=chosen.predict_proba(noisy)
+            probs=sparse_predict_proba(chosen,noisy)
             accuracies.append(float(accuracy_score(yte,np.argmax(probs,axis=1))))
             top3_scores.append(float(top_k_accuracy_score(yte,probs,k=3,labels=classes)))
         robustness.append({'percent_dropped':pct,'accuracy':float(np.mean(accuracies)),'accuracy_std':float(np.std(accuracies)),'top3_accuracy':float(np.mean(top3_scores)),'top3_std':float(np.std(top3_scores)),'repeats':10})
+    # Wrong evidence is added relative to what each patient actually reported (at least one
+    # item when pct>0), so these levels mirror the missing-evidence test above.
+    noise_levels=[0,10,20,30]
+    def add_wrong_evidence(matrix,pct,seed):
+        generator=np.random.default_rng(seed); noisy=matrix.copy()
+        if pct:
+            for row in noisy:
+                count=max(1,round(int(np.count_nonzero(row[8:]))*pct/100))
+                zeros=np.flatnonzero(row[8:]==0)+8
+                if len(zeros): row[generator.choice(zeros,size=min(count,len(zeros)),replace=False)]=1
+        return noisy
     noise_robustness=[]
-    for pct in [0,5,10]:
+    for pct in noise_levels:
         accuracies=[]; top3_scores=[]
-        for _ in range(10):
-            noisy=present.copy()
-            if pct:
-                count=int(noisy.shape[1]*pct/100)
-                for row in noisy:
-                    zeros=np.flatnonzero(row[8:]==0)+8
-                    if len(zeros): row[rng.choice(zeros,size=min(count,len(zeros)),replace=False)]=1
-            probs=chosen.predict_proba(noisy)
+        for repeat in range(10):
+            probs=sparse_predict_proba(chosen,add_wrong_evidence(present,pct,SEED+1000*pct+repeat))
             accuracies.append(float(accuracy_score(yte,np.argmax(probs,axis=1))))
             top3_scores.append(float(top_k_accuracy_score(yte,probs,k=3,labels=classes)))
         noise_robustness.append({'percent_wrong_evidence':pct,'accuracy':float(np.mean(accuracies)),'accuracy_std':float(np.std(accuracies)),'top3_accuracy':float(np.mean(top3_scores)),'top3_std':float(np.std(top3_scores)),'repeats':10})
-    # Add 10% corrupted training copies and retrain the selected estimator once.
-    aug_n=min(len(yt),50000); aug_X=Xtr[:aug_n].toarray(); aug_y=yt[:aug_n].copy(); aug_rng=np.random.default_rng(SEED+101)
-    for row in aug_X:
-        zeros=np.flatnonzero(row[8:]==0)+8
-        if len(zeros): row[aug_rng.choice(zeros,size=min(max(1,int(.05*len(columns))),len(zeros)),replace=False)]=1
+    # Retrain the selected estimator with corrupted copies (10% wrong evidence) added to the
+    # training data, then score it on the SAME noisy held-out sets as the plain model.
+    aug_n=min(len(yt),50000); aug_X=add_wrong_evidence(Xtr[:aug_n].toarray(),10,SEED+101); aug_y=yt[:aug_n].copy()
     augmented=clone(best).fit(vstack([Xtr,csr_from_dense(aug_X)],format='csr'),np.concatenate([yt,aug_y]))
-    aug_probs=augmented.predict_proba(Xte)
-    noise_robustness.append({'variant':'noise_augmented_model','percent_wrong_evidence':5,'accuracy':float(accuracy_score(yte,np.argmax(aug_probs,axis=1))),'top3_accuracy':float(top_k_accuracy_score(yte,aug_probs,k=3,labels=classes)),'augmented_training_rows':aug_n})
+    for pct in noise_levels:
+        aug_probs=sparse_predict_proba(augmented,add_wrong_evidence(present,pct,SEED+1000*pct))
+        noise_robustness.append({'variant':'noise_augmented_model','percent_wrong_evidence':pct,'accuracy':float(accuracy_score(yte,np.argmax(aug_probs,axis=1))),'top3_accuracy':float(top_k_accuracy_score(yte,aug_probs,k=3,labels=classes)),'repeats':1,'augmented_training_rows':aug_n})
     train_pred=best.predict(Xtr); train_accuracy=float(accuracy_score(yt,train_pred))
     metrics['train_accuracy']=train_accuracy; metrics['train_test_accuracy_gap']=train_accuracy-acc
     learning_curve=[]; learn_n=min(30000,len(yt))
@@ -198,7 +203,7 @@ def train(train_limit=150000):
         # gives a model-native global ranking when SHAP lacks a NB explainer.
         raw_imp=np.std(best.feature_log_prob_,axis=0)
     try:
-        background=Xtr[:128].toarray(); explained=Xte[:64].toarray()
+        background=Xtr[:128].toarray(); explained=explain_matrix(best,Xte[:64])
         if hasattr(best,'feature_importances_'):
             shap_values=shap.TreeExplainer(best)(explained)
         elif hasattr(best,'coef_'):
@@ -209,7 +214,7 @@ def train(train_limit=150000):
             baseline=np.mean(background,axis=0)
             def predict_subset(values):
                 full=np.tile(baseline,(len(values),1)); full[:,candidate_idx]=values
-                return best.predict_proba(full)
+                return sparse_predict_proba(best,np.nan_to_num(full))
             explainer=shap.PermutationExplainer(predict_subset,background_subset,feature_names=[columns[i] for i in candidate_idx],seed=SEED)
             shap_values=explainer(explained[:24,candidate_idx],max_evals=2*len(candidate_idx)+1)
             sv=shap_values.values
@@ -221,7 +226,7 @@ def train(train_limit=150000):
             if isinstance(sv,list): raw_imp=np.mean(np.abs(np.stack(sv,axis=-1)),axis=(0,2))
             elif np.ndim(sv)==3: raw_imp=np.mean(np.abs(sv),axis=(0,2))
             else: raw_imp=np.mean(np.abs(sv),axis=0)
-            shap_method='SHAP TreeExplainer' if hasattr(best,'feature_importances_') else 'SHAP LinearExplainer'
+            shap_method=('SHAP TreeExplainer (tree-path-dependent, raw margin units; zeros passed as missing to match sparse training)' if hasattr(best,'feature_importances_') else 'SHAP LinearExplainer')
     except Exception as explain_error:
         raw_imp=getattr(best,'feature_importances_',None)
         if raw_imp is None and hasattr(best,'coef_'): raw_imp=np.mean(np.abs(best.coef_),axis=0)
@@ -248,9 +253,9 @@ def train(train_limit=150000):
     artifact_hashes={p.name:digest(p) for p in ART.glob('*') if p.is_file() and p.name not in ('ml_report.json',)}
     unique_pattern_counts=frames['train'].groupby('PATHOLOGY')['EVIDENCES'].nunique().to_dict()
     report={'schema_version':1,'generated_at':__import__('datetime').datetime.now(__import__('datetime').timezone.utc).isoformat(),'model_version':'ddxplus-'+hashes['release_train_patients'][:12],
-      'dataset':{'source':'https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374','representation':'DDXPlus patient evidence lists expanded into schema-defined sparse symptom and antecedent features; INITIAL_EVIDENCE excluded because not collected at inference','preprocessing':{'fitted_on':'training split only','method':'schema-fixed one-hot evidence encoding; no validation/test-fitted statistics','sex_mask_probability':0.20},'raw_rows':sizes['train']['rows_before_sampling'],'unique_rows':int(frames['train']['EVIDENCES'].nunique()),'duplicate_patterns_removed':int(len(frames['train'])-frames['train']['EVIDENCES'].nunique()),'feature_count':len(columns),'class_count':len(enc.classes_),'age_median':float(frames['train']['AGE'].median()),'class_distribution':[{'disease':k,'count':v,'unique_count':int(unique_pattern_counts.get(k,0))} for k,v in sizes['train']['class_distribution'].items()],'top_symptoms':[{'symptom':columns[i],'count':int(feature_counts[i])} for i in top_ids[:10]],'correlation':{'labels':eda_names,'matrix':corr},'missing_values':[{'column':c,'count':int(frames['train'][c].isna().sum())} for c in frames['train'].columns],'missing_interpretation':'Empty evidence tokens mean evidence not reported; original DDXPlus data are synthetic.','sample':[{'disease':str(r.PATHOLOGY),'symptoms':__import__('ml_pipeline.ddxplus_data',fromlist=['parse_evidence']).parse_evidence(r.EVIDENCES)[:12]} for r in frames['train'].head(10).itertuples()] ,'sha256':hashes['release_train_patients'],'input_sha256':hashes,'sample_sizes':sizes,'split_overlap_fingerprints':overlaps,'patient_id_available':False,'exact_duplicate_evidence_patterns':int(frames['train']['EVIDENCES'].duplicated().sum()),'sampled_train_rows':len(frames['train']),'feature_memory_bytes':int(Xtr.data.nbytes+Xtr.indices.nbytes+Xtr.indptr.nbytes),'training_seconds':float(time.perf_counter()-started)},
+      'dataset':{'source':'https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374','representation':'DDXPlus patient evidence lists expanded into schema-defined sparse symptom and antecedent features; INITIAL_EVIDENCE excluded because not collected at inference','preprocessing':{'fitted_on':'training split only','method':'schema-fixed one-hot evidence encoding; no validation/test-fitted statistics','sex_mask_probability':0.20},'raw_rows':sizes['train']['rows_before_sampling'],'unique_evidence_patterns':int(frames['train']['EVIDENCES'].nunique()),'duplicate_evidence_patterns_kept':int(len(frames['train'])-frames['train']['EVIDENCES'].nunique()),'feature_count':len(columns),'class_count':len(enc.classes_),'age_median':float(frames['train']['AGE'].median()),'class_distribution':[{'disease':k,'count':v,'unique_count':int(unique_pattern_counts.get(k,0))} for k,v in sizes['train']['class_distribution'].items()],'top_symptoms':[{'symptom':columns[i],'count':int(feature_counts[i])} for i in top_ids[:10]],'correlation':{'labels':eda_names,'matrix':corr},'missing_values':[{'column':c,'count':int(frames['train'][c].isna().sum())} for c in frames['train'].columns],'missing_interpretation':'Empty evidence tokens mean evidence not reported; original DDXPlus data are synthetic.','sample':[{'disease':str(r.PATHOLOGY),'symptoms':__import__('ml_pipeline.ddxplus_data',fromlist=['parse_evidence']).parse_evidence(r.EVIDENCES)[:12]} for r in frames['train'].head(10).itertuples()] ,'sha256':hashes['release_train_patients'],'input_sha256':hashes,'sample_sizes':sizes,'split_overlap_fingerprints':overlaps,'patient_id_available':False,'exact_duplicate_evidence_patterns':int(frames['train']['EVIDENCES'].duplicated().sum()),'sampled_train_rows':len(frames['train']),'feature_memory_bytes':int(Xtr.data.nbytes+Xtr.indices.nbytes+Xtr.indptr.nbytes),'training_seconds':float(time.perf_counter()-started)},
       'symptoms':[x['code'] for x in sym if not x['is_antecedent']],'evidence_codes':[x['code'] for x in sym],'classes':enc.classes_.tolist(),'split':{'train_rows':Xtr.shape[0],'validation_rows':Xv.shape[0],'test_rows':Xte.shape[0],'overlap_fingerprints':overlaps},
-      'training':{'winner':winner,'comparison':comparison,'hyperparameters':tuned,'best_parameters':next(x['parameters'] for x in tuned if x['model']==winner),'learning_curve':learning_curve,'training_seconds':float(time.perf_counter()-cv_started)},
+      'training':{'winner':winner,'selection_metric':'validation macro-F1 after RandomizedSearchCV on the training split (test split untouched)','comparison':comparison,'hyperparameters':tuned,'best_parameters':next(x['parameters'] for x in tuned if x['model']==winner),'learning_curve':learning_curve,'training_seconds':float(time.perf_counter()-cv_started)},
       'evaluation':{'metrics':metrics,'topk':topk,'confusion_matrix':cm,'per_class':[{'disease':str(enc.classes_[i]),'precision':float(p[i]),'recall':float(r[i]),'f1':float(f[i]),'support':int(np.sum(yte==i))} for i in classes],'macro_auc':auc,'roc':roc_data,'robustness':robustness,'train_test_accuracy_gap':train_accuracy-acc},
       'baselines':{'majority_class':{'accuracy':majority_accuracy,'test_rows':min(5000,len(yte)),'class':str(enc.classes_[majority])},'nearest_neighbour':nearest_baseline,'interpretation':'Majority-class score is a naive floor; nearest-neighbour tests whether local evidence-pattern similarity beats the selected classical models. Nearest-neighbour evaluation uses a deterministic bounded slice for laptop memory.'},
       'noise_robustness':noise_robustness,'calibration':{'method':calibration['method'],'validation':calibration['validation'],'brier_before':bs_raw,'brier_after':calibration['validation'].get(calibration['method'],{}).get('brier',bs_raw),'brier_definition':'Validation multiclass Brier score is mean sum of squared class-probability errors.','curve_before':calibration['curve_before'],'curve_after':calibration['curve_after']},
