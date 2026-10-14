@@ -39,7 +39,7 @@ export default function DashboardRoute() {
       )}
       {triageScreen === 'questions' && (
         <div className="page-container mobile-padding">
-          <div className="content-wrapper" style={{ maxWidth: '600px' }}>
+          <div className="content-wrapper [max-width:600px]" >
             <AIQuestionEngine
               defaultLanguage={aiLang}
               onComplete={handleAIComplete}

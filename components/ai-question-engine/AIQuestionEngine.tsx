@@ -1,85 +1,100 @@
 "use client";
 
 import React from "react";
+import {
+  Check,
+  Volume2,
+  VolumeX,
+  Mic,
+  Square,
+  RotateCcw,
+  Languages,
+  AlertTriangle,
+  Loader2,
+  ShieldAlert,
+} from 'lucide-react';
+import { Badge, Button, Field, Notice, Section } from '@/components/ui/primitives';
 import { useQuestionEngine } from "./useQuestionEngine";
 import type { EngineProps } from "./types";
 
-// ── Progress Bar ──────────────────────────────────────────────
-function ProgressBar({ step, total, progress }: { step: number; total: number; progress: number }) {
-  return (
-    <div style={{ width: "100%", marginBottom: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--text-3)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          Question {step + 1} of {total}
-        </span>
-        <span style={{ fontSize: "12px", fontWeight: 700, color: "var(--red)" }}>{progress}%</span>
-      </div>
-      <div style={{ width: "100%", height: "6px", background: "var(--border)", borderRadius: "999px", overflow: "hidden" }}>
-        <div style={{ height: "100%", width: `${progress}%`, background: "linear-gradient(90deg, #B91C1C, #7F1D1D)", borderRadius: "999px", transition: "width 0.5s ease" }} />
-      </div>
-    </div>
-  );
-}
-
-// ── Option Button ─────────────────────────────────────────────
 function OptionButton({
-  label, emoji, isSelected, onClick, disabled,
+  label,
+  isSelected,
+  onClick,
+  disabled,
 }: {
-  label: string; emoji: string; isSelected: boolean; onClick: () => void; disabled: boolean;
+  label: string;
+  isSelected: boolean;
+  onClick: () => void;
+  disabled: boolean;
 }) {
   return (
     <button
+      type="button"
+      className="option"
+      aria-pressed={isSelected}
       onClick={onClick}
       disabled={disabled}
-      style={{
-        display: "flex", alignItems: "center", gap: "12px",
-        padding: "16px 18px", borderRadius: "12px", width: "100%", textAlign: "left",
-        border: isSelected ? "2px solid var(--red)" : "1.5px solid var(--border)",
-        background: isSelected ? "var(--red-light)" : "white",
-        cursor: disabled ? "not-allowed" : "pointer",
-        fontFamily: "inherit", transition: "all 0.15s ease",
-        transform: isSelected ? "scale(1.01)" : "scale(1)",
-        boxShadow: isSelected ? "0 4px 12px rgba(185,28,28,0.15)" : "none",
-        opacity: disabled ? 0.6 : 1,
-        position: "relative",
-      }}
     >
-      <span style={{ fontSize: "24px", flexShrink: 0 }}>{emoji}</span>
-      <span style={{ fontSize: "14px", fontWeight: 600, color: isSelected ? "var(--red)" : "var(--text-2)", flex: 1 }}>
-        {label}
-      </span>
-      {isSelected && (
-        <div style={{ width: "20px", height: "20px", borderRadius: "50%", background: "var(--red)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
-            <polyline points="20 6 9 17 4 12" />
-          </svg>
-        </div>
-      )}
+      <span className="option-label">{label}</span>
+      {isSelected && <Check className="w-5 h-5 text-teal-700" aria-hidden="true" />}
     </button>
   );
 }
 
-// ── Main Component ────────────────────────────────────────────
-export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel, initialSymptom, gender }: EngineProps) {
+export function AIQuestionEngine({
+  defaultLanguage = "en",
+  onComplete,
+  onCancel,
+  initialSymptom,
+  gender,
+}: EngineProps) {
   const engine = useQuestionEngine({ defaultLanguage, onComplete, onCancel, initialSymptom, gender });
-
   const {
-    currentQuestion, currentStep, totalSteps, progress, stage,
-    selectedOptions, customInput, customInputError, showCustomInput,
-    language, toggleLanguage, isSpeaking, isRecording, isLoading, isComplete,
-    voiceError, isMuted, toggleMute, genderMismatch, dismissMismatch,
-    riskSnapshot, redFlagPending, acknowledgeRedFlag,
-    handleOptionToggle, handleCustomInputChange, handleNext, handleVoiceToggle,
+    currentQuestion,
+    currentStep,
+    totalSteps,
+    progress,
+    stage,
+    selectedOptions,
+    customInput,
+    customInputError,
+    showCustomInput,
+    language,
+    toggleLanguage,
+    isSpeaking,
+    isRecording,
+    isLoading,
+    isComplete,
+    voiceError,
+    isMuted,
+    toggleMute,
+    genderMismatch,
+    dismissMismatch,
+    riskSnapshot,
+    redFlagPending,
+    acknowledgeRedFlag,
+    handleOptionToggle,
+    handleCustomInputChange,
+    handleNext,
+    handleVoiceToggle,
     replayQuestion,
   } = engine;
 
+  const t = (en: string, hi: string, mr: string) =>
+    language === 'hi' ? hi : language === 'mr' ? mr : en;
+
   const stageLabel: Record<string, { en: string; hi: string; mr: string }> = {
-    q1_age:         { en: "Demographics", hi: "जनसांख्यिकी", mr: "लोकसंख्याशास्त्र" },
-    q2_symptoms:    { en: "Symptoms", hi: "लक्षण", mr: "लक्षणे" },
-    ai_questions:   { en: "Follow-up", hi: "अनुवर्ती", mr: "पाठपुरावा" },
-    q9_duration:    { en: "Duration", hi: "अवधि", mr: "कालावधी" },
-    q10_severity:   { en: "Severity", hi: "गंभीरता", mr: "तीव्रता" },
-    q11_medications:{ en: "Medical History", hi: "चिकित्सा इतिहास", mr: "वैद्यकीय इतिहास" },
+    q1_age: { en: "About you", hi: "आपके बारे में", mr: "तुमच्याविषयी" },
+    q2_symptoms: { en: "Symptoms", hi: "लक्षण", mr: "लक्षणे" },
+    ai_questions: { en: "Follow-up questions", hi: "अगले प्रश्न", mr: "पुढील प्रश्न" },
+    q9_duration: { en: "Duration", hi: "अवधि", mr: "कालावधी" },
+    q10_severity: { en: "Severity", hi: "गंभीरता", mr: "तीव्रता" },
+    q11_medications: {
+      en: "Medicines and health history",
+      hi: "दवाइयाँ और स्वास्थ्य इतिहास",
+      mr: "औषधे आणि आरोग्याचा इतिहास",
+    },
   };
 
   const canProceed =
@@ -89,297 +104,274 @@ export function AIQuestionEngine({ defaultLanguage = "en", onComplete, onCancel,
 
   if (isComplete) {
     return (
-      <div style={{ padding: "60px 32px", textAlign: "center" }}>
-        <div style={{ fontSize: "48px", marginBottom: "16px" }}>✅</div>
-        <h3 style={{ fontSize: "20px", fontWeight: 800, color: "var(--text-1)" }}>
-          {language === "hi" ? "मूल्यांकन पूर्ण" : language === "mr" ? "मूल्यांकन पूर्ण" : "Assessment Complete"}
-        </h3>
-        <p style={{ color: "var(--text-3)", marginTop: "8px" }}>
-          {language === "hi" ? "आपका डेटा विश्लेषण किया जा रहा है..." : language === "mr" ? "तुमचा डेटा विश्लेषण केला जात आहे..." : "Analyzing your data..."}
+      <Section className="question-flow text-center py-12" role="status">
+        <Loader2 className="w-8 h-8 text-teal-700 animate-spin mx-auto mb-3" />
+        <h2>{t('Assessment complete', 'मूल्यांकन पूरा हुआ', 'मूल्यांकन पूर्ण झाले')}</h2>
+        <p className="text-slate-600 mt-2">
+          {t('Preparing your clinical summary and triage results…', 'आपके परिणाम और सारांश तैयार हो रहे हैं…', 'तुमचे निकाल आणि सारांश तयार होत आहेत…')}
         </p>
-      </div>
+      </Section>
     );
   }
 
-  // ── Red-flag short-circuit interstitial ───────────────────────
-  // The deterministic engine detected a high-acuity presentation (e.g. chest
-  // pain, breathing difficulty). We stop asking questions and go straight to
-  // the emergency result.
   if (redFlagPending) {
     const flagged = riskSnapshot?.factors?.[0]?.replace('Red flag: ', '') || '';
     return (
-      <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
-        <div className="card" style={{ padding: "36px 32px", borderRadius: "20px", border: "2px solid #FCA5A5", background: "#FFF5F5", textAlign: "center" }}>
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>🚨</div>
-          <h2 style={{ fontSize: "20px", fontWeight: 900, color: "#B91C1C", marginBottom: "12px", letterSpacing: "-0.3px" }}>
-            {language === "hi" ? "तत्काल चिकित्सा ध्यान की आवश्यकता" : language === "mr" ? "तात्काळ वैद्यकीय लक्ष आवश्यक" : "Urgent medical attention needed"}
-          </h2>
-          <p style={{ fontSize: "14px", color: "#7F1D1D", lineHeight: "1.65", marginBottom: "18px" }}>
-            {language === "hi"
-              ? `आपके लक्षण "${flagged || 'सीने में दर्द'}" उच्च जोखिम के संकेत देते हैं। हम प्रश्न छोड़कर तुरंत आपका मूल्यांकन पूरा करेंगे।`
-              : language === "mr"
-              ? `तुमच्या लक्षणांमुळे ("${flagged || 'छातीत दुखणे'}") उच्च जोखमीचे संकेत दिसत आहेत. आम्ही प्रश्न वगळून ताबडतोब तुमचे मूल्यांकन पूर्ण करू.`
-              : `Your symptoms ("${flagged || 'chest pain'}") show high-risk indicators. We'll skip the remaining questions and complete your assessment right away.`}
-          </p>
-          <p style={{ fontSize: "13px", fontWeight: 700, color: "#991B1B", lineHeight: "1.6", marginBottom: "28px" }}>
-            {language === "hi"
-              ? "परिणाम देखने के लिए नीचे दिए गए बटन पर क्लिक करें।"
-              : language === "mr"
-              ? "निकाल पाहण्यासाठी खालील बटणावर क्लिक करा."
-              : "Click below to see your results."}
-          </p>
-          <button onClick={acknowledgeRedFlag} className="btn btn-primary" style={{ padding: "14px 32px", fontSize: "15px", fontWeight: 700 }}>
-            {language === "hi" ? "परिणाम देखें →" : language === "mr" ? "निकाल पहा →" : "See Results →"}
-          </button>
-        </div>
+      <div className="question-flow" lang={language}>
+        <Notice tone="danger" role="alert">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
+            <div>
+              <h1 className="text-lg font-bold">
+                {t('Urgent medical attention needed', 'तुरंत चिकित्सा सहायता की आवश्यकता', 'तात्काळ वैद्यकीय मदत आवश्यक')}
+              </h1>
+              <p className="mt-2 text-sm">
+                {t('Your symptoms show high-risk indicators:', 'आपके लक्षणों में उच्च जोखिम के संकेत हैं:', 'तुमच्या लक्षणांमध्ये उच्च जोखमीचे संकेत आहेत:')}{' '}
+                <strong>{flagged || t('chest pain', 'सीने में दर्द', 'छातीत दुखणे')}</strong>.
+              </p>
+              <p className="mt-1 text-sm">
+                {t(
+                  "We'll skip the remaining questions and complete your assessment right away.",
+                  'हम बाकी प्रश्न छोड़कर तुरंत आपका मूल्यांकन पूरा करेंगे।',
+                  'आम्ही उर्वरित प्रश्न वगळून लगेच तुमचे मूल्यांकन पूर्ण करू.'
+                )}
+              </p>
+              <div className="mt-4">
+                <Button variant="danger" onClick={acknowledgeRedFlag}>
+                  {t('See results', 'परिणाम देखें', 'निकाल पहा')}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Notice>
       </div>
     );
   }
 
-  // ── Gender-symptom mismatch warning popup ────────────────────
   if (genderMismatch) {
-    const symptomDisplay = genderMismatch.symptom.charAt(0).toUpperCase() + genderMismatch.symptom.slice(1);
+    const symptomDisplay =
+      genderMismatch.symptom.charAt(0).toUpperCase() + genderMismatch.symptom.slice(1);
     const genderDisplay = genderMismatch.gender;
     return (
-      <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
-        <div className="card" style={{ padding: "36px 32px", borderRadius: "20px", border: "2px solid #FCA5A5", background: "#FFF5F5", textAlign: "center" }}>
-          <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
-          <h2 style={{ fontSize: "20px", fontWeight: 900, color: "#B91C1C", marginBottom: "12px", letterSpacing: "-0.3px" }}>
-            {language === "hi" ? "लक्षण और लिंग में असंगति" : language === "mr" ? "लक्षण आणि लिंग विसंगती" : "Symptom–Gender Mismatch"}
+      <div className="question-flow" lang={language}>
+        <Notice tone="warning" role="alert">
+          <h2>
+            {t(
+              'Check your symptom and sex selection',
+              'लक्षण और लिंग का चयन जाँचें',
+              'लक्षण आणि लिंगाची निवड तपासा'
+            )}
           </h2>
-          <p style={{ fontSize: "14px", color: "#7F1D1D", lineHeight: "1.65", marginBottom: "8px" }}>
-            {language === "hi"
-              ? `"${symptomDisplay}" ${genderDisplay === "Male" ? "पुरुषों" : "महिलाओं"} के लिए शारीरिक रूप से संभव नहीं है।`
-              : language === "mr"
-              ? `"${symptomDisplay}" हे ${genderDisplay === "Male" ? "पुरुषांसाठी" : "महिलांसाठी"} शारीरिकदृष्ट्या शक्य नाही.`
-              : `"${symptomDisplay}" is not anatomically possible for a ${genderDisplay} patient.`}
+          <p className="mt-1">
+            {symptomDisplay} — {genderDisplay}.{' '}
+            {t(
+              'This symptom does not match the sex selected in this questionnaire. Please review your entries; inaccurate information may affect the assessment.',
+              'यह लक्षण इस प्रश्नावली में चुने गए लिंग से मेल नहीं खाता। कृपया अपनी जानकारी जाँचें; गलत जानकारी मूल्यांकन को प्रभावित कर सकती है।',
+              'हे लक्षण या प्रश्नावलीतील निवडलेल्या लिंगाशी जुळत नाही. कृपया माहिती तपासा; चुकीच्या माहितीमुळे मूल्यांकनावर परिणाम होऊ शकतो.'
+            )}
           </p>
-          <p style={{ fontSize: "13px", color: "#991B1B", lineHeight: "1.6", marginBottom: "28px" }}>
-            {language === "hi"
-              ? "कृपया अपना लिंग या लक्षण सही करें। गलत जानकारी से जोखिम मूल्यांकन प्रभावित हो सकता है।"
-              : language === "mr"
-              ? "कृपया तुमचे लिंग किंवा लक्षण दुरुस्त करा. चुकीची माहिती जोखीम मूल्यांकनावर परिणाम करू शकते."
-              : "Please correct your gender or symptom selection. Inaccurate data may affect your risk assessment."}
-          </p>
-          <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap" }}>
-            {/* Go back and fix symptoms */}
-            <button
-              onClick={dismissMismatch}
-              className="btn btn-primary"
-              style={{ padding: "12px 24px", fontSize: "14px" }}
-            >
-              {language === "hi" ? "← लक्षण ठीक करें" : language === "mr" ? "← लक्षण दुरुस्त करा" : "← Fix Symptoms"}
-            </button>
-            {/* Cancel triage entirely */}
+          <div className="row mt-4">
+            <Button onClick={dismissMismatch}>
+              {t('Review symptoms', 'लक्षण जाँचें', 'लक्षणे तपासा')}
+            </Button>
             {onCancel && (
-              <button
-                onClick={onCancel}
-                className="btn btn-outline"
-                style={{ padding: "12px 24px", fontSize: "14px" }}
-              >
-                {language === "hi" ? "मूल्यांकन रद्द करें" : language === "mr" ? "मूल्यांकन रद्द करा" : "Cancel Assessment"}
-              </button>
+              <Button variant="secondary" onClick={onCancel}>
+                {t('Cancel assessment', 'मूल्यांकन रद्द करें', 'मूल्यांकन रद्द करा')}
+              </Button>
             )}
           </div>
-        </div>
+        </Notice>
       </div>
     );
   }
 
   return (
-    <div style={{ width: "100%", maxWidth: "600px", fontFamily: "var(--font)" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "20px" }}>
-        <div>
-          <span style={{ fontSize: "11px", fontWeight: 800, color: "var(--red)", textTransform: "uppercase", letterSpacing: "0.08em", background: "var(--red-light)", padding: "3px 10px", borderRadius: "999px", border: "1px solid var(--red-border)" }}>
-            {stageLabel[stage]?.[language] ?? stage}
+    <div className="question-flow" lang={language}>
+      <header className="stack">
+        <div className="row between">
+          <p className="eyebrow">{stageLabel[stage]?.[language] ?? stage}</p>
+          <div className="question-tools">
+            <Button
+              variant="secondary"
+              onClick={toggleMute}
+              aria-label={
+                isMuted
+                  ? t('Turn voice on', 'आवाज़ चालू करें', 'आवाज सुरू करा')
+                  : t('Mute voice', 'आवाज़ बंद करें', 'आवाज बंद करा')
+              }
+              aria-pressed={isMuted}
+            >
+              {isMuted ? <VolumeX aria-hidden="true" /> : <Volume2 aria-hidden="true" />}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={toggleLanguage}
+              aria-label={t('Change language', 'भाषा बदलें', 'भाषा बदला')}
+            >
+              <Languages aria-hidden="true" />
+              {language === 'en' ? 'English' : language === 'hi' ? 'हिन्दी' : 'मराठी'}
+            </Button>
+            {onCancel && (
+              <Button variant="secondary" onClick={onCancel}>
+                {t('Cancel', 'रद्द करें', 'रद्द करा')}
+              </Button>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <div className="stack">
+        <div className="row between text-xs font-semibold text-slate-600">
+          <span>
+            {t('Question', 'प्रश्न', 'प्रश्न')} {currentStep + 1} / {totalSteps}
           </span>
+          <span className="muted">{progress}%</span>
         </div>
-        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-          {/* Mute */}
-          <button onClick={toggleMute} style={{ background: "none", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 10px", cursor: "pointer", fontSize: "14px" }}>
-            {isMuted ? "🔇" : "🔊"}
-          </button>
-          {/* Language toggle */}
-          <button onClick={toggleLanguage} style={{ background: "var(--bg)", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px", fontWeight: 700, fontFamily: "inherit" }}>
-            🌐 {language === "en" ? "EN" : language === "hi" ? "HI" : "MR"}
-          </button>
-          {/* Cancel */}
-          {onCancel && (
-            <button onClick={onCancel} style={{ background: "none", border: "1px solid var(--border)", borderRadius: "8px", padding: "6px 12px", cursor: "pointer", fontSize: "12px", color: "var(--text-3)", fontFamily: "inherit" }}>
-              ✕ {language === "hi" ? "रद्द" : language === "mr" ? "रद्द" : "Cancel"}
-            </button>
-          )}
-        </div>
+        <progress
+          value={progress}
+          max={100}
+          aria-label={t('Question progress', 'प्रश्नों की प्रगति', 'प्रश्नांची प्रगती')}
+        />
       </div>
 
-      <ProgressBar step={currentStep} total={totalSteps} progress={progress} />
-
-      {/* Live risk snapshot chip */}
       {riskSnapshot && !riskSnapshot.isRedFlag && (
-        <div style={{ display: "flex", alignItems: "center", gap: "9px", marginBottom: "14px", flexWrap: "wrap" }}>
-          <span className="badge" style={{
-            background: riskSnapshot.urgency === "High" ? "var(--red-light)" : riskSnapshot.urgency === "Medium" ? "#FFFBEB" : "#F0FDF4",
-            color: riskSnapshot.urgency === "High" ? "#B91C1C" : riskSnapshot.urgency === "Medium" ? "#B45309" : "#15803D",
-            border: `1px solid ${riskSnapshot.urgency === "High" ? "var(--red-border)" : riskSnapshot.urgency === "Medium" ? "#FDE68A" : "#BBF7D0"}`,
-          }}>
-            {riskSnapshot.urgency === "High" ? "🔴" : riskSnapshot.urgency === "Medium" ? "🟡" : "🟢"}{" "}
-            {language === "hi" ? "जोखिम" : language === "mr" ? "जोखीम" : "Risk"}: {riskSnapshot.urgency} · {riskSnapshot.score}/100
-          </span>
-          <span style={{ fontSize: "11.5px", color: "var(--text-4)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: "0 1 auto" }}>
-            {riskSnapshot.factors.join(" · ")}
+        <div className="stack">
+          <div>
+            <Badge urgency={riskSnapshot.urgency}>
+              {t('Urgency', 'तात्कालिकता', 'तातडी')}:{' '}
+              {riskSnapshot.urgency === 'High'
+                ? t('High', 'उच्च', 'उच्च')
+                : riskSnapshot.urgency === 'Medium'
+                ? t('Medium', 'मध्यम', 'मध्यम')
+                : t('Low', 'कम', 'कमी')}{' '}
+              · {riskSnapshot.score}/100
+            </Badge>
+          </div>
+          <p className="muted text-xs">{riskSnapshot.factors.join(' · ')}</p>
+        </div>
+      )}
+
+      {isRecording && (
+        <div className="flex items-center gap-2 p-3 bg-teal-50 border border-teal-200 rounded-lg text-teal-900 text-xs font-medium animate-pulse">
+          <span className="w-2.5 h-2.5 rounded-full bg-red-600"></span>
+          <span>
+            {t(
+              'Listening to your voice… speak your symptom clearly',
+              'आपकी आवाज़ सुनी जा रही है… स्पष्ट बोलें',
+              'तुमचा आवाज ऐकला जात आहे… स्पष्ट बोला'
+            )}
           </span>
         </div>
       )}
 
-      {/* Question Card */}
-      <div className="card" style={{ padding: "28px", marginBottom: "16px" }}>
+      <Section>
         {isLoading ? (
-          <div style={{ textAlign: "center", padding: "40px 0" }}>
-            <div style={{ width: "36px", height: "36px", border: "3px solid var(--border)", borderTopColor: "var(--red)", borderRadius: "50%", animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-            <p style={{ color: "var(--text-3)", fontSize: "14px" }}>
-              {language === "hi" ? "AI प्रश्न तैयार कर रहा है..." : language === "mr" ? "AI प्रश्न तयार करत आहे..." : "AI is generating your question..."}
+          <div className="py-8 text-center text-slate-500">
+            <Loader2 className="w-6 h-6 animate-spin mx-auto mb-2 text-teal-700" />
+            <p role="status">
+              {t('Preparing your next question…', 'अगला प्रश्न तैयार हो रहा है…', 'पुढचा प्रश्न तयार होत आहे…')}
             </p>
           </div>
         ) : currentQuestion ? (
           <>
-            <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px" }}>
-              <h2 style={{ fontSize: "18px", fontWeight: 800, color: "var(--text-1)", lineHeight: 1.4, flex: 1, paddingRight: "12px" }}>
-                {currentQuestion.question[language]}
-              </h2>
-              {isSpeaking && (
-                <div style={{ display: "flex", gap: "3px", alignItems: "center", flexShrink: 0 }}>
-                  {[1, 2, 3].map((i) => (
-                    <div key={i} style={{ width: "3px", height: "16px", background: "var(--red)", borderRadius: "2px", animation: "pulse 0.8s ease-in-out infinite", animationDelay: `${i * 0.15}s` }} />
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {currentQuestion.type === "multiselect" && (
-              <p style={{ fontSize: "12px", color: "var(--text-4)", marginBottom: "16px", fontStyle: "italic" }}>
-                {language === "hi" ? "एक या अधिक चुनें" : language === "mr" ? "एक किंवा अधिक निवडा" : "Select one or more"}
+            <h1 className="question-title">{currentQuestion.question[language]}</h1>
+            {isSpeaking && (
+              <p role="status" className="muted flex items-center gap-1.5 text-xs text-teal-700 font-medium mt-1">
+                <Volume2 className="w-4 h-4 animate-pulse" />
+                {t('Reading question aloud…', 'प्रश्न पढ़ा जा रहा है…', 'प्रश्न वाचला जात आहे…')}
               </p>
             )}
-
-            {/* Options */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {currentQuestion.options.map((opt) => (
+            {currentQuestion.type === 'multiselect' && (
+              <p className="muted text-xs mt-1">
+                {t('Select all that apply.', 'सभी लागू विकल्प चुनें।', 'लागू असलेले सर्व पर्याय निवडा.')}
+              </p>
+            )}
+            <div className="stack mt-4">
+              {currentQuestion.options.map(opt => (
                 <OptionButton
                   key={opt.value}
                   label={opt.label[language]}
-                  emoji={opt.emoji}
                   isSelected={selectedOptions.includes(opt.value)}
                   onClick={() => handleOptionToggle(opt.value)}
                   disabled={isLoading}
                 />
               ))}
-
-              {/* "Something else" option */}
               {currentQuestion.allowOther && (
                 <OptionButton
-                  label={language === "hi" ? "कुछ और..." : language === "mr" ? "इतर काही..." : "Something else..."}
-                  emoji="✏️"
+                  label={t('Something else', 'कुछ और', 'इतर काही')}
                   isSelected={showCustomInput}
-                  onClick={() => handleOptionToggle("other")}
+                  onClick={() => handleOptionToggle('other')}
                   disabled={isLoading}
                 />
               )}
             </div>
-
-            {/* Custom input field */}
             {showCustomInput && (
-              <div style={{ marginTop: "12px" }}>
-                <input
+              <div className="stack mt-3">
+                <Field
+                  id="custom-symptom"
+                  label={t(
+                    'Describe your symptom or condition',
+                    'अपना लक्षण या स्थिति लिखें',
+                    'तुमचे लक्षण किंवा स्थिती लिहा'
+                  )}
                   type="text"
                   value={customInput}
-                  onChange={(e) => handleCustomInputChange(e.target.value)}
-                  placeholder={
-                    language === "hi" ? "अपना लक्षण या स्थिति लिखें..."
-                    : language === "mr" ? "तुमचे लक्षण किंवा स्थिती लिहा..."
-                    : "Describe your symptom or condition..."
-                  }
-                  className="input"
-                  style={{ width: "100%", borderColor: customInputError ? "#EF4444" : undefined }}
+                  onChange={e => handleCustomInputChange(e.target.value)}
+                  aria-invalid={!!customInputError}
+                  aria-describedby={customInputError ? 'custom-symptom-error' : undefined}
                 />
                 {customInputError && (
-                  <p style={{ fontSize: "12px", color: "#EF4444", marginTop: "6px", fontWeight: 600 }}>
-                    ⚠️ {customInputError}
-                  </p>
+                  <Notice tone="warning" id="custom-symptom-error" role="alert">
+                    {customInputError}
+                  </Notice>
                 )}
               </div>
             )}
           </>
         ) : null}
-      </div>
+      </Section>
 
-      {/* Voice + Next */}
-      <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
-        {/* Voice button */}
-        <button
-          onClick={handleVoiceToggle}
-          disabled={isLoading}
-          style={{
-            width: "52px", height: "52px", borderRadius: "50%", flexShrink: 0,
-            background: isRecording ? "#EF4444" : "var(--red)",
-            border: "none",
-            cursor: isLoading ? "not-allowed" : "pointer",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            transition: "all 0.2s",
-            boxShadow: isRecording ? "0 0 0 4px rgba(239,68,68,0.25)" : "0 2px 8px rgba(185,28,28,0.35)",
-          }}
-          title={isRecording ? "Stop recording" : "Speak your answer"}
-        >
-          {isRecording ? (
-            /* Stop square */
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
-              <rect x="4" y="4" width="16" height="16" rx="2"/>
-            </svg>
-          ) : (
-            /* WhatsApp-style mic */
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <rect x="9" y="2" width="6" height="11" rx="3"/>
-              <path d="M5 10a7 7 0 0 0 14 0"/>
-              <line x1="12" y1="19" x2="12" y2="22"/>
-              <line x1="8" y1="22" x2="16" y2="22"/>
-            </svg>
-          )}
-        </button>
-
-        {/* Replay */}
-        <button
-          onClick={replayQuestion}
-          disabled={isLoading || isSpeaking}
-          style={{ background: "none", border: "none", cursor: "pointer", fontSize: "20px", opacity: isLoading || isSpeaking ? 0.4 : 1 }}
-          title="Replay question"
-        >
-          🔁
-        </button>
-
-        {/* Next */}
-        <button
-          onClick={handleNext}
-          disabled={!canProceed || isLoading}
-          className="btn btn-primary"
-          style={{ flex: 1, padding: "14px", fontSize: "15px", fontWeight: 700, opacity: !canProceed || isLoading ? 0.5 : 1, cursor: !canProceed || isLoading ? "not-allowed" : "pointer" }}
-        >
-          {stage === "q11_medications"
-            ? (language === "hi" ? "परिणाम देखें →" : language === "mr" ? "निकाल पहा →" : "See Results →")
-            : (language === "hi" ? "अगला →" : language === "mr" ? "पुढे →" : "Next →")}
-        </button>
-      </div>
-
-      {/* Voice error */}
-      {voiceError && (
-        <div style={{ marginTop: "12px", padding: "10px 14px", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: "8px", fontSize: "13px", color: "#C2410C" }}>
-          ⚠️ {voiceError}
+      <div className="row between">
+        <div className="question-tools">
+          <Button
+            variant="secondary"
+            onClick={handleVoiceToggle}
+            disabled={isLoading}
+            aria-pressed={isRecording}
+            aria-label={
+              isRecording
+                ? t('Stop recording', 'रिकॉर्डिंग रोकें', 'रेकॉर्डिंग थांबवा')
+                : t('Speak your answer', 'अपना उत्तर बोलें', 'तुमचे उत्तर बोला')
+            }
+          >
+            {isRecording ? <Square className="text-red-600" aria-hidden="true" /> : <Mic aria-hidden="true" />}
+            {isRecording ? t('Stop', 'रोकें', 'थांबवा') : t('Speak', 'बोलें', 'बोला')}
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={replayQuestion}
+            disabled={isLoading || isSpeaking}
+            aria-label={t('Read the question again', 'प्रश्न फिर से सुनें', 'प्रश्न पुन्हा ऐका')}
+          >
+            <RotateCcw aria-hidden="true" />
+          </Button>
         </div>
-      )}
+        <Button onClick={handleNext} disabled={!canProceed || isLoading}>
+          {stage === 'q11_medications'
+            ? t('See results', 'परिणाम देखें', 'निकाल पहा')
+            : t('Continue', 'आगे बढ़ें', 'पुढे जा')}
+        </Button>
+      </div>
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes pulse { 0%, 100% { opacity: 0.4; } 50% { opacity: 1; } }
-      `}</style>
+      {voiceError && <Notice tone="warning" role="alert">{voiceError}</Notice>}
+
+      <p className="text-xs text-slate-400 text-center pt-2">
+        {t(
+          'Emergency: For severe breathing difficulty, sudden crushing chest pain, or collapse, call 108 immediately.',
+          'आपातकालीन: गंभीर सांस की तकलीफ या अचानक सीने में दर्द होने पर तुरंत 108 पर संपर्क करें।',
+          'आपत्कालीन: श्वास घेण्यास गंभीर त्रास किंवा छातीत तीव्र वेदना असल्यास त्वरित १०८ वर संपर्क साधा.'
+        )}
+      </p>
     </div>
   );
 }

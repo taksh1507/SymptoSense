@@ -1,134 +1,123 @@
 'use client';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Menu, X, Activity } from 'lucide-react';
+import { useApp, type Language } from '../context/AppContext';
+import { Button } from '@/components/ui/primitives';
+import { Modal } from '@/components/ui/modal';
+import { useUiText } from '@/components/ui/use-ui-text';
 
-interface PublicNavProps {
-  activeLink?: 'home' | 'how-it-works' | 'about';
-}
-
-const HeartPulse = () => (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-    <path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>
-  </svg>
-);
-const MenuIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="18" x2="20" y2="18"/>
-  </svg>
-);
-const XIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
-  </svg>
-);
-
-export default function PublicNav({ activeLink }: PublicNavProps) {
+export default function PublicNav({ activeLink }: { activeLink?: 'home' | 'how-it-works' | 'about' }) {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
+  const { language, setLanguage } = useApp();
+  const t = useUiText();
 
-  const NAV_LINKS = [
-    { key: 'home',         label: 'Home',         href: '/' },
-    { key: 'how-it-works', label: 'How it works', href: '/how-it-works' },
-    { key: 'about',        label: 'About',        href: '/about' },
+  const links = [
+    { key: 'home', label: t('Home', 'मुख्य पृष्ठ', 'मुख्यपृष्ठ'), href: '/' },
+    { key: 'how-it-works', label: t('How it works', 'यह कैसे काम करता है', 'हे कसे काम करते'), href: '/how-it-works' },
+    { key: 'about', label: t('About', 'हमारे बारे में', 'आमच्याविषयी'), href: '/about' },
   ];
+
+  const languageControl = (
+    <select
+      className="input language-select !min-h-[38px] !py-1 !px-2.5 !text-xs font-medium cursor-pointer"
+      aria-label={t('Language', 'भाषा', 'भाषा')}
+      value={language || 'English'}
+      onChange={e => setLanguage(e.target.value as Language)}
+    >
+      <option value="English">English</option>
+      <option value="Hindi">हिन्दी</option>
+      <option value="Marathi">मराठी</option>
+    </select>
+  );
 
   return (
     <>
-      <nav 
-        className="mobile-padding"
-        aria-label="Main navigation"
-        style={{
-          position: 'sticky', top: 0, zIndex: 40,
-          background: 'rgba(255,255,255,0.95)',
-          backdropFilter: 'blur(12px)',
-          borderBottom: '1px solid var(--border-faint)',
-          padding: '0 48px',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          height: '62px',
-          fontFamily: 'var(--font)',
-        }}
-      >
-        {/* Logo */}
-        <button
-          onClick={() => router.push('/')}
-          aria-label="SymptoSense home"
-          style={{ display: 'flex', alignItems: 'center', gap: '10px', background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'var(--font)', padding: 0 }}
-        >
-          <div style={{ width: '32px', height: '32px', borderRadius: '9px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-            <HeartPulse />
-          </div>
-          <span style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', letterSpacing: '-0.3px' }}>
-            Sympto<span style={{ color: 'var(--red)' }}>Sense</span>
+      <a className="skip-link" href="#main-content">
+        {t('Skip to content', 'मुख्य सामग्री पर जाएँ', 'मुख्य मजकुराकडे जा')}
+      </a>
+      <nav className="public-nav" aria-label={t('Main navigation', 'मुख्य नेविगेशन', 'मुख्य नेव्हिगेशन')}>
+        <button className="wordmark cursor-pointer" onClick={() => router.push('/')} aria-label="SymptoSense home">
+          <span className="w-8 h-8 rounded-lg bg-teal-700 text-white flex items-center justify-center font-bold text-sm shadow-xs">
+            <Activity className="w-5 h-5 text-teal-100" />
           </span>
+          <span>SymptoSense</span>
         </button>
 
-        {/* Desktop Nav links */}
-        <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '2px' }}>
-          {NAV_LINKS.map((link) => {
-            const isActive = activeLink === link.key;
-            return (
-              <button
+        <div className="public-links hide-mobile">
+          {links.map(link => (
+            <button
+              key={link.key}
+              className={`nav-link !w-auto !py-2 !px-3 ${activeLink === link.key ? 'active' : ''}`}
+              aria-current={activeLink === link.key ? 'page' : undefined}
+              onClick={() => router.push(link.href)}
+            >
+              {link.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="public-links hide-mobile">
+          {languageControl}
+          <Button variant="ghost" onClick={() => router.push('/auth/login')}>
+            {t('Sign in', 'साइन इन', 'साइन इन')}
+          </Button>
+          <Button variant="primary" onClick={() => router.push('/auth/signup')}>
+            {t('Start assessment', 'मूल्यांकन शुरू करें', 'मूल्यांकन सुरू करा')}
+          </Button>
+        </div>
+
+        <Button
+          className="show-mobile"
+          variant="secondary"
+          aria-label={t('Open menu', 'मेनू खोलें', 'मेनू उघडा')}
+          aria-haspopup="dialog"
+          onClick={() => setIsOpen(true)}
+        >
+          <Menu aria-hidden="true" />
+        </Button>
+      </nav>
+
+      {isOpen && (
+        <Modal title={t('Menu', 'मेनू', 'मेनू')} onClose={() => setIsOpen(false)}>
+          <div className="stack">
+            {links.map(link => (
+              <Button
                 key={link.key}
-                onClick={() => router.push(link.href)}
-                style={{
-                  background: isActive ? 'var(--red-light)' : 'none',
-                  border: 'none', cursor: 'pointer', fontFamily: 'var(--font)',
-                  padding: '8px 14px', borderRadius: '8px',
-                  fontSize: '14px', fontWeight: isActive ? '600' : '500',
-                  color: isActive ? 'var(--red)' : 'var(--text-3)',
-                  transition: 'all 0.15s',
+                variant="secondary"
+                onClick={() => {
+                  router.push(link.href);
+                  setIsOpen(false);
                 }}
               >
                 {link.label}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Desktop CTA buttons */}
-        <div className="hide-mobile" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <button className="btn btn-outline" onClick={() => router.push('/auth/login')} style={{ padding: '8px 17px' }}>Sign in</button>
-          <button className="btn btn-primary" onClick={() => router.push('/auth/signup')} style={{ padding: '8px 17px' }}>Get started</button>
-        </div>
-
-        {/* Mobile Burger Toggle */}
-        <button 
-          className="show-mobile"
-          onClick={() => setIsOpen(true)}
-          aria-label="Open navigation menu"
-          aria-haspopup="dialog"
-          style={{ background: 'none', border: 'none', color: 'var(--text-1)', cursor: 'pointer', padding: '8px' }}
-        >
-          <MenuIcon />
-        </button>
-      </nav>
-
-      {/* Mobile Menu Overlay */}
-      {isOpen && (
-        <div className="anim-fadein" role="dialog" aria-modal="true" aria-label="Navigation menu" style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(0,0,0,0.5)' }} onClick={() => setIsOpen(false)}>
-           <div className="anim-modalin" style={{ width: '280px', height: '100%', background: 'white', marginLeft: 'auto', display: 'flex', flexDirection: 'column', padding: '24px' }} onClick={e => e.stopPropagation()}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '32px' }}>
-                <span style={{ fontWeight: '800', color: 'var(--text-1)' }}>Menu</span>
-                <button onClick={() => setIsOpen(false)} aria-label="Close navigation menu" style={{ background: 'none', border: 'none', color: 'var(--text-4)' }}><XIcon /></button>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1 }}>
-                {NAV_LINKS.map(link => (
-                  <button 
-                    key={link.key} 
-                    onClick={() => { router.push(link.href); setIsOpen(false); }}
-                    style={{ textAlign: 'left', padding: '12px 16px', borderRadius: '10px', background: activeLink === link.key ? 'var(--red-light)' : 'none', border: 'none', color: activeLink === link.key ? 'var(--red)' : 'var(--text-2)', fontWeight: '600', fontSize: '15px' }}
-                  >
-                    {link.label}
-                  </button>
-                ))}
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', borderTop: '1px solid var(--border-faint)', paddingTop: '24px' }}>
-                <button className="btn btn-primary" onClick={() => router.push('/auth/signup')}>Get Started Free</button>
-                <button className="btn btn-outline" onClick={() => router.push('/auth/login')}>Sign In</button>
-              </div>
-           </div>
-        </div>
+              </Button>
+            ))}
+            <div className="py-2">{languageControl}</div>
+            <Button
+              onClick={() => {
+                router.push('/auth/signup');
+                setIsOpen(false);
+              }}
+            >
+              {t('Start assessment', 'मूल्यांकन शुरू करें', 'मूल्यांकन सुरू करा')}
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                router.push('/auth/login');
+                setIsOpen(false);
+              }}
+            >
+              {t('Sign in', 'साइन इन', 'साइन इन')}
+            </Button>
+            <Button variant="ghost" onClick={() => setIsOpen(false)}>
+              <X aria-hidden="true" />
+              {t('Close menu', 'मेनू बंद करें', 'मेनू बंद करा')}
+            </Button>
+          </div>
+        </Modal>
       )}
     </>
   );

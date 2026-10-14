@@ -140,9 +140,9 @@ Respond with ONLY this JSON:
     "mr": "..."
   },
   "options": [
-    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_a", "emoji": "🔵" },
-    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_b", "emoji": "🟢" },
-    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_c", "emoji": "🟡" }
+    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_a", "emoji": "" },
+    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_b", "emoji": "" },
+    { "label": { "en": "...", "hi": "...", "mr": "..." }, "value": "option_c", "emoji": "" }
   ]
 }`;
 

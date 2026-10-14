@@ -3,104 +3,122 @@
 import { useSession, signOut } from 'next-auth/react';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import { Button, Field, Notice, Section } from '@/components/ui/primitives';
 import AppShell from '@/app/components/AppShell';
-import { useApp } from '@/app/context/AppContext';
+import { useApp, type Language } from '@/app/context/AppContext';
+import { Shield, Bell, User, Globe, Info, LogOut } from 'lucide-react';
 
 interface Strings {
-  title: string; sub: string; profile: string; fullName: string; email: string; authProvider: string;
-  notifications: string; notifSub: string; phoneLabel: string; phoneNote: string; phonePlaceholder: string;
-  phoneInvalid: string; phoneEmpty: string; phoneSaved: string; phoneSaving: string; savePhone: string; saved: string;
-  about: string; appVersion: string; database: string; framework: string; account: string; signOut: string;
+  title: string;
+  sub: string;
+  profile: string;
+  fullName: string;
+  email: string;
+  notifications: string;
+  notifSub: string;
+  phoneLabel: string;
+  phoneNote: string;
+  phonePlaceholder: string;
+  phoneInvalid: string;
+  phoneSaved: string;
+  phoneSaving: string;
+  savePhone: string;
+  saved: string;
+  language: string;
+  privacy: string;
+  about: string;
+  appVersion: string;
+  account: string;
+  signOut: string;
 }
 
 const STRINGS: Record<'en' | 'hi' | 'mr', Strings> = {
   en: {
     title: 'Settings',
-    sub: 'Manage your account and preferences',
+    sub: 'Manage your profile, language, notification preferences, and privacy.',
     profile: 'Profile',
     fullName: 'Full Name',
     email: 'Email',
-    authProvider: 'Auth Provider',
     notifications: 'Notifications & Follow-ups',
     notifSub: 'Where should follow-up reminders reach you?',
     phoneLabel: 'Phone number (WhatsApp)',
     phoneNote: 'Used for follow-up reminders once WhatsApp is enabled. Email reminders use your email above and are free.',
     phonePlaceholder: '+91 98765 43210',
-    phoneInvalid: 'Enter a valid phone number (8–15 digits).',
-    phoneEmpty: 'Enter a phone number.',
-    phoneSaved: 'Phone number saved.',
+    phoneInvalid: 'Enter a valid phone number with country code (e.g., +91 98765 43210).',
+    phoneSaved: 'Preferences saved successfully.',
     phoneSaving: 'Saving…',
-    savePhone: 'Save phone',
+    savePhone: 'Save preferences',
     saved: 'Saved',
-    about: 'About',
+    language: 'Language & Accessibility',
+    privacy: 'Privacy & Data Protection',
+    about: 'System Information',
     appVersion: 'App Version',
-    database: 'Database',
-    framework: 'Framework',
-    account: 'Account',
+    account: 'Account Actions',
     signOut: 'Sign Out',
   },
   hi: {
     title: 'सेटिंग्स',
-    sub: 'अपने खाते और प्राथमिकताएं प्रबंधित करें',
+    sub: 'अपनी प्रोफ़ाइल, भाषा, सूचना प्राथमिकताएँ और गोपनीयता प्रबंधित करें।',
     profile: 'प्रोफ़ाइल',
     fullName: 'पूरा नाम',
     email: 'ईमेल',
-    authProvider: 'प्रमाणीकरण प्रदाता',
     notifications: 'सूचनाएं और फॉलो-अप',
     notifSub: 'फॉलो-अप रिमाइंडर आप तक कहां पहुंचाए जाएं?',
     phoneLabel: 'फोन नंबर (व्हाट्सएप)',
     phoneNote: 'व्हाट्सएप सक्षम होने पर केवल फॉलो-अप रिमाइंडर के लिए उपयोग होगा। ईमेल रिमाइंडर ऊपर दिए गए ईमेल पर मुफ्त हैं।',
     phonePlaceholder: '+91 98765 43210',
-    phoneInvalid: 'मान्य फोन नंबर दर्ज करें (8–15 अंक)।',
-    phoneEmpty: 'फोन नंबर दर्ज करें।',
-    phoneSaved: 'फोन नंबर सहेजा गया।',
+    phoneInvalid: 'देश कोड के साथ मान्य फोन नंबर दर्ज करें (जैसे +91 98765 43210)।',
+    phoneSaved: 'प्राथमिकताएं सफलतापूर्वक सहेजी गईं।',
     phoneSaving: 'सहेजा जा रहा है…',
-    savePhone: 'फोन सहेजें',
+    savePhone: 'प्राथमिकताएं सहेजें',
     saved: 'सहेजा गया',
-    about: 'परिचय',
+    language: 'भाषा और सुगमता',
+    privacy: 'गोपनीयता और डेटा सुरक्षा',
+    about: 'प्रणाली की जानकारी',
     appVersion: 'ऐप संस्करण',
-    database: 'डेटाबेस',
-    framework: 'फ्रेमवर्क',
-    account: 'खाता',
+    account: 'खाता क्रियाएं',
     signOut: 'लॉग आउट',
   },
   mr: {
     title: 'सेटिंग्ज',
-    sub: 'तुमचे खाते आणि प्राधान्ये व्यवस्थापित करा',
+    sub: 'तुमचे प्रोफाइल, भाषा, सूचना प्राधान्ये आणि गोपनीयता व्यवस्थापित करा.',
     profile: 'प्रोफाइल',
     fullName: 'पूर्ण नाव',
     email: 'ईमेल',
-    authProvider: 'प्रमाणीकरण प्रदाता',
     notifications: 'सूचना आणि फॉलो-अप',
     notifSub: 'फॉलो-अप रिमाइंडर तुमच्यापर्यंत कुठे पोहोचवायचे?',
     phoneLabel: 'फोन नंबर (व्हाट्सअॅप)',
     phoneNote: 'व्हाट्सअॅप सक्षम झाल्यावर फक्त फॉलो-अप रिमाइंडरसाठी वापरला जाईल. ईमेल रिमाइंडर वर दिलेल्या ईमेलवर मोफत आहेत.',
     phonePlaceholder: '+91 98765 43210',
-    phoneInvalid: 'वैध फोन नंबर प्रविष्ट करा (8–15 अंक).',
-    phoneEmpty: 'फोन नंबर प्रविष्ट करा.',
-    phoneSaved: 'फोन नंबर जतन झाला.',
+    phoneInvalid: 'देश कोडसह वैध फोन नंबर प्रविष्ट करा (उदा. +91 98765 43210).',
+    phoneSaved: 'प्राधान्ये यशस्वीरीत्या जतन झाली.',
     phoneSaving: 'जतन होत आहे…',
-    savePhone: 'फोन जतन करा',
+    savePhone: 'प्राधान्ये जतन करा',
     saved: 'जतन झाले',
-    about: 'माहिती',
+    language: 'भाषा आणि सुलभता',
+    privacy: 'गोपनीयता आणि डेटा संरक्षण',
+    about: 'प्रणालीची माहिती',
     appVersion: 'अॅप आवृत्ती',
-    database: 'डेटाबेस',
-    framework: 'फ्रेमवर्क',
-    account: 'खाते',
+    account: 'खाते कृती',
     signOut: 'लॉग आउट',
   },
 };
 
 export default function SettingsPage() {
   const { data: session } = useSession();
-  const { language } = useApp();
+  const { language, setLanguage } = useApp();
   const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
   const t = STRINGS[langKey];
 
   const userName = session?.user?.name || 'User';
   const userEmail = session?.user?.email || '';
   const userImage = session?.user?.image || null;
-  const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const initials = userName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   const [phone, setPhone] = useState('');
   const [emailReminders, setEmailReminders] = useState(false);
@@ -111,10 +129,15 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch('/api/profile')
-      .then(async (r) => (r.ok ? ((await r.json()) as { phone?: string; emailReminders?: boolean; whatsappReminders?: boolean }) : {}))
-      .then((p) => {
+      .then(async r =>
+        r.ok
+          ? ((await r.json()) as { phone?: string; emailReminders?: boolean; whatsappReminders?: boolean })
+          : {}
+      )
+      .then(p => {
         if (p && typeof p.phone === 'string') setPhone(p.phone);
-        setEmailReminders(!!p.emailReminders); setWhatsappReminders(!!p.whatsappReminders);
+        setEmailReminders(!!p.emailReminders);
+        setWhatsappReminders(!!p.whatsappReminders);
       })
       .catch(() => {});
   }, []);
@@ -150,99 +173,179 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div className="mobile-padding" style={{ padding: '28px 32px', minHeight: '100vh', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
-        <div style={{ maxWidth: '760px', margin: '0 auto' }}>
-          <div style={{ marginBottom: '28px' }}>
-            <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', letterSpacing: '-0.5px' }}>{t.title}</h1>
-            <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>{t.sub}</p>
-          </div>
+      <div className="page">
+        <div className="report">
+          <header className="stack">
+            <p className="eyebrow">{t.title}</p>
+            <h1>{t.title}</h1>
+            <p className="muted">{t.sub}</p>
+          </header>
 
-          {/* Profile Card */}
-          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '20px' }}>{t.profile}</h2>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
+          <Section title={t.profile}>
+            <div className="account-summary">
               {userImage ? (
-                <Image src={userImage} alt={userName} width={56} height={56} style={{ borderRadius: '50%', objectFit: 'cover' }} unoptimized />
+                <Image src={userImage} alt="" width={48} height={48} unoptimized />
               ) : (
-                <div style={{ width: '56px', height: '56px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '18px' }}>{initials}</div>
+                <span className="initials">{initials}</span>
               )}
               <div>
-                <div style={{ fontSize: '16px', fontWeight: '700', color: 'var(--text-1)' }}>{userName}</div>
-                <div style={{ fontSize: '13px', color: 'var(--text-3)', marginTop: '2px' }}>{userEmail}</div>
+                <strong>{userName}</strong>
+                <p className="text-xs text-slate-500">{userEmail}</p>
               </div>
             </div>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-faint)' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-2)', fontWeight: '600' }}>{t.fullName}</span>
-                <span style={{ fontSize: '14px', color: 'var(--text-3)' }}>{userName}</span>
+            <dl className="facts">
+              <div>
+                <dt>{t.fullName}</dt>
+                <dd>{userName}</dd>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0' }}>
-                <span style={{ fontSize: '14px', color: 'var(--text-2)', fontWeight: '600' }}>{t.email}</span>
-                <span style={{ fontSize: '14px', color: 'var(--text-3)' }}>{userEmail}</span>
+              <div>
+                <dt>{t.email}</dt>
+                <dd>{userEmail}</dd>
               </div>
-            </div>
-          </div>
+            </dl>
+          </Section>
 
-          {/* Notifications Card */}
-          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '4px' }}>{t.notifications}</h2>
-            <p style={{ fontSize: '13px', color: 'var(--text-3)', margin: '0 0 18px 0' }}>{t.notifSub}</p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 18 }}>
-              <label><input type="checkbox" checked={emailReminders} onChange={e => { setEmailReminders(e.target.checked); setSaved(false); }} /> {langKey === 'hi' ? 'ईमेल रिमाइंडर सक्षम करें' : langKey === 'mr' ? 'ईमेल स्मरणपत्रे सुरू करा' : 'Enable email check-in reminders'}</label>
-              <label><input type="checkbox" checked={whatsappReminders} onChange={e => { setWhatsappReminders(e.target.checked); setSaved(false); }} /> {langKey === 'hi' ? 'व्हाट्सएप रिमाइंडर सक्षम करें' : langKey === 'mr' ? 'व्हॉट्सॲप स्मरणपत्रे सुरू करा' : 'Enable WhatsApp check-in reminders'}</label>
-              <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{langKey === 'hi' ? 'फोन नंबर हटाने के लिए इसे खाली करके सहेजें।' : langKey === 'mr' ? 'फोन क्रमांक काढण्यासाठी रिकामा करून जतन करा.' : 'Clear and save the phone field to remove your number. Disable reminders here at any time.'}</p>
-            </div>
-            <label htmlFor="phone" style={{ display: 'block', fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '8px' }}>
-              {t.phoneLabel}
-            </label>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
-              <input
-                id="phone"
-                inputMode="tel"
-                autoComplete="tel"
-                placeholder={t.phonePlaceholder}
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                className="input"
-                style={{ maxWidth: '300px' }}
-              />
-              <button className="btn btn-primary" onClick={savePhone} disabled={saving} style={{ fontSize: '13px', padding: '10px 18px' }}>
-                {saving ? t.phoneSaving : saved ? `✓ ${t.saved}` : t.savePhone}
-              </button>
-            </div>
-            {error && <p style={{ fontSize: '12.5px', color: 'var(--red)', margin: '10px 0 0 0' }}>{error}</p>}
-            <p style={{ fontSize: '11.5px', color: 'var(--text-4)', margin: '12px 0 0 0', lineHeight: '1.5' }}>{t.phoneNote}</p>
-          </div>
-
-          {/* About Card */}
-          <div className="card" style={{ padding: '24px', marginBottom: '16px' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--text-2)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '20px' }}>{t.about}</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {[
-                { label: t.appVersion, value: 'v1.1.0' },
-                { label: t.database, value: 'Neon PostgreSQL' },
-                { label: t.framework, value: 'Next.js 15' },
-              ].map((item) => (
-                <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid var(--border-faint)' }}>
-                  <span style={{ fontSize: '14px', color: 'var(--text-2)', fontWeight: '600' }}>{item.label}</span>
-                  <span style={{ fontSize: '14px', color: 'var(--text-3)' }}>{item.value}</span>
-                </div>
+          <Section title={t.language}>
+            <p className="text-xs text-slate-600 mb-2">
+              {langKey === 'hi'
+                ? 'मूल्यांकन और इंटरफेस के लिए अपनी पसंदीदा भाषा चुनें:'
+                : langKey === 'mr'
+                ? 'मूल्यांकन आणि इंटरफेससाठी तुमची पसंतीची भाषा निवडा:'
+                : 'Choose your preferred language for questionnaires, notifications, and reports:'}
+            </p>
+            <div className="flex gap-2 flex-wrap">
+              {(['English', 'Hindi', 'Marathi'] as Language[]).map(l => (
+                <Button
+                  key={l}
+                  variant={language === l ? 'primary' : 'secondary'}
+                  onClick={() => setLanguage(l)}
+                >
+                  {l === 'English' ? 'English' : l === 'Hindi' ? 'हिन्दी (Hindi)' : 'मराठी (Marathi)'}
+                </Button>
               ))}
             </div>
-          </div>
+            <p className="muted text-xs mt-2">
+              {langKey === 'hi'
+                ? 'देवनागरी लिपि के लिए विशेष रूप से अनुकूलित टाइपोग्राफी।'
+                : langKey === 'mr'
+                ? 'देवनागरी लिपीसाठी विशेषतः अनुकूलित टायपोग्राफी.'
+                : 'Typography and line-heights are dynamically scaled for Noto Sans Devanagari.'}
+            </p>
+          </Section>
 
-          {/* Account Card */}
-          <div className="card" style={{ padding: '24px', border: '1px solid var(--red-border)' }}>
-            <h2 style={{ fontSize: '14px', fontWeight: '800', color: 'var(--red)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '16px' }}>{t.account}</h2>
-            <button
-              onClick={() => signOut({ callbackUrl: '/' })}
-              className="btn"
-              style={{ background: 'var(--red)', color: 'white', padding: '10px 20px', fontSize: '14px', fontWeight: '600', border: 'none', borderRadius: '8px', cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              {t.signOut}
-            </button>
-          </div>
+          <Section title={t.notifications}>
+            <p>{t.notifSub}</p>
+            <div className="stack">
+              <label className="checkbox-field flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-teal-700 rounded border-slate-300 focus:ring-teal-500"
+                  checked={emailReminders}
+                  onChange={e => {
+                    setEmailReminders(e.target.checked);
+                    setSaved(false);
+                  }}
+                />
+                <span className="text-sm text-slate-800">
+                  {langKey === 'hi'
+                    ? 'ईमेल रिमाइंडर सक्षम करें'
+                    : langKey === 'mr'
+                    ? 'ईमेल स्मरणपत्रे सुरू करा'
+                    : 'Enable email check-in reminders'}
+                </span>
+              </label>
+
+              <label className="checkbox-field flex items-center gap-3 cursor-pointer py-1">
+                <input
+                  type="checkbox"
+                  className="w-4 h-4 text-teal-700 rounded border-slate-300 focus:ring-teal-500"
+                  checked={whatsappReminders}
+                  onChange={e => {
+                    setWhatsappReminders(e.target.checked);
+                    setSaved(false);
+                  }}
+                />
+                <span className="text-sm text-slate-800">
+                  {langKey === 'hi'
+                    ? 'व्हाट्सएप रिमाइंडर सक्षम करें'
+                    : langKey === 'mr'
+                    ? 'व्हॉट्सॲप स्मरणपत्रे सुरू करा'
+                    : 'Enable WhatsApp check-in reminders'}
+                </span>
+              </label>
+
+              <p className="muted text-xs">
+                {langKey === 'hi'
+                  ? 'फोन नंबर हटाने के लिए इसे खाली करके सहेजें। रिमाइंडर कभी भी बंद किए जा सकते हैं।'
+                  : langKey === 'mr'
+                  ? 'फोन क्रमांक काढण्यासाठी रिकामा करून जतन करा. स्मरणपत्रे कधीही बंद करता येतात.'
+                  : 'Clear and save the phone field to remove your number. Reminders can be toggled anytime.'}
+              </p>
+            </div>
+
+            <Field
+              id="phone"
+              label={t.phoneLabel}
+              inputMode="tel"
+              autoComplete="tel"
+              placeholder={t.phonePlaceholder}
+              value={phone}
+              onChange={e => setPhone(e.target.value)}
+              aria-invalid={!!error}
+              aria-describedby="phone-note"
+            />
+            <p id="phone-note" className="muted text-xs">
+              {t.phoneNote}
+            </p>
+
+            {error && <Notice tone="warning" role="alert">{error}</Notice>}
+
+            <div>
+              <Button onClick={savePhone} disabled={saving}>
+                {saving ? t.phoneSaving : saved ? t.saved : t.savePhone}
+              </Button>
+            </div>
+            {saved && (
+              <p role="status" className="text-xs text-emerald-700 font-semibold mt-1">
+                {t.phoneSaved}
+              </p>
+            )}
+          </Section>
+
+          <Section title={t.privacy}>
+            <dl className="facts">
+              <div>
+                <dt>{langKey === 'hi' ? 'डेटा एन्क्रिप्शन' : langKey === 'mr' ? 'डेटा एन्क्रिप्शन' : 'Data Encryption'}</dt>
+                <dd>{langKey === 'hi' ? 'ट्रांजिट और रेस्ट में सुरक्षित' : langKey === 'mr' ? 'ट्रान्झिट आणि रेस्टमध्ये सुरक्षित' : 'TLS 1.3 in transit, scoped session isolation'}</dd>
+              </div>
+              <div>
+                <dt>{langKey === 'hi' ? 'तृतीय पक्ष शेयरिंग' : langKey === 'mr' ? 'तृतीय पक्ष शेअरिंग' : 'Third-Party Sharing'}</dt>
+                <dd>{langKey === 'hi' ? 'कोई विज्ञापनदाता या डेटा ब्रोकर शेयरिंग नहीं' : langKey === 'mr' ? 'जाहिरातदार किंवा डेटा ब्रोकर शेअरिंग नाही' : 'Zero third-party monetization or data sale'}</dd>
+              </div>
+            </dl>
+          </Section>
+
+          <Section title={t.about}>
+            <dl className="facts">
+              <div>
+                <dt>{t.appVersion}</dt>
+                <dd>SymptoSense 0.1.0-clinical</dd>
+              </div>
+              <div>
+                <dt>{langKey === 'hi' ? 'मॉडल आधार' : langKey === 'mr' ? 'मॉडेल आधार' : 'Inference Core'}</dt>
+                <dd>FastAPI ML Engine (DDXPlus Evidence Model v2.1)</dd>
+              </div>
+            </dl>
+          </Section>
+
+          <Section title={t.account}>
+            <div>
+              <Button variant="danger" onClick={() => signOut({ callbackUrl: '/' })}>
+                <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
+                {t.signOut}
+              </Button>
+            </div>
+          </Section>
         </div>
       </div>
     </AppShell>

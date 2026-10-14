@@ -2,6 +2,9 @@
 
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
+import { Printer } from 'lucide-react';
+import { Badge, Button, Field, Notice, Section } from '@/components/ui/primitives';
+import { useUiText } from '@/components/ui/use-ui-text';
 import AppShell from '@/app/components/AppShell';
 import { useApp } from '@/app/context/AppContext';
 import { RiskGauge } from '@/components/results/RiskGauge';
@@ -91,6 +94,7 @@ function getDrugWarnings(onBloodThinners: boolean, symptomTokens: string[]): str
 
 // Parse the raw answer map (questionId -> value) once for meds/drug checks
 export default function ReportDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const t = useUiText();
   const { id } = use(params);
   const router = useRouter();
   const { language } = useApp();
@@ -159,7 +163,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   if (loading) {
     return (
       <AppShell>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', color: 'var(--text-4)', fontSize: '14px' }}>
+        <div  className="[display:flex] [align-items:center] [justify-content:center] [height:60vh] [color:var(--text-4)] [font-size:var(--text-sm)]">
           {language === 'Hindi' ? 'रिपोर्ट लोड हो रही है...' : language === 'Marathi' ? 'अहवाल लोड होत आहे...' : 'Loading report...'}
         </div>
       </AppShell>
@@ -169,8 +173,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   if (!report) {
     return (
       <AppShell>
-        <div style={{ padding: '40px', textAlign: 'center' }}>
-          <p style={{ color: 'var(--text-3)', marginBottom: '16px' }}>{loadError || 'Report not found.'}</p>
+        <div  className="[padding:40px] [text-align:left]">
+          <p  className="[color:var(--text-3)] [margin-bottom:16px]">{loadError || 'Report not found.'}</p>
           <button className="btn btn-primary" onClick={() => router.push('/dashboard/reports')}>
             Back to Reports
           </button>
@@ -182,8 +186,6 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   // ── Derived data ──────────────────────────────────────────────
   const score    = report.score ?? 0;
   const urgency  = (report.urgency ?? 'Low') as RiskLevel;
-  const riskColor = score >= COLOR_THRESHOLDS.high ? 'var(--red)' : score >= COLOR_THRESHOLDS.medium ? '#B45309' : '#15803D';
-  const riskBg    = score >= COLOR_THRESHOLDS.high ? 'var(--red-light)' : score >= COLOR_THRESHOLDS.medium ? '#FFFBEB' : '#F0FDF4';
 
   const parsed = parseStoredAssessment(report.answers, report.assessmentPayload);
   const { primarySymptom, severity, duration, additionalSymptoms, medicalHistory } = parsed;
@@ -194,7 +196,7 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const displayName = report.personName && report.personName !== 'Myself' ? report.personName : null;
   const relationLabel = !report.isSelf && report.relation ? ` (${report.relation})` : '';
   const reportTitle = displayName
-    ? `Health Assessment for ${displayName}${relationLabel}`
+    ? t('Assessment', 'मूल्यांकन', 'मूल्यांकन') + ': ' + displayName + relationLabel
     : (language === 'Hindi' ? 'स्वास्थ्य मूल्यांकन' : language === 'Marathi' ? 'आरोग्य मूल्यांकन' : 'Health Assessment');
 
   // Local engine as fallback
@@ -245,416 +247,54 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const onBloodThinners = medRaw.includes('blood_thinners') || medRaw.includes('blood_thinner') || medRaw.includes('blood thinner');
   const drugWarnings = getDrugWarnings(onBloodThinners, [...parsed.allSymptoms, ...parsed.additionalSymptoms, ...parsed.medicalHistory]);
 
-  return (
-    <AppShell>
-      <div className="mobile-padding" style={{ padding: '32px 24px', minHeight: '100%', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
-        <div style={{ maxWidth: '800px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-
-          {/* ── Personalized Header ── */}
-          <div>
-            <button
-              onClick={() => router.push('/dashboard/reports')}
-              style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-4)', fontSize: '13px', fontWeight: '600', fontFamily: 'inherit', marginBottom: '14px', padding: 0 }}
-            >
-              ← {language === 'Hindi' ? 'वापस जाएं' : language === 'Marathi' ? 'परत जा' : 'Back to Reports'}
-            </button>
-
-            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '6px', flexWrap: 'wrap' }}>
-                  <h1 style={{ fontSize: '24px', fontWeight: '900', color: 'var(--text-1)', margin: 0, letterSpacing: '-0.5px' }}>
-                    {reportTitle}
-                  </h1>
-                  {/* Saved Report badge */}
-                  <span style={{ fontSize: '11px', fontWeight: '700', padding: '3px 10px', borderRadius: '999px', background: '#F0FDF4', color: '#15803D', border: '1px solid #BBF7D0', letterSpacing: '0.04em' }}>
-                    ✓ Saved Report
-                  </span>
-                </div>
-                <p style={{ fontSize: '14px', color: 'var(--text-3)', margin: 0 }}>
-                  {new Date(report.createdAt).toLocaleDateString(
-                    langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US',
-                    { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }
-                  )}
-                </p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexShrink: 0, flexWrap: 'wrap' }}>
-                <button
-                  className="btn btn-outline no-print"
-                  onClick={() => { try { window.print(); } catch { /* noop */ } }}
-                  style={{ fontSize: '13px', padding: '9px 16px' }}
-                  title="Print or save as PDF"
-                >
-                  🖨️ {language === 'Hindi' ? 'प्रिंट / PDF' : language === 'Marathi' ? 'प्रिंट / PDF' : 'Print / PDF'}
-                </button>
-                <button
-                  className="btn btn-primary"
-                  onClick={() => router.push('/dashboard')}
-                  style={{ fontSize: '13px', padding: '9px 18px', flexShrink: 0 }}
-                >
-                  {language === 'Hindi' ? 'नया मूल्यांकन' : language === 'Marathi' ? 'नवीन मूल्यांकन' : 'New Assessment'}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* ── Gauges ── */}
-          <div className="card" style={{ padding: '28px', borderRadius: '24px', boxShadow: 'var(--shadow-md)' }}>
-            <div style={{ textAlign: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: '0 0 4px 0' }}>
-                {language === 'Hindi' ? 'मूल्यांकन सारांश' : language === 'Marathi' ? 'मूल्यांकन सारांश' : 'Assessment Summary'}
-              </h2>
-              <p style={{ fontSize: '11px', color: 'var(--text-4)', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '1px', margin: 0 }}>
-                Historical Snapshot
-              </p>
-            </div>
-
-            <div className="mobile-flex-stack" style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', gap: '20px' }}>
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                <RiskGauge score={score} urgency={urgency as Urgency} explanation={riskOneLiner} />
-              </div>
-
-              <div className="mobile-hide" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '90px', textAlign: 'center', alignSelf: 'center' }}>
-                <div style={{ width: '1px', height: '32px', background: 'var(--border-faint)', marginBottom: '10px' }} />
-                <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                  Risk tells <span style={{ color: 'var(--text-1)' }}>WHAT</span>
-                </p>
-                <div style={{ height: '18px' }} />
-                <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                  Model score reflects input patterns
-                </p>
-                <div style={{ width: '1px', height: '32px', background: 'var(--border-faint)', marginTop: '10px' }} />
-              </div>
-
-              <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-                {!isLegacy ? (
-                  <ConfidenceMeter
-                    score={Math.round(report.confidenceScore! * 100)}
-                    level={report.confidenceLevel || 'Medium'}
-                    explanation={report.confidenceExplanation || ''}
-                  />
-                ) : (
-                  <div style={{ padding: '28px 20px', background: 'var(--bg)', borderRadius: '20px', border: '1.5px dashed var(--border)', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center', maxWidth: '220px' }}>
-                    <div style={{ fontSize: '28px', marginBottom: '12px' }}>📊</div>
-                    <div style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-2)', marginBottom: '6px' }}>Heuristic model score</div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-4)', lineHeight: '1.5' }}>
-                      Not available for this report. The urgency result remains available.
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Why this risk level? ── */}
-          <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', borderLeft: '5px solid ' + riskColor }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🔍</span>
-              {language === 'Hindi' ? 'यह जोखिम स्तर क्यों?' : language === 'Marathi' ? 'हा जोखीम स्तर का?' : 'Why this risk level?'}
-            </h3>
-            <p style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: '1.6', marginBottom: '14px', fontStyle: 'italic' }}>
-              {displaySummary}
-            </p>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {displayFactors.map((factor, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: riskColor, flexShrink: 0, marginTop: '7px' }} />
-                  <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.5' }}>{factor}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Key Insights ── */}
-          <div className="card" style={{ padding: '24px 28px', borderRadius: '20px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💡</span>
-              {language === 'Hindi' ? 'मुख्य निष्कर्ष' : language === 'Marathi' ? 'मुख्य निष्कर्ष' : 'Key Insights'}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {keyInsights.map((insight, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)', flexShrink: 0, marginTop: '7px' }} />
-                  <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.5' }}>{insight}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── What you should do now ── */}
-          <div className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ background: riskBg, padding: '22px 28px', borderBottom: '1px solid var(--border-faint)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '900', color: 'var(--text-1)', margin: 0 }}>
-                  {language === 'Hindi' ? 'अनुशंसित कार्रवाई' : language === 'Marathi' ? 'शिफारस केलेली कृती' : 'What you should do'}
-                </h3>
-                <span style={{ background: riskColor, color: 'white', padding: '3px 10px', borderRadius: '999px', fontSize: '11px', fontWeight: '800' }}>
-                  {urgency.toUpperCase()}
-                </span>
-              </div>
-              <p style={{ fontSize: '15px', fontWeight: '700', color: riskColor, margin: 0 }}>
-                {displayPrimary}
-              </p>
-              {/* Read-only note */}
-              <p style={{ fontSize: '11.5px', color: 'var(--text-4)', marginTop: '8px', fontStyle: 'italic' }}>
-                This is historical guidance based on your assessment at the time.
-              </p>
-            </div>
-            <div style={{ padding: '18px 28px' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {displaySteps.map((step, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                    <div style={{ width: '20px', height: '20px', borderRadius: '50%', background: 'var(--bg)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '10px', fontWeight: '800', color: 'var(--text-3)', flexShrink: 0 }}>
-                      {i + 1}
-                    </div>
-                    <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.55', paddingTop: '1px' }}>{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* ── Warning Signs ── */}
-          <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', background: score >= COLOR_THRESHOLDS.high ? '#FFF5F5' : 'white', border: score >= COLOR_THRESHOLDS.high ? '1px solid var(--red-border)' : '1px solid var(--border)' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '14px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>⚠️</span>
-              {language === 'Hindi' ? 'चेतावनी संकेत' : language === 'Marathi' ? 'सावधानीचे संकेत' : 'Warning Signs to Watch'}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {warningSigns.map((sign, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#B45309', flexShrink: 0, marginTop: '7px' }} />
-                  <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.5' }}>{sign}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* ── Outcome Check-in ── */}
-          {followUp && (
-            <div className="card" style={{ padding: '24px 28px', borderRadius: '20px', border: '1.5px solid var(--border)', background: '#FAFBFF', boxShadow: 'var(--shadow-md)', overflow: 'hidden' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '4px' }}>
-                <div style={{ width: '38px', height: '38px', borderRadius: '12px', background: 'linear-gradient(135deg, #10B981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '18px', flexShrink: 0, boxShadow: '0 3px 8px rgb(16 185 129 / 0.3)' }}>
-                  ✅
-                </div>
-                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0 }}>
-                  {language === 'Hindi' ? 'फॉलो-अप चेक-इन' : language === 'Marathi' ? 'फॉलो-अप तपासणी' : 'Outcome Check-in'}
-                </h3>
-              </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: '6px 0 14px 34px', lineHeight: '1.5' }}>
-                {language === 'Hindi'
-                  ? 'आपके मूल्यांकन के बाद आपकी स्थिति में क्या बदलाव आया? यह हमें अपनी भविष्यवाणियों को बेहतर बनाने में मदद करता है।'
-                  : language === 'Marathi'
-                    ? 'तुमच्या मूल्यांकनानंतर तुमच्या स्थितीत काय बदलले? हे आम्हाला आमच्या अंदाज सुधारण्यास मदत करते.'
-                    : 'How were things after your assessment? This helps us improve our predictions.'}
-              </p>
-
-              {followUp.status === 'responded' ? (
-                <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: '14px', padding: '16px 18px' }}>
-                  <p style={{ fontSize: '13.5px', fontWeight: '700', color: '#15803D', margin: '0 0 10px 0', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ width: '18px', height: '18px', borderRadius: '50%', background: '#15803D', color: 'white', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px' }}>✓</span>
-                    {language === 'Hindi' ? 'आपकी प्रतिक्रिया दर्ज की गई' : language === 'Marathi' ? 'तुमचा अभिप्राय नोंदवला' : 'Your check-in has been recorded'}
-                  </p>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-                    {followUp.contactedDoctor != null && (
-                      <span className="badge" style={{ background: followUp.contactedDoctor ? '#DBEAFE' : '#F1F5F9', color: followUp.contactedDoctor ? '#1D4ED8' : '#475569', border: `1px solid ${followUp.contactedDoctor ? '#BFDBFE' : '#E2E8F0'}` }}>
-                        {language === 'Hindi' ? 'डॉक्टर से परामर्श' : language === 'Marathi' ? 'डॉक्टरांचा सल्ला' : 'Doctor'}: {followUp.contactedDoctor ? (language === 'Hindi' ? 'हाँ' : language === 'Marathi' ? 'होय' : 'Yes') : (language === 'Hindi' ? 'नहीं' : language === 'Marathi' ? 'नाही' : 'No')}
-                      </span>
-                    )}
-                    {followUp.improved && (
-                      <span className="badge" style={{ background: followUp.improved === 'worse' ? '#FEF2F2' : followUp.improved === 'same' ? '#FFFBEB' : '#F0FDF4', color: followUp.improved === 'worse' ? '#B91C1C' : followUp.improved === 'same' ? '#B45309' : '#15803D', border: `1px solid ${followUp.improved === 'worse' ? '#FECACA' : followUp.improved === 'same' ? '#FDE68A' : '#BBF7D0'}` }}>
-                        {language === 'Hindi' ? 'स्थिति' : language === 'Marathi' ? 'स्थिती' : 'Condition'}: {followUp.improved.charAt(0).toUpperCase() + followUp.improved.slice(1)}
-                      </span>
-                    )}
-                    {followUp.diagnosis && <span className="badge" style={{ background: '#F3E8FF', color: '#7E22CE', border: '1px solid #E9D5FF' }}>💬 {followUp.diagnosis}</span>}
-                  </div>
-                  {followUp.notes && <p style={{ fontSize: '12.5px', color: 'var(--text-3)', margin: '10px 0 0 0', lineHeight: '1.5' }}>“{followUp.notes}”</p>}
-                </div>
-              ) : showCheckInForm || new Date(followUp.scheduledAt) <= new Date() ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                  <div>
-                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
-                      {language === 'Hindi' ? 'क्या आपने डॉक्टर या स्वास्थ्य पेशेवर से परामर्श किया?' : language === 'Marathi' ? 'तुम्ही डॉक्टर किंवा आरोग्य व्यावसायिकांचा सल्ला घेतला का?' : 'Did you see a doctor or health professional?'}
-                    </p>
-                    <div role="radiogroup" aria-label="Contacted a doctor" style={{ display: 'flex', gap: '10px' }}>
-                      {(['yes', 'no'] as const).map((val) => (
-                        <button
-                          key={val}
-                          type="button"
-                          aria-pressed={contactedDoctor === val}
-                          onClick={() => setContactedDoctor(val)}
-                          style={{
-                            padding: '8px 18px', borderRadius: '999px', fontSize: '13px', fontWeight: '600',
-                            border: contactedDoctor === val ? '1.5px solid var(--red)' : '1.5px solid var(--border)',
-                            background: contactedDoctor === val ? 'var(--red-light)' : 'white',
-                            color: contactedDoctor === val ? 'var(--red)' : 'var(--text-3)',
-                            boxShadow: contactedDoctor === val ? '0 2px 6px rgb(185 28 28 / 0.15)' : 'none',
-                            cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s ease',
-                          }}
-                        >
-                          {val === 'yes'
-                            ? (language === 'Hindi' ? 'हाँ' : language === 'Marathi' ? 'होय' : 'Yes')
-                            : (language === 'Hindi' ? 'नहीं' : language === 'Marathi' ? 'नाही' : 'No')}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div>
-                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
-                      {language === 'Hindi' ? 'आपके लक्षण अब कैसे हैं?' : language === 'Marathi' ? 'तुमची लक्षणे आता कशी आहेत?' : 'How are your symptoms now?'}
-                    </p>
-                    <select
-                      value={improved}
-                      onChange={(e) => setImproved(e.target.value)}
-                      aria-label="Current condition"
-                      className="input"
-                    >
-                      <option value="">{language === 'Hindi' ? 'चुनें...' : language === 'Marathi' ? 'निवडा...' : 'Select...'}</option>
-                      <option value="worse">Worse</option>
-                      <option value="same">Same</option>
-                      <option value="better">Better</option>
-                      <option value="recovered">{language === 'Hindi' ? 'पूरी तरह ठीक' : language === 'Marathi' ? 'पूर्णपणे बरे' : 'Recovered'}</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
-                      {language === 'Hindi' ? 'निदान (यदि डॉक्टर ने बताया हो):' : language === 'Marathi' ? 'निदान (जर डॉक्टरांनी सांगितले असेल):' : 'Diagnosis (if the doctor told you):'}
-                    </p>
-                    <input
-                      type="text"
-                      value={diagnosis}
-                      onChange={(e) => setDiagnosis(e.target.value)}
-                      aria-label="Diagnosis"
-                      className="input"
-                    />
-                  </div>
-
-                  <div>
-                    <p style={{ fontSize: '12.5px', fontWeight: '700', color: 'var(--text-2)', margin: '0 0 8px 0' }}>
-                      {language === 'Hindi' ? 'अतिरिक्त टिप्पणियां' : language === 'Marathi' ? 'अतिरिक्त टिप्पण्या' : 'Additional notes'}
-                    </p>
-                    <textarea
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                      rows={2}
-                      aria-label="Additional notes"
-                      className="input"
-                      style={{ resize: 'vertical' }}
-                    />
-                  </div>
-
-                  {checkInError && <p style={{ fontSize: '12.5px', color: 'var(--red)', margin: 0 }}>{checkInError}</p>}
-
-                  <button className="btn btn-primary" onClick={submitCheckIn} disabled={checkInSubmitting} style={{ alignSelf: 'flex-start', fontSize: '13px', padding: '10px 20px' }}>
-                    {checkInSubmitting
-                      ? (language === 'Hindi' ? 'सहेजा जा रहा है...' : language === 'Marathi' ? 'जतन होत आहे...' : 'Saving...')
-                      : (language === 'Hindi' ? 'चेक-इन सबमिट करें' : language === 'Marathi' ? 'तपासणी सबमिट करा' : 'Submit check-in')}
-                  </button>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexWrap: 'wrap' }}>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-3)', margin: 0, display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ fontSize: '13px' }}>📅</span>
-                    {language === 'Hindi'
-                      ? `हम ${new Date(followUp.scheduledAt).toLocaleDateString()} को आपकी स्थिति देखेंगे।`
-                      : language === 'Marathi'
-                        ? `आम्ही ${new Date(followUp.scheduledAt).toLocaleDateString()} रोजी तुमची स्थिती पाहू.`
-                        : `We'll check in on you on ${new Date(followUp.scheduledAt).toLocaleDateString()}.`}
-                  </p>
-                  <button className="btn btn-outline" onClick={() => setShowCheckInForm(true)} style={{ fontSize: '12.5px', padding: '8px 16px' }}>
-                    {language === 'Hindi' ? 'अभी चेक-इन करें' : language === 'Marathi' ? 'आता तपासणी करा' : 'Check in now'}
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ── Doctor Visit Note ── */}
-          <div className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ background: '#F8FAFC', padding: '18px 24px', borderBottom: '1px solid var(--border-faint)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <div style={{ width: '34px', height: '34px', borderRadius: '10px', background: '#1E293B', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '16px', flexShrink: 0 }}>📋</div>
-                <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0 }}>Doctor Visit Note</h3>
-                  <p style={{ fontSize: '11.5px', color: 'var(--text-4)', margin: '2px 0 0 0' }}>Quick facts to share at your consultation</p>
-                </div>
-              </div>
-              <button
-                className="btn btn-outline no-print"
-                onClick={() => { try { window.print(); } catch { /* noop */ } }}
-                style={{ fontSize: '12.5px', padding: '8px 16px' }}
-              >
-                🖨️ {language === 'Hindi' ? 'प्रिंट करें' : language === 'Marathi' ? 'प्रिंट करा' : 'Print / Save PDF'}
-              </button>
-            </div>
-            <div style={{ padding: '18px 24px' }}>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '12px', marginBottom: '14px' }}>
-                {[
-                  { label: 'Assessment date', value: new Date(report.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) },
-                  { label: 'Patient', value: report.personName === 'Myself' ? 'Self' : `${report.personName || 'Self'}${relationLabel}` },
-                  { label: 'Primary symptom', value: primarySymptom.replace(/_/g, ' ').replace(/^./, (c) => c.toUpperCase()) },
-                  { label: 'Other symptoms', value: additionalSymptoms.length ? additionalSymptoms.slice(0, 4).map((s) => s.replace(/_/g, ' ')).join(', ') : 'None reported' },
-                  { label: 'Severity', value: severity.replace(/^./, (c) => c.toUpperCase()) },
-                  { label: 'Duration', value: duration },
-                  { label: 'Risk level', value: `${urgency} (score ${score}/100)` },
-                  { label: 'Heuristic model score', value: !isLegacy && report.confidenceScore != null ? `${Math.round(report.confidenceScore * 100)}% (${report.confidenceLevel})` : 'Not available' },
-                  { label: 'Medications / history', value: medRaw.length ? medRaw.map((m) => m.replace(/_/g, ' ')).join(', ') : 'None reported' },
-                  { label: 'Follow-up', value: followUp ? (followUp.status === 'responded' ? 'Check-in recorded' : 'Pending check-in') : 'Not scheduled' },
-                ].map((f) => (
-                  <div key={f.label} style={{ background: 'var(--bg)', border: '1px solid var(--border-faint)', borderRadius: '10px', padding: '10px 12px' }}>
-                    <div style={{ fontSize: '10px', fontWeight: '800', textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-4)', marginBottom: '3px' }}>{f.label}</div>
-                    <div style={{ fontSize: '12.5px', fontWeight: '600', color: 'var(--text-1)', lineHeight: '1.4' }}>{f.value}</div>
-                  </div>
-                ))}
-              </div>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-3)', lineHeight: '1.6', margin: 0, fontStyle: 'italic', borderTop: '1px solid var(--border-faint)', paddingTop: '12px' }}>
-                “{riskOneLiner}” — {displaySummary}
-              </p>
-            </div>
-          </div>
-
-          {/* ── Drug-interaction warnings ── */}
-          {drugWarnings.length > 0 && (
-            <div className="card" style={{ padding: '16px 20px', borderRadius: '16px', border: '1.5px solid #FDE68A', background: '#FFFBEB' }}>
-              <div style={{ display: 'flex', gap: '10px' }}>
-                <span style={{ fontSize: '16px', flexShrink: 0 }}>⚠️</span>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {drugWarnings.map((w, i) => (
-                    <p key={i} style={{ fontSize: '13px', fontWeight: '600', color: '#92400E', lineHeight: '1.5', margin: 0 }}>{w}</p>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ── Disclaimer + Footer ── */}
-          <div style={{ padding: '20px 0', borderTop: '1px solid var(--border-faint)', textAlign: 'center' }}>
-            <div style={{
-              display: 'inline-flex', alignItems: 'flex-start', gap: '10px',
-              background: 'var(--red-light)', border: '1.5px solid var(--red-border)',
-              borderLeft: '4px solid var(--red)',
-              borderRadius: 'var(--radius)', padding: '12px 18px',
-              maxWidth: '580px', margin: '0 auto 16px', textAlign: 'left',
-            }}>
-              <span style={{ fontSize: '15px', flexShrink: 0, marginTop: '1px' }}>⚠️</span>
-              <p style={{ fontSize: '12.5px', color: 'var(--red-text)', lineHeight: '1.6', margin: 0, fontWeight: '600' }}>
-                <strong style={{ fontWeight: '800', color: 'var(--red)' }}>Disclaimer: </strong>
-                This report reflects your health status at the time of assessment and may change with new symptoms. It is not a medical diagnosis — always consult a qualified healthcare professional.
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              <button onClick={() => router.push('/dashboard/reports')} className="btn btn-outline" style={{ fontSize: '13px' }}>
-                ← All Reports
-              </button>
-              <button onClick={() => router.push('/dashboard')} className="btn btn-primary" style={{ fontSize: '13px' }}>
-                New Assessment
-              </button>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </AppShell>
-  );
+  return <AppShell><div className="page"><div className="report">
+    <Notice tone={urgency === 'High' ? 'danger' : urgency === 'Medium' ? 'warning' : 'info'}>
+      <p><Badge urgency={urgency}>{urgency === 'High' ? t('High urgency','उच्च तात्कालिकता','उच्च तातडी') : urgency === 'Medium' ? t('Medium urgency','मध्यम तात्कालिकता','मध्यम तातडी') : t('Low urgency','कम तात्कालिकता','कमी तातडी')}</Badge></p>
+      <h2>{displayPrimary}</h2><p>{t('This is historical guidance from the date of your assessment.','यह मूल्यांकन की तारीख की सलाह है।','हा मूल्यांकनाच्या तारखेचा सल्ला आहे.')}</p>
+    </Notice>
+    <header className="stack"><div><Button variant="secondary" onClick={() => router.push('/dashboard/reports')}>{t('Back to reports','रिपोर्ट पर वापस जाएँ','अहवालांकडे परत जा')}</Button></div>
+      <p className="eyebrow">{t('Saved report','सहेजी गई रिपोर्ट','जतन केलेला अहवाल')}</p><h1>{reportTitle}</h1>
+      <p className="muted">{new Date(report.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US',{ weekday: 'long',year: 'numeric',month: 'long',day: 'numeric' })}</p>
+      <div className="row no-print"><Button variant="secondary" onClick={() => { try { window.print(); } catch { /* Printing is unavailable in some embedded browsers. */ } }}><Printer aria-hidden="true" />{t('Print / save PDF','प्रिंट / PDF सहेजें','प्रिंट / PDF जतन करा')}</Button><Button onClick={() => router.push('/dashboard')}>{t('New assessment','नया मूल्यांकन','नवीन मूल्यांकन')}</Button></div>
+    </header>
+    <Notice><strong>{t('Decision support only. This is not a diagnosis.','केवल निर्णय में सहायता के लिए। यह निदान नहीं है।','केवळ निर्णय घेण्यास मदत. हे निदान नाही.')}</strong><p>{t('This report reflects your health status at the time of assessment and may change with new symptoms. Always consult a qualified healthcare professional.','यह रिपोर्ट मूल्यांकन के समय की स्थिति दर्शाती है। नए लक्षणों से स्थिति बदल सकती है। हमेशा योग्य स्वास्थ्य पेशेवर से सलाह लें।','हा अहवाल मूल्यांकनाच्या वेळची स्थिती दर्शवतो. नवीन लक्षणांमुळे स्थिती बदलू शकते. नेहमी पात्र आरोग्य व्यावसायिकांचा सल्ला घ्या.')}</p></Notice>
+    <Section title={t('Why this urgency level?','यह तात्कालिकता क्यों?','ही तातडीची पातळी का?')}><p>{displaySummary}</p><ul className="plain-list">{displayFactors.map((factor,i) => <li key={i}>{factor}</li>)}</ul></Section>
+    <Section title={t('What to keep in mind','ध्यान देने योग्य बातें','लक्षात ठेवण्याच्या गोष्टी')}><ul className="plain-list">{keyInsights.map((insight,i) => <li key={i}>{insight}</li>)}</ul></Section>
+    <Section title={t('Recommended next steps','अगले कदम','पुढील पावले')}><p><strong>{displayPrimary}</strong></p><ol className="plain-list">{displaySteps.map((step,i) => <li key={i}>{step}</li>)}</ol></Section>
+    <Notice tone="warning"><h2>{t('Warning signs to watch','चेतावनी संकेत','धोक्याची लक्षणे')}</h2><ul className="plain-list">{warningSigns.map((sign,i) => <li key={i}>{sign}</li>)}</ul></Notice>
+    {drugWarnings.length > 0 && <Notice tone="danger" role="alert"><h2>{t('Medicine-related warnings','दवाइयों से जुड़ी चेतावनियाँ','औषधांशी संबंधित इशारे')}</h2>{drugWarnings.map((w,i) => <p key={i}>{w}</p>)}</Notice>}
+    <Section title={t('Recorded scores','दर्ज किए गए स्कोर','नोंदवलेले स्कोअर')}><div className="metric-grid"><RiskGauge score={score} urgency={urgency as Urgency} explanation={riskOneLiner} />{!isLegacy ? <ConfidenceMeter score={Math.round(report.confidenceScore! * 100)} level={report.confidenceLevel || 'Medium'} explanation={report.confidenceExplanation || ''} /> : <div className="metric"><h3>{t('Input pattern score','इनपुट पैटर्न स्कोर','माहितीच्या नमुन्याचा स्कोअर')}</h3><p>{t('Unavailable for this report. The urgency result is still available.','इस रिपोर्ट में उपलब्ध नहीं। तात्कालिकता का परिणाम उपलब्ध है।','या अहवालासाठी उपलब्ध नाही. तातडीचा निकाल उपलब्ध आहे.')}</p></div>}</div></Section>
+    {followUp && <Section title={t('How are you now?','अब आप कैसे हैं?','आता तुम्हाला कसे वाटते?')}>
+      <p>{t('Tell us what changed after this assessment. Your response helps us review the predictions.','बताएँ कि मूल्यांकन के बाद क्या बदला। आपका जवाब अनुमानों की समीक्षा में मदद करता है।','मूल्यांकनानंतर काय बदलले ते सांगा. तुमचे उत्तर अंदाजांचे पुनरावलोकन करण्यास मदत करते.')}</p>
+      {followUp.status === 'responded' ? <Notice><strong>{t('Your check-in has been recorded.','आपकी प्रतिक्रिया दर्ज की गई।','तुमचा अभिप्राय नोंदवला आहे.')}</strong><dl className="facts">
+        {followUp.contactedDoctor != null && <div><dt>{t('Saw a doctor','डॉक्टर से मिले','डॉक्टरांना भेटलात')}</dt><dd>{followUp.contactedDoctor ? t('Yes','हाँ','होय') : t('No','नहीं','नाही')}</dd></div>}
+        {followUp.improved && <div><dt>{t('Condition','स्थिति','स्थिती')}</dt><dd>{followUp.improved.charAt(0).toUpperCase() + followUp.improved.slice(1)}</dd></div>}
+        {followUp.diagnosis && <div><dt>{t('Diagnosis','निदान','निदान')}</dt><dd>{followUp.diagnosis}</dd></div>}
+      </dl>{followUp.notes && <p>{followUp.notes}</p>}</Notice> : showCheckInForm || new Date(followUp.scheduledAt) <= new Date() ? <div className="stack">
+        <fieldset className="checkin-options"><legend>{t('Did you see a doctor or health professional?','क्या आपने डॉक्टर या स्वास्थ्य पेशेवर से परामर्श किया?','तुम्ही डॉक्टर किंवा आरोग्य व्यावसायिकांचा सल्ला घेतला का?')}</legend><div className="row">{(['yes','no'] as const).map(val => <button key={val} type="button" className="option option-compact" aria-pressed={contactedDoctor === val} onClick={() => setContactedDoctor(val)}>{val === 'yes' ? t('Yes','हाँ','होय') : t('No','नहीं','नाही')}</button>)}</div></fieldset>
+        <label className="field"><span>{t('How are your symptoms now?','आपके लक्षण अब कैसे हैं?','तुमची लक्षणे आता कशी आहेत?')}</span><select className="input" value={improved} onChange={e => setImproved(e.target.value)}><option value="">{t('Select…','चुनें…','निवडा…')}</option><option value="worse">{t('Worse','बदतर','अधिक त्रास')}</option><option value="same">{t('Same','वैसे ही','तशीच')}</option><option value="better">{t('Better','बेहतर','सुधारणा')}</option><option value="recovered">{t('Recovered','पूरी तरह ठीक','पूर्णपणे बरे')}</option></select></label>
+        <Field id="checkin-diagnosis" label={t('Diagnosis, if a doctor told you','निदान, यदि डॉक्टर ने बताया हो','निदान, डॉक्टरांनी सांगितले असल्यास')} value={diagnosis} onChange={e => setDiagnosis(e.target.value)} />
+        <label className="field"><span>{t('Additional notes','अतिरिक्त टिप्पणियाँ','अतिरिक्त नोंदी')}</span><textarea className="input" value={notes} onChange={e => setNotes(e.target.value)} rows={2} /></label>
+        {checkInError && <Notice tone="warning" role="alert">{checkInError}</Notice>}
+        <Button onClick={submitCheckIn} disabled={checkInSubmitting}>{checkInSubmitting ? t('Saving…','सहेजा जा रहा है…','जतन होत आहे…') : t('Save check-in','प्रतिक्रिया सहेजें','अभिप्राय जतन करा')}</Button>
+      </div> : <div className="stack"><p>{t('Check-in scheduled for','प्रतिक्रिया की तय तारीख','अभिप्रायाची नियोजित तारीख')} {new Date(followUp.scheduledAt).toLocaleDateString()}.</p><div><Button variant="secondary" onClick={() => setShowCheckInForm(true)}>{t('Check in now','अभी प्रतिक्रिया दें','आता अभिप्राय द्या')}</Button></div></div>}
+    </Section>}
+    <Section title={t('Notes for your doctor','डॉक्टर के लिए जानकारी','डॉक्टरांसाठी माहिती')}>
+      <p>{t('Quick facts to share at your consultation.','परामर्श के समय साझा करने के लिए जानकारी।','डॉक्टरांच्या भेटीत सांगण्यासाठी माहिती.')}</p>
+      <dl className="facts">{[
+        { label: t('Assessment date','मूल्यांकन की तारीख','मूल्यांकनाची तारीख'), value: new Date(report.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US',{ year: 'numeric',month: 'short',day: 'numeric' }) },
+        { label: t('Patient','मरीज़','रुग्ण'), value: report.personName === 'Myself' ? t('Self','स्वयं','स्वतः') : (report.personName || t('Self','स्वयं','स्वतः')) + relationLabel },
+        { label: t('Primary symptom','मुख्य लक्षण','मुख्य लक्षण'), value: primarySymptom.replace(/_/g,' ').replace(/^./,c => c.toUpperCase()) },
+        { label: t('Other symptoms','अन्य लक्षण','इतर लक्षणे'), value: additionalSymptoms.length ? additionalSymptoms.slice(0,4).map(s => s.replace(/_/g,' ')).join(', ') : t('None reported','कोई नहीं बताया','काही सांगितले नाही') },
+        { label: t('Severity','गंभीरता','तीव्रता'), value: severity.replace(/^./,c => c.toUpperCase()) },
+        { label: t('Duration','अवधि','कालावधी'), value: duration },
+        { label: t('Urgency','तात्कालिकता','तातडी'), value: urgency + ' (' + score + '/100)' },
+        { label: t('Model score','मॉडल स्कोर','मॉडेल स्कोअर'), value: !isLegacy && report.confidenceScore != null ? Math.round(report.confidenceScore * 100) + '% (' + report.confidenceLevel + ')' : t('Unavailable','उपलब्ध नहीं','उपलब्ध नाही') },
+        { label: t('Medicines / history','दवाइयाँ / इतिहास','औषधे / इतिहास'), value: medRaw.length ? medRaw.map(m => m.replace(/_/g,' ')).join(', ') : t('None reported','कोई नहीं बताया','काही सांगितले नाही') },
+        { label: t('Follow-up','फॉलो-अप','पाठपुरावा'), value: followUp ? followUp.status === 'responded' ? t('Recorded','दर्ज किया गया','नोंदवला') : t('Pending','बाकी है','प्रलंबित') : t('Not scheduled','तय नहीं','नियोजित नाही') },
+      ].map(f => <div key={f.label}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}</dl>
+      <p>{riskOneLiner} — {displaySummary}</p>
+      <div className="no-print"><Button variant="secondary" onClick={() => { try { window.print(); } catch { /* Printing may be unavailable. */ } }}><Printer aria-hidden="true" />{t('Print / save PDF','प्रिंट / PDF सहेजें','प्रिंट / PDF जतन करा')}</Button></div>
+    </Section>
+  </div></div></AppShell>;
 }

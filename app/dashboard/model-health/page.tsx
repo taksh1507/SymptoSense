@@ -43,10 +43,10 @@ interface MlReport {
 function Card({ title, value, sub, tone }: { title: string; value: string; sub?: string; tone?: 'green' | 'amber' | 'red' }) {
   const color = tone === 'green' ? '#15803D' : tone === 'amber' ? '#B45309' : tone === 'red' ? '#DC2626' : 'var(--text-1)';
   return (
-    <div className="card" style={{ padding: '18px 20px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
-      <div style={{ fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--text-4)', marginBottom: '6px' }}>{title}</div>
-      <div style={{ fontSize: '24px', fontWeight: '900', color, letterSpacing: '-0.5px' }}>{value}</div>
-      {sub && <div style={{ fontSize: '12px', color: 'var(--text-4)', marginTop: '4px' }}>{sub}</div>}
+    <div className="card [padding:20px_20px] [border-radius:4px]" >
+      <div  className="[font-size:var(--text-sm)] [font-weight:600] [text-transform:uppercase] [letter-spacing:0.6px] [color:var(--text-4)] [margin-bottom:8px]">{title}</div>
+      <div style={{ color }} className="[font-size:var(--text-xl)] [font-weight:600] [letter-spacing:-0.5px]">{value}</div>
+      {sub && <div  className="[font-size:var(--text-sm)] [color:var(--text-4)] [margin-top:4px]">{sub}</div>}
     </div>
   );
 }
@@ -127,48 +127,43 @@ export default function ModelHealthPage() {
 
   return (
     <AppShell>
-      <div className="mobile-padding" style={{ padding: '28px 24px', minHeight: '100%', background: 'var(--bg)', fontFamily: 'var(--font)' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+      <div className="mobile-padding [padding:28px_24px] [min-height:100%] [background:var(--bg)] [font-family:var(--font)]" >
+        <div  className="[max-width:900px] [margin:0_auto] [display:flex] [flex-direction:column] [gap:20px]">
 
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+          <div  className="[display:flex] [justify-content:space-between] [align-items:center] [gap:12px] [flex-wrap:wrap]">
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '2px' }}>
-                <h1 style={{ fontSize: '22px', fontWeight: '900', color: 'var(--text-1)', margin: 0, letterSpacing: '-0.5px' }}>Model Health</h1>
+              <div  className="[display:flex] [align-items:center] [gap:12px] [margin-bottom:4px]">
+                <h1  className="[font-size:var(--text-xl)] [font-weight:600] [color:var(--text-1)] [margin:0] [letter-spacing:-0.5px]">Model Health</h1>
                 <span
-                  className="badge"
-                  style={{
-                    background: report ? 'rgba(16,185,129,0.1)' : '#F1F5F9',
-                    color: report ? '#059669' : '#64748B',
-                    border: `1px solid ${report ? 'rgba(16,185,129,0.35)' : '#E2E8F0'}`,
-                    display: 'inline-flex', alignItems: 'center', gap: '5px',
-                  }}
+                  className="badge [display:inline-flex] [align-items:center] [gap:4px]"
+                  style={{ background: report ? 'rgba(16,185,129,0.1)' : '#F1F5F9', color: report ? '#059669' : '#64748B', border: `1px solid ${report ? 'rgba(16,185,129,0.35)' : '#E2E8F0'}` }}
                 >
-                  <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: report ? '#10B981' : '#94A3B8', animation: report ? 'pulseDot 1.6s infinite' : 'none' }} />
+                  <span style={{ background: report ? '#10B981' : '#94A3B8' }} className="[width:7px] [height:7px] [border-radius:4px]" />
                   {report ? 'Latest retraining report' : 'Waiting for first retrain'}
                 </span>
               </div>
-              <p style={{ fontSize: '12.5px', color: 'var(--text-4)', margin: '4px 0 0 0' }}>
+              <p  className="[font-size:var(--text-sm)] [color:var(--text-4)] [margin:4px_0_0_0]">
                 Live confidence-service activity and independently reviewed outcome retraining.
               </p>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div  className="[display:flex] [align-items:center] [gap:12px]">
               {lastUpdated && (
-                <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>Updated {lastUpdated.toLocaleTimeString()}</span>
+                <span  className="[font-size:var(--text-sm)] [color:var(--text-4)]">Updated {lastUpdated.toLocaleTimeString()}</span>
               )}
-              <button className="btn btn-primary" onClick={runRetrain} disabled={retraining} style={{ fontSize: '13px', padding: '10px 18px' }}>
+              <button className="btn btn-primary [font-size:var(--text-sm)] [padding:12px_20px]" onClick={runRetrain} disabled={retraining} >
                 {retraining ? 'Retraining…' : 'Run retrain now'}
               </button>
             </div>
           </div>
 
           {error && (
-            <div style={{ background: '#FFF5F5', border: '1.5px solid #FECACA', color: '#DC2626', borderRadius: '12px', padding: '12px 16px', fontSize: '13px' }}>{error}</div>
+            <div  className="[background:#FFF5F5] [border:1px_solid_#FECACA] [color:#DC2626] [border-radius:4px] [padding:12px_16px] [font-size:var(--text-sm)]">{error}</div>
           )}
 
-          {!stats && !error && <div style={{ fontSize: '13px', color: 'var(--text-4)' }}>Loading…</div>}
+          {!stats && !error && <div  className="[font-size:var(--text-sm)] [color:var(--text-4)]">Loading…</div>}
 
           {stats && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px' }}>
+            <div  className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(170px,_1fr))] [gap:12px]">
               <Card title="Predictions" value={String(stats.predictionCount)} sub={`${stats.predictionCountToday} today`} />
               <Card title="ML unavailable" value={`${stats.mlUnavailableRate}%`} tone={stats.mlUnavailableRate > 5 ? 'amber' : 'green'} />
               <Card title="Avg latency" value={`${stats.avgLatencyMs}ms`} />
@@ -179,19 +174,19 @@ export default function ModelHealthPage() {
           )}
 
           {report && report.candidate && (
-            <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0 }}>Latest retrain</h3>
+            <div className="card [padding:20px_24px] [border-radius:4px]" >
+              <div  className="[display:flex] [justify-content:space-between] [align-items:center] [flex-wrap:wrap] [gap:8px] [margin-bottom:12px]">
+                <h3  className="[font-size:var(--text-base)] [font-weight:600] [color:var(--text-1)] [margin:0]">Latest retrain</h3>
                 {report.createdAt && (
-                  <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>{new Date(report.createdAt).toLocaleString()}</span>
+                  <span  className="[font-size:var(--text-sm)] [color:var(--text-4)]">{new Date(report.createdAt).toLocaleString()}</span>
                 )}
               </div>
               {report.promoted !== undefined && (
-                <span style={{ display: 'inline-block', fontSize: '11px', fontWeight: '800', padding: '4px 12px', borderRadius: '999px', marginBottom: '12px', color: '#fff', background: report.promoted ? '#15803D' : '#B45309' }}>
+                <span style={{ background: report.promoted ? '#15803D' : '#B45309' }} className="[display:inline-block] [font-size:var(--text-sm)] [font-weight:600] [padding:4px_12px] [border-radius:4px] [margin-bottom:12px] [color:var(--surface)]">
                   {report.promoted ? 'PROMOTED' : 'KEPT PREVIOUS MODEL'}
                 </span>
               )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px', marginBottom: '10px' }}>
+              <div  className="[display:grid] [grid-template-columns:repeat(auto-fit,_minmax(180px,_1fr))] [gap:12px] [margin-bottom:12px]">
                 {retrainMetricCards(report.candidate, 'Candidate').map(metric => <Card key={metric.title} title={metric.title} value={metric.value} />)}
                 {report.champion ? (
                   <>
@@ -203,11 +198,11 @@ export default function ModelHealthPage() {
                 <Card title="Real rows" value={String(report.rows_real_used ?? report.rows_real ?? 0)} sub={`${report.rows_synthetic ?? 0} synthetic`} />
               </div>
               {report.champion_error && (
-                <p style={{ fontSize: '11.5px', color: '#B45309', margin: '0 0 6px 0' }}>Champion could not be loaded: {report.champion_error}</p>
+                <p  className="[font-size:var(--text-sm)] [color:#B45309] [margin:0_0_8px_0]">Champion could not be loaded: {report.champion_error}</p>
               )}
-              {report.note && <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: 0 }}>{report.note}</p>}
+              {report.note && <p  className="[font-size:var(--text-sm)] [color:var(--text-4)] [margin:0]">{report.note}</p>}
               {report.gate && !report.gate.passed && (
-                <div style={{ marginTop: '10px', fontSize: '12.5px', color: '#DC2626' }}>
+                <div  className="[margin-top:12px] [font-size:var(--text-sm)] [color:#DC2626]">
                   {report.gate.failed.map((f: string, i: number) => (
                     <div key={i}>• {f}</div>
                   ))}
@@ -217,34 +212,34 @@ export default function ModelHealthPage() {
           )}
 
           {drift.length > 0 && (
-            <div className="card" style={{ padding: '20px 24px', borderRadius: '16px', boxShadow: 'var(--shadow-sm)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '4px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div className="card [padding:20px_24px] [border-radius:4px]" >
+              <div  className="[display:flex] [justify-content:space-between] [align-items:center] [flex-wrap:wrap] [gap:8px] [margin-bottom:4px]">
+                <h3  className="[font-size:var(--text-base)] [font-weight:600] [color:var(--text-1)] [margin:0] [display:flex] [align-items:center] [gap:8px]">
                   Feature drift
                   {flaggedDrift.length > 0 && (
-                    <span className="badge" style={{ background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>
+                    <span className="badge [background:#FEF2F2] [color:#DC2626] [border:1px_solid_#FECACA]" >
                       {flaggedDrift.length} flagged
                     </span>
                   )}
                 </h3>
               </div>
-              <p style={{ fontSize: '12px', color: 'var(--text-4)', margin: '0 0 12px 0' }}>
+              <p  className="[font-size:var(--text-sm)] [color:var(--text-4)] [margin:0_0_12px_0]">
                 z &gt; 2 between live predictions and the training distribution suggests new population patterns.
               </p>
-              <div style={{ fontSize: '12.5px' }}>
+              <div  className="[font-size:var(--text-sm)]">
                 {drift.map((d) => (
-                  <div key={d.feature} style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '9px 0', borderBottom: '1px solid var(--border-faint)' }}>
-                    <span style={{ flex: '1 1 auto', fontWeight: d.flagged ? '700' : '500', color: d.flagged ? '#DC2626' : 'var(--text-2)', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <div key={d.feature}  className="[display:flex] [align-items:center] [gap:12px] [padding:8px_0] [border-bottom:1px_solid_var(--border-faint)]">
+                    <span style={{ fontWeight: d.flagged ? '700' : '500', color: d.flagged ? '#DC2626' : 'var(--text-2)' }} className="[flex:1_1_auto] [min-width:0] [overflow:hidden] [text-overflow:ellipsis] [white-space:nowrap]">
                       {d.feature.replace(/_/g, ' ')}
                     </span>
-                    <div style={{ flex: '0 0 120px', height: '6px', borderRadius: '999px', background: '#E5E7EB', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', borderRadius: '999px', width: `${Math.min(100, (Math.abs(d.z) / maxAbsZ) * 100)}%`, background: d.flagged ? '#DC2626' : '#94A3B8', transition: 'width 0.4s ease' }} />
+                    <div  className="[flex:0_0_120px] [height:6px] [border-radius:4px] [background:#E5E7EB] [overflow:hidden]">
+                      <div style={{ width: `${Math.min(100, (Math.abs(d.z) / maxAbsZ) * 100)}%`, background: d.flagged ? '#DC2626' : '#94A3B8' }} className="[height:100%] [border-radius:4px]" />
                     </div>
-                    <span style={{ flex: '0 0 auto', color: 'var(--text-4)', fontVariantNumeric: 'tabular-nums' }}>
+                    <span  className="[flex:0_0_auto] [color:var(--text-4)] [font-variant-numeric:tabular-nums]">
                       Δ {d.z > 0 ? '+' : ''}{d.z.toFixed(1)}σ
                     </span>
                     {d.flagged && (
-                      <span className="badge" style={{ flex: '0 0 auto', background: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}>drift</span>
+                      <span className="badge [flex:0_0_auto] [background:#FEF2F2] [color:#DC2626] [border:1px_solid_#FECACA]" >drift</span>
                     )}
                   </div>
                 ))}
@@ -253,7 +248,7 @@ export default function ModelHealthPage() {
           )}
 
           {report && report.error && (
-            <div style={{ background: '#FFF5F5', border: '1.5px solid #FECACA', color: '#DC2626', borderRadius: '12px', padding: '12px 16px', fontSize: '13px' }}>
+            <div  className="[background:#FFF5F5] [border:1px_solid_#FECACA] [color:#DC2626] [border-radius:4px] [padding:12px_16px] [font-size:var(--text-sm)]">
               Last retrain failed: {report.error}
             </div>
           )}

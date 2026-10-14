@@ -1,321 +1,146 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
+import { ArrowRight, AlertTriangle, ShieldCheck, Clock, FileText } from 'lucide-react';
 import PublicNav from './components/PublicNav';
-
-// SVG Icons
-const HeartPulse = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
-    <path d="M3.22 12H9.5l.5-1 2 4.5 2-7 1.5 3.5h5.27"/>
-  </svg>
-);
-const ShieldCheck = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-    <polyline points="9 12 11 14 15 10"/>
-  </svg>
-);
-const Zap = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
-  </svg>
-);
-const Database = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/>
-    <path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/>
-  </svg>
-);
-const Globe = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/>
-    <line x1="2" y1="12" x2="22" y2="12"/>
-    <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-  </svg>
-);
-const ClipboardList = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
-    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/>
-    <line x1="12" y1="11" x2="16" y2="11"/><line x1="12" y1="16" x2="16" y2="16"/>
-    <line x1="8" y1="11" x2="8.01" y2="11"/><line x1="8" y1="16" x2="8.01" y2="16"/>
-  </svg>
-);
-const ArrowRight = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/>
-  </svg>
-);
-const CheckCircle = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <circle cx="12" cy="12" r="10"/><polyline points="9 12 11 14 15 10"/>
-  </svg>
-);
-
-const FEATURES = [
-  { icon: <Zap />, color: '#B91C1C', bg: '#FEF2F2', title: 'Instant Triage', desc: 'Our AI engine analyzes 8 key symptom indicators and returns a calibrated risk score in seconds.' },
-  { icon: <ShieldCheck />, color: '#1D4ED8', bg: '#EFF6FF', title: 'Risk Score Engine', desc: 'Weighted scoring model (Mild=1, Moderate=2, Severe=3) combined with duration and symptom-specific multipliers.' },
-  { icon: <Database />, color: '#15803D', bg: '#F0FDF4', title: 'Secure Health History', desc: 'Every assessment is persisted securely to your account, giving you a full audit trail of your health checks.' },
-  { icon: <Globe />, color: '#7C3AED', bg: '#F5F3FF', title: 'Multilingual', desc: 'Native support for English, Hindi (हिन्दी), and Marathi (मराठी) — language preference saved per account.' },
-  { icon: <ClipboardList />, color: '#B45309', bg: '#FFFBEB', title: 'Detailed Reports', desc: 'Past test results with date, risk level, score, and symptoms. Queryable from the dashboard at any time.' },
-  { icon: <HeartPulse />, color: '#C2410C', bg: '#FFF7ED', title: 'Family Profiles', desc: 'Run assessments for yourself or a family member — each report is properly attributed and stored separately.' },
-];
-
-const HOW_IT_WORKS = [
-  { step: '01', title: 'Sign in or create an account', desc: 'Secure authentication. Your data is private and encrypted.' },
-  { step: '02', title: 'Choose language & profile', desc: 'Select English, Hindi, or Marathi. Choose yourself or a family member.' },
-  { step: '03', title: 'Answer 8 symptom questions', desc: 'Optimized questions covering severity, duration, history, and progression.' },
-  { step: '04', title: 'Receive your triage report', desc: 'Instant risk score with recommendations — hospital, doctor, or home care.' },
-];
+import PublicFooter from './components/PublicFooter';
+import { Badge, Button, Notice } from '@/components/ui/primitives';
+import { useUiText } from '@/components/ui/use-ui-text';
 
 export default function LandingPage() {
   const router = useRouter();
+  const t = useUiText();
 
   return (
-    <div style={{ minHeight: '100vh', background: 'white', fontFamily: 'var(--font)' }}>
+    <>
       <PublicNav activeLink="home" />
-
-      {/* ── Hero ── */}
-      <section className="mobile-padding" style={{
-        padding: '80px 48px 72px',
-        background: 'linear-gradient(160deg, #FFF5F5 0%, #FFFFFF 50%, #FFF5F5 100%)',
-        textAlign: 'center',
-        position: 'relative', overflow: 'hidden',
-      }}>
-        {/* Subtle bg blobs */}
-        <div style={{ position: 'absolute', top: '-80px', left: '-80px', width: '320px', height: '320px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(185,28,28,0.08) 0%, transparent 70%)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: '-60px', right: '-60px', width: '280px', height: '280px', borderRadius: '50%', background: 'radial-gradient(circle, rgba(185,28,28,0.06) 0%, transparent 70%)', pointerEvents: 'none' }} />
-
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: '780px', margin: '0 auto' }}>
-          {/* Badge */}
-          <div className="badge-high" style={{
-            display: 'inline-flex', alignItems: 'center', gap: '8px',
-            padding: '6px 16px', borderRadius: '999px', fontSize: '13px', fontWeight: '700',
-            marginBottom: '24px', letterSpacing: '0.02em'
-          }}>
-            <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: 'var(--red)' }} />
-            Enterprise-Grade Symptom Analysis
-          </div>
-
-          <h1 style={{
-            fontSize: '56px', fontWeight: '900', color: 'var(--text-1)',
-            letterSpacing: '-1.8px', lineHeight: '1.05', marginBottom: '22px',
-          }}>
-            Smart Symptom<br />
-            <span style={{ color: 'var(--red)' }}>Triage</span> System
-          </h1>
-          <p style={{
-            fontSize: '19px', color: 'var(--text-3)', lineHeight: '1.65',
-            marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px',
-          }}>
-            Identify potential health risks instantly. Use our adaptive questionnaire and weighted rules to understand the urgency of your symptoms—available in 3 languages.
-          </p>
-
-          <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px' }}>
-            <button
-              id="hero-getstarted-btn"
-              className="btn btn-primary"
-              onClick={() => router.push('/auth/signup')}
-              style={{ padding: '14px 32px', fontSize: '15px', gap: '8px', boxShadow: '0 8px 20px -4px rgba(185, 28, 28, 0.4)' }}
-            >
-              Start Free Assessment <ArrowRight />
-            </button>
-            <button
-              id="hero-signin-btn"
-              className="btn btn-outline"
-              onClick={() => router.push('/auth/login')}
-              style={{ padding: '14px 32px', fontSize: '15px' }}
-            >
-              Sign in to Dashboard
-            </button>
-          </div>
-
-          {/* Trust line */}
-          <div style={{ marginTop: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '24px', flexWrap: 'wrap' }}>
-            {['Decision support only', 'No personal data sold', 'Modern Tech Stack'].map((t) => (
-              <span key={t} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: 'var(--text-4)', fontWeight: '600' }}>
-                <CheckCircle /> {t}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        {/* Dashboard preview card */}
-        <div className="anim-fadeup hide-mobile" style={{ maxWidth: '900px', margin: '64px auto 0', position: 'relative', zIndex: 1 }}>
-          <div style={{
-            background: 'white', borderRadius: '16px',
-            border: '1px solid var(--border)',
-            boxShadow: 'var(--shadow-lg)',
-            overflow: 'hidden',
-          }}>
-            {/* Mock browser chrome */}
-            <div style={{ background: 'var(--bg)', borderBottom: '1px solid var(--border)', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#EF4444' }} />
-              <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#F59E0B' }} />
-              <div style={{ width: '11px', height: '11px', borderRadius: '50%', background: '#10B981' }} />
-              <div style={{ flex: 1, background: 'white', borderRadius: '6px', height: '24px', marginLeft: '12px', display: 'flex', alignItems: 'center', paddingLeft: '12px', border: '1px solid var(--border-faint)' }}>
-                <span style={{ fontSize: '10px', color: 'var(--text-4)', fontFamily: 'JetBrains Mono, monospace' }}>symptosense.io/dashboard</span>
-              </div>
-            </div>
-            {/* Mock UI content */}
-            <div style={{ display: 'flex', height: '240px' }}>
-              {/* Sidebar */}
-              <div style={{ width: '180px', background: 'white', borderRight: '1px solid var(--border-faint)', padding: '20px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px', borderRadius: '8px', background: 'var(--red-light)' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--red)' }} />
-                  <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--red)' }}>Home</span>
-                </div>
-                {['Reports', 'Support', 'Settings'].map((n) => (
-                  <div key={n} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 12px' }}>
-                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--border)' }} />
-                    <span style={{ fontSize: '12px', color: 'var(--text-4)' }}>{n}</span>
-                  </div>
-                ))}
-              </div>
-              {/* Main */}
-              <div style={{ flex: 1, padding: '20px 24px', textAlign: 'left' }}>
-                <div style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-1)', marginBottom: '12px' }}>Dashboard Overview</div>
-                {/* Alert */}
-                <div style={{ background: 'var(--red-light)', border: '1.5px solid var(--red-border)', borderRadius: '10px', padding: '10px 14px', fontSize: '12px', color: 'var(--red)', fontWeight: '600', marginBottom: '16px', display: 'flex', gap: '10px', alignItems: 'center' }}>
-                  <Zap /> Strong Alert: High risk activity detected.
-                </div>
-                {/* Cards row */}
-                <div style={{ display: 'flex', gap: '12px', marginBottom: '16px' }}>
-                  {[['64/100', 'Risk Score'], ['Completed', 'Triage Status']].map(([v, l]) => (
-                    <div key={l} style={{ flex: 1, background: 'white', borderRadius: '10px', border: '1px solid var(--border)', padding: '12px' }}>
-                      <div style={{ fontSize: '9px', color: 'var(--text-4)', fontWeight: '800', marginBottom: '4px', textTransform: 'uppercase' }}>{l}</div>
-                      <div style={{ fontSize: '14px', fontWeight: '900', color: 'var(--text-1)' }}>{v}</div>
-                    </div>
-                  ))}
-                </div>
-                {/* Start button */}
-                <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--red)', color: 'white', padding: '8px 18px', borderRadius: '8px', fontSize: '12px', fontWeight: '800' }}>
-                   Analyze Symptoms Now
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ── Features ── */}
-      <section className="mobile-padding" id="features" style={{ padding: '80px 48px', background: 'var(--bg)' }}>
-        <div style={{ maxWidth: '1100px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--red)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>System Architecture</div>
-            <h2 style={{ fontSize: '36px', fontWeight: '900', color: 'var(--text-1)', letterSpacing: '-1px', marginBottom: '16px' }}>
-              Everything you need for smart triage
-            </h2>
-            <p style={{ fontSize: '17px', color: 'var(--text-3)', maxWidth: '540px', margin: '0 auto' }}>
-              Robust full-stack health platform — FastAPI ML service, secure database persistence, and Next.js performance.
+      <main id="main-content">
+        <section className="editorial hero">
+          <div className="stack-lg">
+            <p className="eyebrow">
+              {t('A little clarity when you feel unwell', 'तबीयत ठीक न हो, तो अगला कदम समझें', 'बरे वाटत नसल्यास पुढचे पाऊल समजून घ्या')}
             </p>
+            <h1>
+              {t('Your symptoms. A clearer, safer next step.', 'आपके लक्षण। अगला कदम स्पष्ट, सुरक्षित।', 'तुमची लक्षणे. पुढचे पाऊल स्पष्ट, सुरक्षित.')}
+            </h1>
+            <p>
+              {t(
+                'Tell us what has changed and how you feel. We’ll help you understand the urgency of your symptoms and what to discuss with a doctor.',
+                'बताएँ कि क्या बदला है और आप कैसा महसूस कर रहे हैं। हम लक्षणों की तात्कालिकता और डॉक्टर से क्या बात करनी है, यह समझने में मदद करेंगे।',
+                'काय बदलले आहे आणि कसे वाटते ते सांगा. लक्षणांची तातडी आणि डॉक्टरांशी काय बोलावे हे समजून घेण्यास आम्ही मदत करू.'
+              )}
+            </p>
+            <div className="row">
+              <Button id="hero-getstarted-btn" onClick={() => router.push('/auth/signup')}>
+                {t('Start an assessment', 'मूल्यांकन शुरू करें', 'मूल्यांकन सुरू करा')}
+                <ArrowRight aria-hidden="true" />
+              </Button>
+              <Button id="hero-signin-btn" variant="secondary" onClick={() => router.push('/auth/login')}>
+                {t('Sign in', 'साइन इन', 'साइन इन')}
+              </Button>
+            </div>
+            <p className="muted">English · हिन्दी · मराठी</p>
           </div>
 
-          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px' }}>
-            {FEATURES.map((f, i) => (
-              <div key={i} className="card card-lift" style={{ padding: '28px' }}>
-                <div style={{
-                  width: '46px', height: '46px', borderRadius: '12px',
-                  background: f.bg, color: f.color,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  marginBottom: '20px',
-                }}>{f.icon}</div>
-                <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '10px' }}>{f.title}</h3>
-                <p style={{ fontSize: '14px', color: 'var(--text-3)', lineHeight: '1.7' }}>{f.desc}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── How it works ── */}
-      <section className="mobile-padding" id="how-it-works" style={{ padding: '80px 48px', background: 'white' }}>
-        <div style={{ maxWidth: '900px', margin: '0 auto' }}>
-          <div style={{ textAlign: 'center', marginBottom: '56px' }}>
-            <div style={{ fontSize: '13px', fontWeight: '800', color: 'var(--red)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: '12px' }}>The Workflow</div>
-            <h2 style={{ fontSize: '36px', fontWeight: '900', color: 'var(--text-1)', letterSpacing: '-1px' }}>
-              Results in under 3 minutes
-            </h2>
-          </div>
-
-          <div className="mobile-grid-1" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
-            {HOW_IT_WORKS.map((s, i) => (
-              <div key={i} className="card" style={{ padding: '28px', display: 'flex', gap: '20px', alignItems: 'flex-start' }}>
-                <div style={{
-                  fontSize: '14px', fontWeight: '900', color: 'var(--red)',
-                  background: 'var(--red-light)', border: '1.5px solid var(--red-border)',
-                  width: '42px', height: '42px', borderRadius: '12px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                }}>{s.step}</div>
+          <aside className="hero-aside stack">
+            <p className="eyebrow">{t('Before you begin', 'शुरू करने से पहले', 'सुरू करण्यापूर्वी')}</p>
+            <h2>{t('Guidance, with limits.', 'मार्गदर्शन, अपनी सीमाओं के साथ।', 'मार्गदर्शन, त्याच्या मर्यादांसह.')}</h2>
+            <p>
+              {t(
+                'An assessment can help you decide when to seek care. It cannot tell you for certain what condition you have.',
+                'मूल्यांकन यह तय करने में मदद कर सकता है कि कब सहायता लें। इससे बीमारी की निश्चित पहचान नहीं हो सकती।',
+                'मूल्यांकन कधी मदत घ्यावी हे ठरवण्यास उपयोगी ठरू शकते. यातून आजाराचे निश्चित निदान होत नाही.'
+              )}
+            </p>
+            <Notice tone="danger">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" aria-hidden="true" />
                 <div>
-                  <h3 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '8px' }}>{s.title}</h3>
-                  <p style={{ fontSize: '14px', color: 'var(--text-3)', lineHeight: '1.65' }}>{s.desc}</p>
+                  <strong>{t('Do not wait in an emergency.', 'आपातस्थिति में इंतज़ार न करें।', 'आपत्कालीन स्थितीत थांबू नका.')}</strong>
+                  <p className="mt-1">
+                    {t(
+                      'For life-threatening symptoms, seek emergency care immediately.',
+                      'जीवन के लिए खतरनाक लक्षण होने पर तुरंत आपातकालीन सहायता लें।',
+                      'जीवघेणी लक्षणे असल्यास त्वरित आपत्कालीन मदत घ्या.'
+                    )}
+                  </p>
                 </div>
               </div>
+            </Notice>
+          </aside>
+        </section>
+
+        <section className="editorial split-section" id="how-it-works">
+          <div className="stack">
+            <p className="eyebrow">{t('The assessment', 'मूल्यांकन', 'मूल्यांकन')}</p>
+            <h2>{t('Start with what you know.', 'जो जानते हैं, वहीं से शुरू करें।', 'तुम्हाला माहीत आहे तिथून सुरुवात करा.')}</h2>
+          </div>
+          <ol className="editorial-list">
+            {[
+              [
+                t('Choose a language and person', 'भाषा और व्यक्ति चुनें', 'भाषा आणि व्यक्ती निवडा'),
+                t('Answer for yourself or someone you are helping.', 'अपने लिए या जिस व्यक्ति की मदद कर रहे हैं, उसके लिए उत्तर दें।', 'स्वतःसाठी किंवा तुम्ही मदत करत असलेल्या व्यक्तीसाठी उत्तरे द्या.')
+              ],
+              [
+                t('Describe the symptoms', 'लक्षण बताएँ', 'लक्षणे सांगा'),
+                t('Share symptoms, duration, severity, and relevant health history. Type or use voice input.', 'लक्षण, अवधि, गंभीरता और स्वास्थ्य इतिहास बताएँ। लिखकर या बोलकर उत्तर दें।', 'लक्षणे, कालावधी, तीव्रता आणि आरोग्याचा इतिहास सांगा. टाइप करा किंवा बोलून उत्तर द्या.')
+              ],
+              [
+                t('Read your next steps', 'अगले कदम पढ़ें', 'पुढील पावले वाचा'),
+                t('Review the urgency, possible conditions, and the information behind the estimate.', 'तात्कालिकता, संभावित स्थितियाँ और अनुमान में उपयोग की गई जानकारी देखें।', 'तातडी, संभाव्य स्थिती आणि अंदाजासाठी वापरलेली माहिती पाहा.')
+              ],
+            ].map(([title, desc], i) => (
+              <li key={title}>
+                <span className="rank-number">0{i + 1}</span>
+                <div className="stack">
+                  <h3>{title}</h3>
+                  <p>{desc}</p>
+                </div>
+              </li>
             ))}
-          </div>
-        </div>
-      </section>
+          </ol>
+        </section>
 
-      {/* ── CTA Banner ── */}
-      <section className="mobile-padding" style={{
-        padding: '80px 48px',
-        background: 'linear-gradient(135deg, #FC8181 0%, #B91C1C 50%, #7F1D1D 100%)',
-        textAlign: 'center',
-      }}>
-        <h2 style={{ fontSize: '36px', fontWeight: '900', color: 'white', letterSpacing: '-1px', marginBottom: '16px' }}>
-          Ready to assess your symptoms?
-        </h2>
-        <p style={{ fontSize: '18px', color: 'rgba(255,255,255,0.85)', marginBottom: '40px' }}>
-          Free. Private. Accurate decision support at your fingertips.
-        </p>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-          <button
-            id="cta-getstarted-btn"
-            onClick={() => router.push('/auth/signup')}
-            className="btn"
-            style={{
-              background: 'white', color: 'var(--red)', border: 'none',
-              padding: '16px 36px', borderRadius: '12px', fontSize: '16px',
-              fontWeight: '800', cursor: 'pointer', fontFamily: 'inherit',
-              boxShadow: '0 10px 25px rgba(0, 0, 0, 0.2)',
-              display: 'inline-flex', alignItems: 'center', gap: '10px',
-              transition: 'all 0.2s',
-            }}
-          >
-            Start Free Assessment <ArrowRight />
-          </button>
-        </div>
-      </section>
-
-      {/* ── Footer ── */}
-      <footer className="mobile-padding mobile-column" style={{ padding: '40px 48px', background: 'var(--text-1)', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-        <div className="mobile-column" style={{ maxWidth: '1100px', margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white' }}>
-                <HeartPulse />
-            </div>
-            <span style={{ fontSize: '18px', fontWeight: '900', color: 'white' }}>
-                Sympto<span style={{ color: 'var(--red)' }}>Sense</span>
-            </span>
-            </div>
-        </div>
-        <div style={{ maxWidth: '1100px', margin: '20px auto 0', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '12px',
-            background: 'rgba(251,191,36,0.12)', border: '1.5px solid rgba(251,191,36,0.35)',
-            borderRadius: '10px', padding: '12px 18px',
-          }}>
-            <span style={{ fontSize: '18px', flexShrink: 0 }}>⚠️</span>
-            <p style={{ fontSize: '12.5px', color: '#FCD34D', fontWeight: '600', margin: 0, lineHeight: 1.6 }}>
-              <strong style={{ color: '#FDE68A', fontWeight: '800' }}>Medical Disclaimer: </strong>
-              SymptoSense is a decision support tool and is <strong style={{ color: '#FDE68A' }}>not a replacement</strong> for professional medical advice, diagnosis, or treatment. Always consult a qualified healthcare professional.
+        <section className="editorial split-section" id="features">
+          <h2>{t('Understand the urgency.', 'तात्कालिकता समझें।', 'तातडी समजून घ्या.')}</h2>
+          <div className="stack">
+            <p>
+              {t(
+                'Every result names the urgency level in words. Read the advice together with the symptoms and information you provided.',
+                'हर परिणाम में तात्कालिकता का स्तर शब्दों में दिया जाता है। सलाह को अपने बताए लक्षणों और जानकारी के साथ पढ़ें।',
+                'प्रत्येक निकालात तातडीची पातळी शब्दांत दिलेली असते. सल्ला तुम्ही दिलेली लक्षणे आणि माहितीसोबत वाचा.'
+              )}
             </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-lg bg-emerald-50/70 border border-emerald-200">
+                <Badge urgency="Low">{t('Low urgency', 'कम तात्कालिकता', 'कमी तातडी')}</Badge>
+                <p className="text-xs text-slate-700 mt-2 font-medium">
+                  {t('Routine consultation or supportive self-monitoring at home.', 'सामान्य परामर्श या घर पर लक्षणों की साधारण निगरानी।', 'सर्वसाधारण सल्ला किंवा घरी लक्षणांवर लक्ष ठेवणे.')}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-amber-50/70 border border-amber-200">
+                <Badge urgency="Medium">{t('Medium urgency', 'मध्यम तात्कालिकता', 'मध्यम तातडी')}</Badge>
+                <p className="text-xs text-slate-700 mt-2 font-medium">
+                  {t('Schedule a clinical visit with a doctor within 24 to 48 hours.', '24 से 48 घंटों के भीतर डॉक्टर से मिलने का समय निर्धारित करें।', '24 ते 48 तासांत डॉक्टरांशी भेट निश्चित करा.')}
+                </p>
+              </div>
+              <div className="p-4 rounded-lg bg-red-50/70 border border-red-200">
+                <Badge urgency="High">{t('High urgency', 'उच्च तात्कालिकता', 'उच्च तातडी')}</Badge>
+                <p className="text-xs text-slate-700 mt-2 font-medium">
+                  {t('Prompt medical attention required; seek immediate clinical or ER evaluation.', 'त्वरित चिकित्सा सहायता आवश्यक; आपातकालीन जांच तुरंत कराएँ।', 'तात्काळ वैद्यकीय मदत आवश्यक; त्वरित आपत्कालीन तपासणी करा.')}
+                </p>
+              </div>
+            </div>
+            <div className="pt-2">
+              <Button id="cta-getstarted-btn" onClick={() => router.push('/auth/signup')}>
+                {t('Begin with your symptoms', 'अपने लक्षणों से शुरू करें', 'तुमच्या लक्षणांपासून सुरुवात करा')}
+                <ArrowRight aria-hidden="true" />
+              </Button>
+            </div>
           </div>
-        </div>
-      </footer>
-
-    </div>
+        </section>
+      </main>
+      <PublicFooter />
+    </>
   );
 }

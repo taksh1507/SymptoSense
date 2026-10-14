@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { ArrowRight, ChevronDown, FileText, Activity, Calendar, ShieldAlert } from 'lucide-react';
 import { useApp } from '../context/AppContext';
+import { Badge, Button, Notice, Section, Skeleton, EmptyState } from '@/components/ui/primitives';
+import { useUiText } from '@/components/ui/use-ui-text';
 
 interface Report {
   id: string;
@@ -17,115 +21,88 @@ interface Report {
   personName: string;
 }
 
-// ── SVG icons (consistent 16px) ──
-const PlayCircle = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
-  </svg>
-);
-const AlertTriangle = () => (
-  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
-    <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
-  </svg>
-);
-const UserIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-    <circle cx="12" cy="7" r="4"/>
-  </svg>
-);
-const ClockIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
-  </svg>
-);
-const CalendarIcon = () => (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <rect x="3" y="4" width="18" height="18" rx="2"/>
-    <line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/>
-    <line x1="3" y1="10" x2="21" y2="10"/><path d="m9 16 2 2 4-4"/>
-  </svg>
-);
-const TrendIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/>
-    <polyline points="16 7 22 7 22 13"/>
-  </svg>
-);
-const ListIcon = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-    <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
-    <line x1="8" y1="18" x2="21" y2="18"/>
-    <line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/>
-    <line x1="3" y1="18" x2="3.01" y2="18"/>
-  </svg>
-);
-const ChevronRight = () => (
-  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <polyline points="9 18 15 12 9 6"/>
-  </svg>
-);
-
-// ── Chart ──
-const W = 340, H = 88, PAD = { l: 28, r: 10, t: 8, b: 22 };
+const W = 340, H = 140, PAD = { l: 28, r: 10, t: 8, b: 22 };
 
 function RiskChart({ data }: { data: { m: string; v: number }[] }) {
-  if (data.length < 2) return (
-    <div style={{ height: H, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-4)', fontSize: '13px' }}>
-      Complete more tests to see your history
-    </div>
-  );
+  const t = useUiText();
+  if (data.length < 2) {
+    return (
+      <div className="py-6 px-4 bg-slate-50 border border-dashed border-slate-200 rounded-lg text-center">
+        <p className="text-xs text-slate-500 font-medium">
+          {t(
+            'Complete at least 2 assessments to visualize your urgency progression over time.',
+            'समय के साथ तात्कालिकता का रुझान देखने के लिए कम से कम 2 मूल्यांकन पूरे करें।',
+            'कालांतराने तातडीचा कल पाहण्यासाठी किमान २ मूल्यांकने पूर्ण करा.'
+          )}
+        </p>
+      </div>
+    );
+  }
+
   const iW = W - PAD.l - PAD.r;
   const iH = H - PAD.t - PAD.b;
   const maxV = Math.max(...data.map(d => d.v), 10);
   const pts = data.map((d, i) => ({
     x: PAD.l + (i / (data.length - 1)) * iW,
     y: PAD.t + (1 - d.v / maxV) * iH,
-    ...d,
+    ...d
   }));
   const line = pts.map((p, i) => (i === 0 ? `M${p.x},${p.y}` : `L${p.x},${p.y}`)).join(' ');
-  const area = `${line} L${pts[pts.length-1].x},${H-PAD.b} L${pts[0].x},${H-PAD.b} Z`;
 
   return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} style={{ overflow: 'visible' }}>
-      <defs>
-        <linearGradient id="rg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%"   stopColor="var(--red)" stopOpacity="0.12"/>
-          <stop offset="100%" stopColor="var(--red)" stopOpacity="0"/>
-        </linearGradient>
-      </defs>
-      {[0, Math.round(maxV/3), Math.round(maxV*2/3), maxV].map(v => {
-        const y = PAD.t + (1 - v/maxV) * iH;
-        return (
+    <figure className="history-figure">
+      <svg
+        className="chart-history"
+        viewBox={`0 0 ${W} ${H}`}
+        role="img"
+        aria-label={t('Urgency score history', 'तात्कालिकता स्कोर का इतिहास', 'तातडीच्या स्कोअरचा इतिहास')}
+      >
+        <title>{data.map(d => d.m + ': ' + d.v).join('; ')}</title>
+        {[0, Math.round(maxV / 3), Math.round((maxV * 2) / 3), maxV].map(v => (
           <g key={v}>
-            <line x1={PAD.l} y1={y} x2={W - PAD.r} y2={y} stroke="var(--border-faint)" strokeWidth="1"/>
-            <text x={PAD.l-5} y={y+3.5} fontSize="8" fill="var(--text-4)" textAnchor="end" fontFamily="Inter,sans-serif">{v}</text>
+            <line
+              x1={PAD.l}
+              y1={PAD.t + (1 - v / maxV) * iH}
+              x2={W - PAD.r}
+              y2={PAD.t + (1 - v / maxV) * iH}
+              stroke="var(--border)"
+            />
+            <text
+              x={PAD.l - 5}
+              y={PAD.t + (1 - v / maxV) * iH + 4}
+              fontSize="12"
+              fill="var(--text-3)"
+              textAnchor="end"
+            >
+              {v}
+            </text>
           </g>
-        );
-      })}
-      <path d={area} fill="url(#rg)"/>
-      <path d={line} fill="none" stroke="var(--red)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      {pts.map((p, i) => (
-        <g key={i}>
-          <circle cx={p.x} cy={p.y} r="3.5" fill="var(--red)" stroke="white" strokeWidth="1.5"/>
-          <text x={p.x} y={H-4} fontSize="8" fill="var(--text-4)" textAnchor="middle" fontFamily="Inter,sans-serif">{p.m}</text>
-        </g>
-      ))}
-    </svg>
+        ))}
+        <path d={line} fill="none" stroke="var(--accent)" strokeWidth="2.5" />
+        {pts.map((p, i) => (
+          <g key={i}>
+            <circle cx={p.x} cy={p.y} r="3.5" fill="var(--accent)" />
+            <text x={p.x} y={H - 4} fontSize="10" fill="var(--text-3)" textAnchor="middle">
+              {p.m}
+            </text>
+          </g>
+        ))}
+      </svg>
+      <figcaption className="muted">
+        {t(
+          'Past scores show urgency at the time of each assessment.',
+          'पिछले स्कोर हर मूल्यांकन के समय की तात्कालिकता दिखाते हैं।',
+          'मागील स्कोअर प्रत्येक मूल्यांकनाच्या वेळची तातडी दर्शवतात.'
+        )}
+      </figcaption>
+    </figure>
   );
 }
 
-// ── Risk helpers ──
 type ChartFilter = 'all' | 'self' | 'family';
 
-const ChevronDown = () => (
-  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-    <polyline points="6 9 12 15 18 9"/>
-  </svg>
-);
-
 export default function Dashboard() {
+  const t = useUiText();
   const { startTest } = useApp();
   const { data: session } = useSession();
   const router = useRouter();
@@ -135,7 +112,9 @@ export default function Dashboard() {
   const [chartFilter, setChartFilter] = useState<ChartFilter>('all');
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
-  useEffect(() => { setMounted(true); }, []);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -151,14 +130,21 @@ export default function Dashboard() {
     if (!userId) return;
     fetch(`/api/sessions?userId=${userId}`)
       .then((r) => r.json())
-      .then((data) => { setReports(Array.isArray(data.sessions) ? data.sessions : []); })
+      .then((data) => {
+        setReports(Array.isArray(data.sessions) ? data.sessions : []);
+      })
       .catch(() => setReports([]))
       .finally(() => setLoadingReports(false));
   }, [session]);
 
   const userName = session?.user?.name || session?.user?.email?.split('@')[0] || 'there';
   const userImage = session?.user?.image || null;
-  const initials = userName.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2);
+  const initials = userName
+    .split(' ')
+    .map((n: string) => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
 
   const { language } = useApp();
   const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
@@ -166,23 +152,30 @@ export default function Dashboard() {
   const lastReport = reports[0];
   const lastScore = lastReport?.score ?? null;
   const lastUrgency = lastReport?.urgency ?? null;
-  const lastDate = lastReport ? new Date(lastReport.createdAt).toLocaleDateString(langKey, { month: 'short', day: 'numeric', year: 'numeric' }) : null;
+  const lastDate = lastReport
+    ? new Date(lastReport.createdAt).toLocaleDateString(langKey, {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+      })
+    : null;
 
   // Build chart data from real reports (last 7)
   const filteredReports = reports.filter(r =>
-    chartFilter === 'all' ? true :
-    chartFilter === 'self' ? r.isSelf :
-    !r.isSelf
+    chartFilter === 'all' ? true : chartFilter === 'self' ? r.isSelf : !r.isSelf
   );
-  const chartData = filteredReports.slice(0, 7).reverse().map((r) => ({
-    m: new Date(r.createdAt).toLocaleDateString(langKey, { month: 'short', day: 'numeric' }),
-    v: r.score ?? 0,
-  }));
-  const peakScore = filteredReports.length > 0 ? Math.max(...filteredReports.map((r) => r.score ?? 0)) : 0;
+  const chartData = filteredReports
+    .slice(0, 7)
+    .reverse()
+    .map(r => ({
+      m: new Date(r.createdAt).toLocaleDateString(langKey, { month: 'short', day: 'numeric' }),
+      v: r.score ?? 0,
+    }));
+  const peakScore = filteredReports.length > 0 ? Math.max(...filteredReports.map(r => r.score ?? 0)) : 0;
 
   const filterLabel = {
-    all:    langKey === 'hi' ? 'सभी' : langKey === 'mr' ? 'सर्व' : 'All',
-    self:   langKey === 'hi' ? 'मेरे लिए' : langKey === 'mr' ? 'स्वतःसाठी' : 'Myself',
+    all: langKey === 'hi' ? 'सभी' : langKey === 'mr' ? 'सर्व' : 'All',
+    self: langKey === 'hi' ? 'मेरे लिए' : langKey === 'mr' ? 'स्वतःसाठी' : 'Myself',
     family: langKey === 'hi' ? 'किसी और के लिए' : langKey === 'mr' ? 'दुसऱ्यासाठी' : 'Someone Else',
   };
 
@@ -190,232 +183,205 @@ export default function Dashboard() {
   const greetings = {
     en: greetingHour < 12 ? 'Good morning' : greetingHour < 17 ? 'Good afternoon' : 'Good evening',
     hi: greetingHour < 12 ? 'सुप्रभात' : greetingHour < 17 ? 'नमस्कार' : 'शुभ संध्या',
-    mr: greetingHour < 12 ? 'सुप्रभात' : greetingHour < 17 ? 'नमस्कार' : 'शुभ संध्या'
+    mr: greetingHour < 12 ? 'सुप्रभात' : greetingHour < 17 ? 'नमस्कार' : 'शुभ संध्या',
   };
   const greeting = greetings[langKey];
 
-  const urgencyColor = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#B45309' : '#15803D';
-  const urgencyDot = (u: string) => u === 'High' ? 'var(--red)' : u === 'Medium' ? '#F59E0B' : '#22C55E';
-
   return (
-    <div className="page-container mobile-padding">
-      <div className="content-wrapper">
+    <div className="page">
+      <div className="content-wrapper stack-lg">
+        <header className="row between">
+          <div className="stack">
+            <p className="eyebrow">{t('Your overview', 'आपका विवरण', 'तुमचा आढावा')}</p>
+            <h1>
+              {greeting}, {userName}
+            </h1>
+            <p className="muted">
+              {new Date().toLocaleDateString(langKey, {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
+            </p>
+          </div>
+          {userImage ? (
+            <Image src={userImage} alt="" width={38} height={38} unoptimized />
+          ) : (
+            <span className="initials">{initials}</span>
+          )}
+        </header>
 
-      {/* ── Header ── */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '22px' }}>
-        <div>
-          <h1 style={{ fontSize: 'var(--text-xl)', fontWeight: '800', color: 'var(--text-1)', letterSpacing: '-0.5px', lineHeight: 1.2 }}>
-            {greeting}, {userName}
-          </h1>
-          <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginTop: '4px' }}>
-            {new Date().toLocaleDateString(langKey, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </p>
-        </div>
-        {userImage ? (
-          <Image src={userImage} alt={userName} width={38} height={38} style={{ borderRadius: '50%', objectFit: 'cover' }} unoptimized />
-        ) : (
-          <div style={{ width: '38px', height: '38px', borderRadius: '50%', background: 'var(--red)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: '700', fontSize: '12px', boxShadow: '0 2px 6px rgb(185 28 28 / 0.3)' }}>{initials}</div>
+        {lastUrgency === 'High' && (
+          <Notice tone="danger" role="alert">
+            <strong>
+              {t(
+                'Your last assessment indicated High urgency.',
+                'पिछले मूल्यांकन में उच्च तात्कालिकता थी।',
+                'मागील मूल्यांकनात उच्च तातडी होती.'
+              )}
+            </strong>
+            <p>
+              {t(
+                'Please seek medical attention. Your last score was',
+                'कृपया चिकित्सा सहायता लें। पिछला स्कोर था',
+                'कृपया वैद्यकीय मदत घ्या. मागील स्कोअर होता'
+              )}{' '}
+              {lastScore}.
+            </p>
+          </Notice>
         )}
-      </div>
 
-      {/* ── Alert banner — only show if last test was High ── */}
-      {lastUrgency === 'High' && (
-        <div className="alert-high" style={{ marginBottom: '22px' }}>
-          <AlertTriangle />
-          <span>
-            {langKey === 'hi' ? (
-              <><strong>उच्च जोखिम पाया गया।</strong> आपका पिछला मूल्यांकन स्कोर {lastScore} था — कृपया चिकित्सा सहायता लें।</>
-            ) : langKey === 'mr' ? (
-              <><strong>उच्च जोखीम आढळली.</strong> तुमचा मागील स्कोर {lastScore} होता — कृपया डॉक्टरांचा सल्ला घ्या.</>
-            ) : (
-              <><strong>High Risk Detected.</strong> Your last triage score was {lastScore} — please seek medical attention.</>
-            )}
-          </span>
-        </div>
-      )}
+        <Section>
+          <div className="row between">
+            <div className="stack">
+              <h2>{t('How are you feeling?', 'आप कैसा महसूस कर रहे हैं?', 'तुम्हाला कसे वाटत आहे?')}</h2>
+              <p>
+                {t(
+                  'Answer questions about your symptoms to understand the urgency and your next steps.',
+                  'लक्षणों के बारे में प्रश्नों के उत्तर दें और तात्कालिकता व अगले कदम समझें।',
+                  'लक्षणांविषयी प्रश्नांची उत्तरे देऊन तातडी आणि पुढील पावले समजून घ्या.'
+                )}
+              </p>
+            </div>
+            <Button id="start-test-btn" onClick={startTest}>
+              {t('Start assessment', 'मूल्यांकन शुरू करें', 'मूल्यांकन सुरू करा')}
+              <ArrowRight aria-hidden="true" />
+            </Button>
+          </div>
+        </Section>
 
-      {/* ── Start Test card ── */}
-      <div className="card" style={{ padding: '20px 24px', marginBottom: '20px', background: 'white' }}>
-        <div className="mobile-column" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '20px' }}>
+        <dl className="dashboard-summary">
           <div>
-            <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginBottom: '4px' }}>
-              {langKey === 'hi' ? 'अपने लक्षणों का आकलन करने के लिए तैयार हैं?' : langKey === 'mr' ? 'तुमच्या लक्षणांचे मूल्यांकन करण्यास तयार आहात?' : 'Ready to assess your symptoms?'}
-            </div>
-            <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-3)', marginBottom: '10px' }}>
-              {langKey === 'hi' ? 'एआई-पावर्ड ट्राइएज परिणाम के लिए 8 लक्षित प्रश्न पूरे करें।' : langKey === 'mr' ? 'एआई-आधारित निकालासाठी ८ प्रश्नांची उत्तरे द्या.' : 'Complete 8 targeted questions for an AI-powered triage result.'}
-            </div>
+            <dt>{t('Active profile', 'सक्रिय प्रोफ़ाइल', 'सक्रिय प्रोफाइल')}</dt>
+            <dd>
+              <strong>{userName}</strong>
+            </dd>
           </div>
-          <button id="start-test-btn" className="btn btn-primary" onClick={startTest} style={{ padding: '11px 22px', fontSize: '14px', flexShrink: 0 }}>
-            <PlayCircle /> {langKey === 'hi' ? 'परीक्षण शुरू करें' : langKey === 'mr' ? 'चाचणी सुरू करा' : 'Start Test'}
-          </button>
-        </div>
-      </div>
-
-      {/* ── Stat cards ── */}
-      <div className="stat-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '20px' }}>
-        {[
-          {
-            icon: <UserIcon />, iconColor: '#6366F1', iconBg: '#EEF2FF',
-            label: langKey === 'hi' ? 'सक्रिय प्रोफ़ाइल' : langKey === 'mr' ? 'सक्रिय प्रोफाइल' : 'Active Profile', value: userName,
-            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#15803D', background: '#F0FDF4', border: '1px solid #BBF7D0', padding: '2px 9px', borderRadius: '999px' }}>{langKey === 'hi' ? 'प्राथमिक' : langKey === 'mr' ? 'मुख्य' : 'Primary'}</span>,
-          },
-          {
-            icon: <ClockIcon />, iconColor: 'var(--red)', iconBg: 'var(--red-light)',
-            label: langKey === 'hi' ? 'पिछला परीक्षण' : langKey === 'mr' ? 'शेवटची चाचणी' : 'Last Test', value: lastDate ?? (langKey === 'hi' ? 'अभी तक कोई परीक्षण नहीं' : langKey === 'mr' ? 'अद्याप एकही चाचणी नाही' : 'No tests yet'),
-            tag: lastUrgency ? <span className={`badge badge-${lastUrgency.toLowerCase()}`}>{langKey === 'hi' ? (lastUrgency === 'High' ? 'उच्च' : lastUrgency === 'Medium' ? 'मध्यम' : 'कम') : langKey === 'mr' ? (lastUrgency === 'High' ? 'उच्च' : lastUrgency === 'Medium' ? 'मध्यम' : 'सौम्य') : lastUrgency} {langKey === 'hi' ? 'जोखिम' : langKey === 'mr' ? 'जोखीम' : 'Risk'} · {lastScore}</span> : <span style={{ fontSize: '11.5px', color: 'var(--text-4)' }}>—</span>,
-          },
-          {
-            icon: <CalendarIcon />, iconColor: '#B45309', iconBg: '#FFFBEB',
-            label: langKey === 'hi' ? 'कुल परीक्षण' : langKey === 'mr' ? 'एकूण चाचण्या' : 'Total Tests', value: `${reports.length} ${langKey === 'hi' ? 'परीक्षण' : langKey === 'mr' ? 'चाचणी' : (reports.length !== 1 ? 'tests' : 'test')}`,
-            tag: <span style={{ fontSize: '11.5px', fontWeight: '600', color: '#B45309', background: '#FFFBEB', border: '1px solid #FDE68A', padding: '2px 9px', borderRadius: '999px' }}>{reports.length === 0 ? (langKey === 'hi' ? 'अपना पहला शुरू करें' : langKey === 'mr' ? 'पहिली चाचणी सुरू करा' : 'Start your first') : (langKey === 'hi' ? 'इतिहास देखें' : langKey === 'mr' ? 'इतिहास पहा' : 'View history')}</span>,
-          },
-        ].map((c, i) => (
-          <div key={i} className="card card-lift" style={{ padding: '18px 20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
-              <div style={{ width: '34px', height: '34px', borderRadius: 'var(--radius-sm)', background: c.iconBg, color: c.iconColor, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {c.icon}
-              </div>
-              <div>
-                <div style={{ fontSize: '10.5px', fontWeight: '700', color: 'var(--text-4)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{c.label}</div>
-                <div style={{ fontSize: '15px', fontWeight: '700', color: 'var(--text-1)', marginTop: '1px' }}>{c.value}</div>
-              </div>
-            </div>
-            {c.tag}
+          <div>
+            <dt>{t('Last assessment', 'पिछला मूल्यांकन', 'मागील मूल्यांकन')}</dt>
+            <dd>{lastDate ?? t('No assessments yet', 'अभी कोई मूल्यांकन नहीं', 'अद्याप मूल्यांकन नाही')}</dd>
+            {lastUrgency && (
+              <dd>
+                <Badge urgency={lastUrgency}>
+                  {lastUrgency === 'High'
+                    ? t('High', 'उच्च', 'उच्च')
+                    : lastUrgency === 'Medium'
+                    ? t('Medium', 'मध्यम', 'मध्यम')
+                    : t('Low', 'कम', 'कमी')}
+                </Badge>{' '}
+                · {lastScore}
+              </dd>
+            )}
           </div>
-        ))}
-      </div>
+          <div>
+            <dt>{t('Assessments loaded', 'लोड किए गए मूल्यांकन', 'लोड केलेली मूल्यांकने')}</dt>
+            <dd className="metric-value">{reports.length}</dd>
+          </div>
+        </dl>
 
-      {/* ── Chart + Reports ── */}
-      <div className="chart-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-        <div className="card" style={{ padding: '20px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-                <span style={{ color: 'var(--text-3)' }}><TrendIcon /></span>
-                <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>
-                  {langKey === 'hi' ? 'जोखिम स्कोर इतिहास' : langKey === 'mr' ? 'जोखीम स्कोअर इतिहास' : 'Risk Score History'}
-                </span>
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)', marginTop: '2px' }}>
-                {langKey === 'hi' ? `पिछले ${chartData.length} परीक्षण` : langKey === 'mr' ? `शेवटच्या ${chartData.length} चाचण्या` : `Last ${chartData.length} tests`}
-              </div>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              {/* ── Filter dropdown ── */}
-              <div style={{ position: 'relative' }}>
-                <button
-                  onClick={(e) => { e.stopPropagation(); setDropdownOpen(o => !o); }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '5px',
-                    padding: '5px 10px', borderRadius: 'var(--radius-sm)',
-                    border: '1.5px solid var(--border)', background: 'var(--surface)',
-                    fontSize: '12px', fontWeight: '600', color: 'var(--text-2)',
-                    cursor: 'pointer', fontFamily: 'var(--font)',
-                    transition: 'border-color 0.15s',
+        <div className="dashboard-main">
+          <Section title={t('Urgency over time', 'समय के साथ तात्कालिकता', 'कालानुसार तातडी')}>
+            <div className="row between">
+              <p className="muted">
+                {t('Last', 'पिछले', 'मागील')} {chartData.length} {t('assessments', 'मूल्यांकन', 'मूल्यांकने')}
+              </p>
+              <div className="filter-menu">
+                <Button
+                  variant="secondary"
+                  aria-expanded={dropdownOpen}
+                  onClick={e => {
+                    e.stopPropagation();
+                    setDropdownOpen(o => !o);
                   }}
                 >
                   {filterLabel[chartFilter]}
-                  <ChevronDown />
-                </button>
+                  <ChevronDown aria-hidden="true" />
+                </Button>
                 {dropdownOpen && (
-                  <div
-                    style={{
-                      position: 'absolute', top: 'calc(100% + 4px)', right: 0,
-                      background: 'var(--surface)', border: '1px solid var(--border)',
-                      borderRadius: 'var(--radius-sm)', boxShadow: 'var(--shadow-md)',
-                      zIndex: 20, minWidth: '140px', overflow: 'hidden',
-                    }}
-                  >
-                    {(['all', 'self', 'family'] as ChartFilter[]).map((opt) => (
+                  <div className="filter-options">
+                    {(['all', 'self', 'family'] as ChartFilter[]).map(opt => (
                       <button
                         key={opt}
-                        onClick={() => { setChartFilter(opt); setDropdownOpen(false); }}
-                        style={{
-                          display: 'flex', alignItems: 'center', gap: '8px',
-                          width: '100%', padding: '9px 14px', border: 'none',
-                          background: chartFilter === opt ? 'var(--red-light)' : 'transparent',
-                          color: chartFilter === opt ? 'var(--red)' : 'var(--text-2)',
-                          fontSize: '13px', fontWeight: chartFilter === opt ? '700' : '500',
-                          cursor: 'pointer', fontFamily: 'var(--font)', textAlign: 'left',
+                        className="nav-link"
+                        aria-pressed={chartFilter === opt}
+                        onClick={() => {
+                          setChartFilter(opt);
+                          setDropdownOpen(false);
                         }}
                       >
-                        <span style={{ fontSize: '14px' }}>
-                          {opt === 'all' ? '👥' : opt === 'self' ? '🧑' : '👨‍👩‍👧'}
-                        </span>
                         {filterLabel[opt]}
                       </button>
                     ))}
                   </div>
                 )}
               </div>
-              {peakScore > 0 && (
-                <div style={{ fontSize: '11px', fontWeight: '700', background: 'var(--red-light)', color: 'var(--red)', border: '1px solid var(--red-border)', padding: '3px 10px', borderRadius: '6px' }}>
-                  Peak: {peakScore}
-                </div>
-              )}
             </div>
-          </div>
-          {mounted && <RiskChart data={chartData} />}
+            {peakScore > 0 && (
+              <p className="muted">
+                {t('Highest score', 'सबसे अधिक स्कोर', 'सर्वाधिक स्कोअर')}: {peakScore}
+              </p>
+            )}
+            {mounted && <RiskChart data={chartData} />}
+          </Section>
+
+          <Section title={t('Recent reports', 'हालिया रिपोर्ट', 'अलीकडील अहवाल')}>
+            {loadingReports ? (
+              <div className="stack">
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+                <Skeleton className="h-12 w-full" />
+              </div>
+            ) : reports.length === 0 ? (
+              <EmptyState
+                icon={<FileText className="w-8 h-8 text-teal-700" />}
+                title={t('No assessments yet', 'अभी तक कोई मूल्यांकन नहीं', 'अद्याप कोणतेही मूल्यांकन नाही')}
+                description={t(
+                  'Your saved check-ins, symptom summaries, and urgency estimates will appear here.',
+                  'आपकी सहेजी हुई जाँच, लक्षणों के सारांश और तात्कालिकता के अनुमान यहाँ दिखेंगे।',
+                  'तुमच्या जतन केलेल्या तपासण्या, लक्षणांचे सारांश आणि तातडीचे अंदाज येथे दिसतील.'
+                )}
+                action={
+                  <Button onClick={startTest}>
+                    {t('Start your first assessment', 'पहला मूल्यांकन शुरू करें', 'पहिले मूल्यांकन सुरू करा')}
+                  </Button>
+                }
+              />
+            ) : (
+              <div>
+                {reports.slice(0, 5).map(r => (
+                  <Link key={r.id} className="report-link" href={`/dashboard/reports/${r.id}`}>
+                    <span>
+                      <strong>
+                        {new Date(r.createdAt).toLocaleDateString(langKey, {
+                          month: 'short',
+                          day: 'numeric',
+                          year: 'numeric',
+                        })}
+                      </strong>
+                      <span className="report-category">
+                        {r.primaryCategory || t('General', 'सामान्य', 'सामान्य')}
+                      </span>
+                    </span>
+                    <span>
+                      <Badge urgency={r.urgency}>
+                        {r.urgency === 'High'
+                          ? t('High', 'उच्च', 'उच्च')
+                          : r.urgency === 'Medium'
+                          ? t('Medium', 'मध्यम', 'मध्यम')
+                          : t('Low', 'कम', 'कमी')}
+                      </Badge>
+                      <span className="report-category">{r.score} / 100</span>
+                    </span>
+                  </Link>
+                ))}
+              </div>
+            )}
+            <Button variant="secondary" onClick={() => router.push('/dashboard/reports')}>
+              {t('All reports', 'सभी रिपोर्ट', 'सर्व अहवाल')}
+            </Button>
+          </Section>
         </div>
-
-        <div className="card" style={{ padding: '20px 22px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
-              <span style={{ color: 'var(--text-3)' }}><ListIcon /></span>
-              <span style={{ fontSize: '14px', fontWeight: '700', color: 'var(--text-1)' }}>
-                {langKey === 'hi' ? 'हालिया रिपोर्ट' : langKey === 'mr' ? 'अलीकडील अहवाल' : 'Recent Reports'}
-              </span>
-            </div>
-          </div>
-
-          {loadingReports ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>
-              {langKey === 'hi' ? 'लोड हो रहा है...' : langKey === 'mr' ? 'लोड होत आहे...' : 'Loading...'}
-            </div>
-          ) : reports.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-4)', fontSize: '13px' }}>
-              {langKey === 'hi' ? 'अभी तक कोई परीक्षण नहीं हुआ।' : langKey === 'mr' ? 'अद्याप एकही चाचणी झालेली नाही.' : 'No tests yet. Start your first assessment!'}
-            </div>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              {reports.slice(0, 5).map((r, i) => (
-                <div
-                  key={r.id}
-                  onClick={() => router.push(`/dashboard/reports/${r.id}`)}
-                  style={{
-                    display: 'flex', alignItems: 'center', padding: '10px 8px',
-                    borderRadius: 'var(--radius-sm)', cursor: 'pointer',
-                    borderBottom: i < Math.min(reports.length, 5) - 1 ? '1px solid var(--border-faint)' : 'none',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--red-light)')}
-                  onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                >
-                  <div style={{ width: '7px', height: '7px', borderRadius: '50%', background: urgencyDot(r.urgency), marginRight: '12px', flexShrink: 0 }} />
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 'var(--text-sm)', fontWeight: '600', color: 'var(--text-1)' }}>
-                      {new Date(r.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </div>
-                    <div style={{ fontSize: '12px', color: 'var(--text-4)', marginTop: '1px' }}>{r.primaryCategory || 'General'}</div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                    <span style={{ fontSize: '13px', fontWeight: '700', color: urgencyColor(r.urgency) }}>{r.score}</span>
-                    <span className={`badge badge-${r.urgency?.toLowerCase()}`}>{r.urgency}</span>
-                    <span style={{ color: 'var(--text-4)' }}><ChevronRight /></span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Footer ── */}
-      <div style={{ borderTop: '1px solid var(--border)', paddingTop: '16px', marginTop: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-4)' }}>
-          SymptoSense · {reports.length} {langKey === 'hi' ? 'कुल मूल्यांकन' : langKey === 'mr' ? 'एकूण मूल्यांकन' : 'total assessments'}
-        </span>
-      </div>
       </div>
     </div>
   );

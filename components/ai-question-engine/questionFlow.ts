@@ -15,14 +15,14 @@ export const Q1_AGE: QuestionStep = {
   singleSelect: true,
   question: {
     en: "What is your age group?",
-    hi: "आपकी आयु वर्ग क्या है?",
-    mr: "तुमची वयोगट काय आहे?",
+    hi: "आप किस आयु वर्ग में हैं?",
+    mr: "तुम्ही कोणत्या वयोगटात आहात?",
   },
   options: [
-    { label: { en: "Child (0–12)", hi: "बच्चा (0–12)", mr: "मूल (0–12)" }, value: "child", emoji: "👶" },
-    { label: { en: "Teen (13–18)", hi: "किशोर (13–18)", mr: "किशोर (13–18)" }, value: "teen", emoji: "👦" },
-    { label: { en: "Adult (19–50)", hi: "वयस्क (19–50)", mr: "प्रौढ (19–50)" }, value: "adult", emoji: "👨" },
-    { label: { en: "Elderly (50+)", hi: "बुजुर्ग (50+)", mr: "वृद्ध (50+)" }, value: "elderly", emoji: "👴" },
+    { label: { en: "Child (0–12)", hi: "बच्चा (0–12)", mr: "मूल (0–12)" }, value: "child", emoji: "" },
+    { label: { en: "Teen (13–18)", hi: "किशोर (13–18)", mr: "किशोर (13–18)" }, value: "teen", emoji: "" },
+    { label: { en: "Adult (19–50)", hi: "वयस्क (19–50)", mr: "प्रौढ (19–50)" }, value: "adult", emoji: "" },
+    { label: { en: "Elderly (50+)", hi: "बुजुर्ग (50+)", mr: "वृद्ध (50+)" }, value: "elderly", emoji: "" },
   ],
 };
 
@@ -38,14 +38,14 @@ export const Q2_SYMPTOMS: QuestionStep = {
     mr: "तुमची मुख्य लक्षणे कोणती आहेत? (सर्व लागू पर्याय निवडा)",
   },
   options: [
-    { label: { en: "Fever / Chills", hi: "बुखार / कंपकंपी", mr: "ताप / थंडी" }, value: "fever", emoji: "🌡️" },
-    { label: { en: "Headache", hi: "सिरदर्द", mr: "डोकेदुखी" }, value: "headache", emoji: "🤕" },
-    { label: { en: "Cough", hi: "खांसी", mr: "खोकला" }, value: "cough", emoji: "🫁" },
-    { label: { en: "Chest Pain", hi: "सीने में दर्द", mr: "छातीत दुखणे" }, value: "chest_pain", emoji: "💔" },
-    { label: { en: "Shortness of Breath", hi: "सांस की तकलीफ", mr: "श्वास घेण्यास त्रास" }, value: "breathlessness", emoji: "😮‍💨" },
-    { label: { en: "Stomach Pain / Nausea", hi: "पेट दर्द / मतली", mr: "पोटदुखी / मळमळ" }, value: "stomach_pain", emoji: "🤢" },
-    { label: { en: "Fatigue / Weakness", hi: "थकान / कमजोरी", mr: "थकवा / अशक्तपणा" }, value: "fatigue", emoji: "⚡" },
-    { label: { en: "Dizziness", hi: "चक्कर आना", mr: "चक्कर येणे" }, value: "dizziness", emoji: "🌀" },
+    { label: { en: "Fever / Chills", hi: "बुखार / कंपकंपी", mr: "ताप / थंडी" }, value: "fever", emoji: "" },
+    { label: { en: "Headache", hi: "सिरदर्द", mr: "डोकेदुखी" }, value: "headache", emoji: "" },
+    { label: { en: "Cough", hi: "खांसी", mr: "खोकला" }, value: "cough", emoji: "" },
+    { label: { en: "Chest Pain", hi: "सीने में दर्द", mr: "छातीत दुखणे" }, value: "chest_pain", emoji: "" },
+    { label: { en: "Shortness of Breath", hi: "सांस की तकलीफ", mr: "श्वास घेण्यास त्रास" }, value: "breathlessness", emoji: "" },
+    { label: { en: "Stomach Pain / Nausea", hi: "पेट दर्द / मतली", mr: "पोटदुखी / मळमळ" }, value: "stomach_pain", emoji: "" },
+    { label: { en: "Fatigue / Weakness", hi: "थकान / कमजोरी", mr: "थकवा / अशक्तपणा" }, value: "fatigue", emoji: "" },
+    { label: { en: "Dizziness", hi: "चक्कर आना", mr: "चक्कर येणे" }, value: "dizziness", emoji: "" },
   ],
 };
 
@@ -61,10 +61,10 @@ export const Q9_DURATION: QuestionStep = {
     mr: "तुम्हाला ही लक्षणे किती काळापासून आहेत?",
   },
   options: [
-    { label: { en: "Less than 24 hours", hi: "24 घंटे से कम", mr: "24 तासांपेक्षा कमी" }, value: "< 1 day", emoji: "⏰" },
-    { label: { en: "1 – 3 days", hi: "1 – 3 दिन", mr: "1 – 3 दिवस" }, value: "1-3 days", emoji: "📅" },
-    { label: { en: "4 – 7 days", hi: "4 – 7 दिन", mr: "4 – 7 दिवस" }, value: "4-7 days", emoji: "📆" },
-    { label: { en: "More than a week", hi: "एक हफ्ते से ज़्यादा", mr: "एका आठवड्यापेक्षा जास्त" }, value: "> 1 week", emoji: "⏳" },
+    { label: { en: "Less than 24 hours", hi: "24 घंटे से कम", mr: "24 तासांपेक्षा कमी" }, value: "< 1 day", emoji: "" },
+    { label: { en: "1 – 3 days", hi: "1 – 3 दिन", mr: "1 – 3 दिवस" }, value: "1-3 days", emoji: "" },
+    { label: { en: "4 – 7 days", hi: "4 – 7 दिन", mr: "4 – 7 दिवस" }, value: "4-7 days", emoji: "" },
+    { label: { en: "More than a week", hi: "एक हफ्ते से ज़्यादा", mr: "एका आठवड्यापेक्षा जास्त" }, value: "> 1 week", emoji: "" },
   ],
 };
 
@@ -80,10 +80,10 @@ export const Q10_SEVERITY: QuestionStep = {
     mr: "तुमची लक्षणे एकूण किती गंभीर आहेत?",
   },
   options: [
-    { label: { en: "Mild — I can manage normally", hi: "हल्का — मैं सामान्य रूप से काम कर सकता हूँ", mr: "सौम्य — मी सामान्यपणे काम करू शकतो" }, value: "mild", emoji: "🟢" },
-    { label: { en: "Moderate — Some activities are harder", hi: "मध्यम — कुछ काम मुश्किल हैं", mr: "मध्यम — काही कामे कठीण आहेत" }, value: "moderate", emoji: "🟡" },
-    { label: { en: "Severe — Mostly unable to function", hi: "गंभीर — ज़्यादातर काम नहीं कर पा रहा", mr: "गंभीर — बहुतेक काम करणे शक्य नाही" }, value: "severe", emoji: "🔴" },
-    { label: { en: "Critical — Cannot get out of bed", hi: "अत्यंत गंभीर — बिस्तर से उठ नहीं सकता", mr: "अत्यंत गंभीर — अंथरुणातून उठता येत नाही" }, value: "critical", emoji: "🚨" },
+    { label: { en: "Mild — I can manage normally", hi: "हल्का — मैं सामान्य रूप से काम कर सकता हूँ", mr: "सौम्य — मी सामान्यपणे काम करू शकतो" }, value: "mild", emoji: "" },
+    { label: { en: "Moderate — Some activities are harder", hi: "मध्यम — कुछ काम मुश्किल हैं", mr: "मध्यम — काही कामे कठीण आहेत" }, value: "moderate", emoji: "" },
+    { label: { en: "Severe — Mostly unable to function", hi: "गंभीर — ज़्यादातर काम नहीं कर पा रहा", mr: "गंभीर — बहुतेक काम करणे शक्य नाही" }, value: "severe", emoji: "" },
+    { label: { en: "Critical — Cannot get out of bed", hi: "अत्यंत गंभीर — बिस्तर से उठ नहीं सकता", mr: "अत्यंत गंभीर — अंथरुणातून उठता येत नाही" }, value: "critical", emoji: "" },
   ],
 };
 
@@ -99,12 +99,12 @@ export const Q11_MEDICATIONS: QuestionStep = {
     mr: "तुम्ही सध्या कोणती औषधे घेत आहात किंवा कोणता ज्ञात आजार आहे का?",
   },
   options: [
-    { label: { en: "No medications / conditions", hi: "कोई दवाई / बीमारी नहीं", mr: "कोणतीही औषधे / आजार नाही" }, value: "none", emoji: "✅" },
-    { label: { en: "Diabetes", hi: "मधुमेह", mr: "मधुमेह" }, value: "diabetes", emoji: "💉" },
-    { label: { en: "Hypertension / BP", hi: "उच्च रक्तचाप", mr: "उच्च रक्तदाब" }, value: "hypertension", emoji: "💓" },
-    { label: { en: "Heart disease", hi: "हृदय रोग", mr: "हृदयरोग" }, value: "heart_disease", emoji: "🫀" },
-    { label: { en: "Blood thinners", hi: "खून पतला करने की दवा", mr: "रक्त पातळ करणारी औषधे" }, value: "blood_thinners", emoji: "💊" },
-    { label: { en: "Asthma / Lung condition", hi: "अस्थमा / फेफड़े की बीमारी", mr: "दमा / फुफ्फुसाचा आजार" }, value: "asthma", emoji: "🫁" },
+    { label: { en: "No medications / conditions", hi: "कोई दवाई / बीमारी नहीं", mr: "कोणतीही औषधे / आजार नाही" }, value: "none", emoji: "" },
+    { label: { en: "Diabetes", hi: "मधुमेह", mr: "मधुमेह" }, value: "diabetes", emoji: "" },
+    { label: { en: "Hypertension / BP", hi: "उच्च रक्तचाप", mr: "उच्च रक्तदाब" }, value: "hypertension", emoji: "" },
+    { label: { en: "Heart disease", hi: "हृदय रोग", mr: "हृदयरोग" }, value: "heart_disease", emoji: "" },
+    { label: { en: "Blood thinners", hi: "खून पतला करने की दवा", mr: "रक्त पातळ करणारी औषधे" }, value: "blood_thinners", emoji: "" },
+    { label: { en: "Asthma / Lung condition", hi: "अस्थमा / फेफड़े की बीमारी", mr: "दमा / फुफ्फुसाचा आजार" }, value: "asthma", emoji: "" },
   ],
 };
 

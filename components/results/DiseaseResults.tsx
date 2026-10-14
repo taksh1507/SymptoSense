@@ -1,27 +1,44 @@
 'use client';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell, ReferenceLine } from 'recharts';
 import { ConfidenceMeter } from './ConfidenceMeter';
+import { Badge, Notice, Section, Table } from '@/components/ui/primitives';
+import { useUiText } from '@/components/ui/use-ui-text';
 import type { DiseasePrediction } from '@/lib/ml/disease';
+
 export function DiseaseResults({ result, status, error }: { result: DiseasePrediction | null; status: string; error: string }) {
-  if (!result) return <section className="card" style={{ padding: 24 }} aria-live="polite"><h2>Top 3 possible conditions</h2><p>{status === 'loading' ? 'Extracting symptoms and calculating disease probabilities…' : error || 'Disease prediction has not run yet.'}</p><p style={{ color: 'var(--text-3)', fontSize: 13 }}>Not a medical diagnosis. The rule triage result and emergency guidance remain available.</p></section>;
-  const bars = result.shap_top5.map(v => ({ ...v, label: v.symptom.replace(/_/g, ' ') + (v.present ? ' (present)' : ' (absent)'), points: v.contribution * 100 }));
-  return <section className="card" style={{ padding: 24, borderRadius: 20 }}>
-    <h2 style={{ fontSize: 19 }}>Top 3 possible conditions</h2>
-    <p style={{ color: 'var(--text-3)', fontSize: 13 }}>{result.disclaimer}</p>
-    {result.uncertain && <p role="status" style={{ padding: 14, borderRadius: 12, background: '#FFFBEB', color: '#92400E', fontWeight: 700 }}>Uncertain, please consult a doctor. The top probability is below the configured {(result.uncertainty_threshold * 100).toFixed(0)}% threshold.</p>}
-    {result.red_flag_override && <p role="alert" style={{ color: 'var(--red)', fontWeight: 800 }}>Red-flag override: High urgency. Seek immediate medical attention; model probabilities cannot rule out an emergency.</p>}
-    {result.disease_safety_override && <p role="alert" style={{ color: 'var(--red)', fontWeight: 800 }}>Safety floor applied: {result.disease_safety_floor} urgency because the model ranked {result.disease_safety_conditions.join(', ')}. This is a precautionary rule, not a diagnosis.</p>}
-    {result.symptoms_used.length <= 1 && <p role="status" style={{ padding: 12, borderRadius: 10, background: 'var(--bg)', color: 'var(--text-2)' }}>Add more symptoms for a better-supported estimate. A single symptom often cannot distinguish between conditions.</p>}
-    <ol style={{ padding: 0, listStyle: 'none', display: 'grid', gap: 12 }}>
-      {result.top3.map(condition => <li key={condition.disease} style={{ padding: 14, background: 'var(--bg)', borderRadius: 12 }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}><strong>{condition.disease}</strong><span>{(condition.probability * 100).toFixed(1)}%</span></div><div style={{ height: 7, background: 'var(--border-faint)', borderRadius: 8, marginTop: 10 }}><div style={{ height: '100%', width: (condition.probability * 100) + '%', background: 'var(--red)', borderRadius: 8 }} /></div></li>)}
-    </ol>
-    <div className="ml-result-grid">
-      <ConfidenceMeter score={result.confidence * 100} level={result.uncertain ? 'Low' : 'High'} kind="disease" explanation={`Top prediction from ${result.probability_mode}. This is not clinical diagnostic accuracy.`} />
-      <div style={{ minWidth: 0 }}><h3>Why this result?</h3><p style={{ fontSize: 12, color: 'var(--text-3)' }}>SHAP contributions to the top condition’s raw model probability, in percentage points. Present and absent symptoms can influence the result; these are model associations.</p><div style={{ height: 300, width: '100%' }}><ResponsiveContainer width="100%" height="100%"><BarChart data={bars} layout="vertical" margin={{ left: 5, right: 15 }}><XAxis type="number" /><YAxis type="category" dataKey="label" width={130} tick={{ fontSize: 11 }} /><Tooltip /><ReferenceLine x={0} stroke="#64748B" /><Bar dataKey="points" name="Probability contribution (points)">{bars.map(v => <Cell key={v.symptom} fill={v.points >= 0 ? '#15803D' : '#B91C1C'} />)}</Bar></BarChart></ResponsiveContainer></div></div>
-    </div>
-    <p style={{ lineHeight: 1.7 }}>{result.explanation}</p>
-    <p style={{ fontSize: 12, color: 'var(--text-3)' }}>Model inputs used: age {result.age_used == null ? 'unavailable' : `${result.age_used} (${result.age_group_used}; ${result.age_source})`}; sex {result.sex_used ?? 'unknown'}.</p>
-    <p style={{ fontSize: 12, color: 'var(--text-3)' }}>{result.context_note} Safety-adjusted urgency: {result.urgency}. Experimental research urgency model: {result.model_urgency}. Model version: {result.model_version}.</p>
-    {result.ignored_symptoms.length > 0 && <p style={{ fontSize: 12 }}>Outside the dataset vocabulary: {result.ignored_symptoms.join(', ')}.</p>}
-  </section>;
+  const t = useUiText();
+  const title = t('Three possible conditions', 'तीन संभावित स्थितियाँ', 'तीन संभाव्य स्थिती');
+  if (!result) return <Section title={title} aria-live="polite"><p>{status === 'loading' ? t('Reviewing symptoms and estimating condition probabilities…', 'लक्षणों की समीक्षा और संभावनाओं का अनुमान जारी है…', 'लक्षणांचा आढावा आणि संभाव्यतेचा अंदाज सुरू आहे…') : error || t('Condition estimates are not available yet.', 'स्थितियों के अनुमान अभी उपलब्ध नहीं हैं।', 'स्थितींचे अंदाज अद्याप उपलब्ध नाहीत.')}</p><Notice>{t('This is not a diagnosis. Your urgency result and emergency guidance remain available.', 'यह निदान नहीं है। तात्कालिकता का परिणाम और आपातकालीन सलाह उपलब्ध हैं।', 'हे निदान नाही. तातडीचा निकाल आणि आपत्कालीन मार्गदर्शन उपलब्ध आहे.')}</Notice></Section>;
+  const bars = result.shap_top5.map(v => ({ ...v, label: v.symptom.replace(/_/g, ' '), points: v.contribution * 100 }));
+  const largest = Math.max(1, ...bars.map(v => Math.abs(v.points)));
+  return <div className="stack">
+    <Section title={title}>
+      {result.red_flag_override && <Notice tone="danger" role="alert"><strong>{t('High urgency: seek immediate medical attention.', 'उच्च तात्कालिकता: तुरंत चिकित्सा सहायता लें।', 'उच्च तातडी: त्वरित वैद्यकीय मदत घ्या.')}</strong><p>{t('A red flag was detected. Model probabilities cannot rule out an emergency.', 'खतरे का संकेत मिला है। मॉडल की संभावनाएँ आपातस्थिति को खारिज नहीं कर सकतीं।', 'धोक्याचे लक्षण आढळले. मॉडेलच्या संभाव्यता आपत्कालीन स्थिती नाकारू शकत नाहीत.')}</p></Notice>}
+      {result.disease_safety_override && <Notice tone="danger" role="alert"><p>{t('Precautionary urgency level', 'एहतियात के तौर पर तात्कालिकता', 'खबरदारी म्हणून तातडीची पातळी')}: <Badge urgency={result.disease_safety_floor || result.urgency} />. {result.disease_safety_conditions.join(', ')}.</p><p>{t('These ranked conditions triggered a safety rule. This is not a diagnosis.', 'इन स्थितियों के कारण सुरक्षा नियम लागू हुआ। यह निदान नहीं है।', 'या स्थितींमुळे सुरक्षिततेचा नियम लागू झाला. हे निदान नाही.')}</p></Notice>}
+      {result.uncertain && <Notice tone="warning" role="status"><strong>{t('Uncertain — please consult a doctor.', 'अनिश्चित — कृपया डॉक्टर से परामर्श करें।', 'अनिश्चित — कृपया डॉक्टरांचा सल्ला घ्या.')}</strong><p>{t('The highest probability is below the configured threshold of', 'सबसे अधिक संभावना निर्धारित सीमा से कम है:', 'सर्वाधिक संभाव्यता ठरवलेल्या मर्यादेपेक्षा कमी आहे:')} {(result.uncertainty_threshold * 100).toFixed(0)}%.</p></Notice>}
+      <p className="muted">{result.disclaimer}</p>
+      {result.symptoms_used.length <= 1 && <Notice>{t('Add more symptoms for a better-supported estimate. A single symptom often cannot distinguish between conditions.', 'बेहतर अनुमान के लिए अधिक लक्षण जोड़ें। केवल एक लक्षण से स्थितियों में अंतर करना मुश्किल हो सकता है।', 'अधिक आधार असलेल्या अंदाजासाठी आणखी लक्षणे जोडा. एकाच लक्षणावरून स्थितींमध्ये फरक करणे कठीण असू शकते.')}</Notice>}
+      <Table className="rank-table" aria-label={title}><thead><tr><th scope="col">#</th><th scope="col">{t('Condition', 'स्थिति', 'स्थिती')}</th><th scope="col">{t('Probability', 'संभावना', 'संभाव्यता')}</th></tr></thead><tbody>
+        {result.top3.map((condition,i) => <tr key={condition.disease}><td className="rank-number">{i + 1}</td><th scope="row">{condition.disease}</th><td><div className="probability"><span>{(condition.probability * 100).toFixed(1)}%</span><progress max={1} value={condition.probability} aria-label={condition.disease} /></div></td></tr>)}
+      </tbody></Table>
+      <p>{result.explanation}</p>
+    </Section>
+    <Section title={t('What we used', 'हमने किन जानकारियों का उपयोग किया', 'आम्ही वापरलेली माहिती')}>
+      <dl className="facts">
+        <div><dt>{t('Age', 'उम्र', 'वय')}</dt><dd>{result.age_used == null ? t('Unavailable', 'उपलब्ध नहीं', 'उपलब्ध नाही') : result.age_used} {result.age_group_used && '(' + result.age_group_used + ')'} {result.age_source}</dd></div>
+        <div><dt>{t('Sex', 'लिंग', 'लिंग')}</dt><dd>{result.sex_used ?? t('Not provided', 'नहीं बताया गया', 'दिलेली नाही')}</dd></div>
+        <div><dt>{t('Symptoms', 'लक्षण', 'लक्षणे')}</dt><dd>{result.symptoms_used.map(s => s.replace(/_/g, ' ')).join(', ')}</dd></div>
+      </dl>
+      {result.ignored_symptoms.length > 0 && <p>{t('Symptoms outside this dataset', 'डेटासेट में शामिल नहीं लक्षण', 'डेटासेटमध्ये नसलेली लक्षणे')}: {result.ignored_symptoms.join(', ')}.</p>}
+      <p className="muted">{result.context_note}</p>
+    </Section>
+    <Section title={t('What influenced the estimate', 'अनुमान को किसने प्रभावित किया', 'अंदाजावर कशाचा प्रभाव पडला')}>
+      <p>{t('Each bar shows how a symptom raised or lowered the top condition’s raw probability, in percentage points. These SHAP values describe model associations, not medical causes.', 'हर पट्टी दिखाती है कि किसी लक्षण ने पहली स्थिति की मूल संभावना को कितने प्रतिशत अंक बढ़ाया या घटाया। ये SHAP मान मॉडल के संबंध दिखाते हैं, चिकित्सा कारण नहीं।', 'प्रत्येक पट्टी लक्षणामुळे पहिल्या स्थितीची मूळ संभाव्यता किती टक्के गुणांनी वाढली किंवा कमी झाली हे दर्शवते. ही SHAP मूल्ये मॉडेलमधील संबंध दर्शवतात, वैद्यकीय कारणे नाहीत.')}</p>
+      <ul className="contributions" aria-label={t('Symptom contributions', 'लक्षणों का योगदान', 'लक्षणांचे योगदान')}>{bars.map(v => <li key={v.symptom} className={v.points < 0 ? 'contribution-down' : undefined}>
+        <div className="row between"><span>{v.label} · {v.present ? t('Reported', 'बताया गया', 'सांगितलेले') : t('Not reported', 'नहीं बताया गया', 'न सांगितलेले')}</span><strong>{v.points >= 0 ? '+' : '−'}{Math.abs(v.points).toFixed(2)} {t('points', 'अंक', 'गुण')}</strong></div>
+        <progress max={largest} value={Math.abs(v.points)} aria-label={v.label + ': ' + (v.points >= 0 ? t('raises estimate', 'अनुमान बढ़ाता है', 'अंदाज वाढवते') : t('lowers estimate', 'अनुमान घटाता है', 'अंदाज कमी करते'))} />
+      </li>)}</ul>
+      <ConfidenceMeter score={result.confidence * 100} level={result.uncertain ? 'Low' : 'High'} kind="disease" explanation={t('Probability method', 'संभावना की विधि', 'संभाव्यतेची पद्धत') + ': ' + result.probability_mode} />
+      <p className="muted">{t('Safety-adjusted urgency', 'सुरक्षा के अनुसार तात्कालिकता', 'सुरक्षिततेनुसार तातडी')}: {result.urgency}. {t('Research model urgency', 'शोध मॉडल की तात्कालिकता', 'संशोधन मॉडेलची तातडी')}: {result.model_urgency}. {t('Model version', 'मॉडल संस्करण', 'मॉडेल आवृत्ती')}: {result.model_version}.</p>
+    </Section>
+  </div>;
 }

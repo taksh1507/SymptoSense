@@ -5,23 +5,46 @@ import { RiskGauge } from '@/components/results/RiskGauge';
 import { ConfidenceMeter } from '@/components/results/ConfidenceMeter';
 import { DiseaseResults } from '@/components/results/DiseaseResults';
 import { generateRiskExplanation, generateRecommendations } from '@/lib/report/reasoningEngine';
-import { COLOR_THRESHOLDS } from '@/lib/ai-engine/scoring/thresholds';
-import { Phone } from 'lucide-react';
+import { Badge, Button, Notice, Section } from '@/components/ui/primitives';
+import { useUiText } from '@/components/ui/use-ui-text';
+import { Phone, Printer, HelpCircle } from 'lucide-react';
 import type { Urgency } from '@/lib/ai-engine/scoring/types';
 
 export default function ResultsPage() {
   const {
-    language, riskScore, riskLevel, narrative, setTriageScreen,
-    mlScore, mlLevel, mlExplanation, riskReasoning, riskFactors, diseasePrediction, diseaseStatus, diseaseError,
-    recommendationSteps, primaryAction, keyInsights,
-    patientName, relation, personType, assessmentPayload, saveStatus, saveError, retrySave,
+    language,
+    riskScore,
+    riskLevel,
+    narrative,
+    setTriageScreen,
+    mlScore,
+    mlLevel,
+    mlExplanation,
+    riskReasoning,
+    riskFactors,
+    diseasePrediction,
+    diseaseStatus,
+    diseaseError,
+    recommendationSteps,
+    primaryAction,
+    keyInsights,
+    patientName,
+    relation,
+    personType,
+    assessmentPayload,
+    saveStatus,
+    saveError,
+    retrySave,
   } = useApp();
 
+  const t = useUiText();
   const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
-  const displayName = patientName || (personType === 'self' ? 'You' : 'Patient');
-  const reportTitle = personType === 'family' && relation
-    ? `Health Assessment for ${displayName} (${relation})`
-    : `Health Assessment for ${displayName}`;
+  const displayName =
+    patientName || (personType === 'self' ? t('you', 'आप', 'तुम्ही') : t('patient', 'मरीज़', 'रुग्ण'));
+  const reportTitle =
+    personType === 'family' && relation
+      ? t('Assessment', 'मूल्यांकन', 'मूल्यांकन') + ': ' + displayName + ' (' + relation + ')'
+      : t('Assessment', 'मूल्यांकन', 'मूल्यांकन') + ': ' + displayName;
 
   // Local engine as fallback when Groq hasn't returned yet
   const localReasoning = assessmentPayload
@@ -32,195 +55,199 @@ export default function ResultsPage() {
     : null;
 
   // Use Groq output if available, fall back to local engine
-  const displaySummary   = narrative?.[langKey] || riskReasoning || localReasoning?.summary || '';
-  const displayFactors   = riskFactors.length > 0 ? riskFactors : (localReasoning?.factors || []);
-  const displayPrimary   = primaryAction || localRecommendations?.primaryAction || '';
-  const displaySteps     = recommendationSteps.length > 0 ? recommendationSteps : (localRecommendations?.steps || []);
+  const displaySummary = narrative?.[langKey] || riskReasoning || localReasoning?.summary || '';
+  const displayFactors = riskFactors.length > 0 ? riskFactors : localReasoning?.factors || [];
+  const displayPrimary = primaryAction || localRecommendations?.primaryAction || '';
+  const displaySteps = recommendationSteps.length > 0 ? recommendationSteps : localRecommendations?.steps || [];
 
-  const riskColor = riskScore >= COLOR_THRESHOLDS.high ? 'var(--red)' : riskScore >= COLOR_THRESHOLDS.medium ? '#B45309' : '#15803D';
-  const riskBg   = riskScore >= COLOR_THRESHOLDS.high ? 'var(--red-light)' : riskScore >= COLOR_THRESHOLDS.medium ? '#FFFBEB' : '#F0FDF4';
+  const urgencyText =
+    riskLevel === 'High'
+      ? t(
+          'High urgency — seek immediate medical attention.',
+          'उच्च तात्कालिकता — तुरंत चिकित्सा सहायता लें।',
+          'उच्च तातडी — त्वरित वैद्यकीय मदत घ्या.'
+        )
+      : riskLevel === 'Medium'
+      ? t(
+          'Medium urgency — arrange a medical consultation soon.',
+          'मध्यम तात्कालिकता — जल्द डॉक्टर से परामर्श लें।',
+          'मध्यम तातडी — लवकर डॉक्टरांचा सल्ला घ्या.'
+        )
+      : t(
+          'Low urgency — monitor your symptoms and follow the advice below.',
+          'कम तात्कालिकता — लक्षणों पर नज़र रखें और नीचे दी गई सलाह का पालन करें।',
+          'कमी तातडी — लक्षणांवर लक्ष ठेवा आणि खालील सल्ल्याचे पालन करा.'
+        );
 
   return (
-    <div className="mobile-padding" style={{
-      padding: '40px 24px', minHeight: '100%', background: 'var(--bg)',
-      fontFamily: 'var(--font)', display: 'flex', flexDirection: 'column',
-      alignItems: 'center', gap: '28px',
-    }}>
-      <div style={{ maxWidth: '800px', width: '100%', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div className="page">
+      <div className="report" lang={langKey}>
+        <Notice
+          tone={riskLevel === 'High' ? 'danger' : riskLevel === 'Medium' ? 'warning' : 'info'}
+          role={riskLevel === 'High' ? 'alert' : 'status'}
+        >
+          <h2>{urgencyText}</h2>
+          {displayPrimary && <p>{displayPrimary}</p>}
+          {riskLevel === 'High' && (
+            <div className="pt-2">
+              <a className="btn btn-danger" href="tel:108">
+                <Phone aria-hidden="true" />
+                {t(
+                  'Call emergency services (108)',
+                  'आपातकालीन सेवा को कॉल करें (108)',
+                  'आपत्कालीन सेवेला कॉल करा (108)'
+                )}
+              </a>
+            </div>
+          )}
+        </Notice>
 
-        {/* ── Personalized Header ── */}
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '16px' }}>
-          <div>
-            <h1 style={{ fontSize: '26px', fontWeight: '900', color: 'var(--text-1)', margin: 0, letterSpacing: '-0.6px' }}>
-              {reportTitle}
-            </h1>
-            <p style={{ fontSize: '14px', color: 'var(--text-3)', marginTop: '4px' }}>
-              {new Date().toLocaleDateString(
-                langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US',
-                { year: 'numeric', month: 'long', day: 'numeric' }
-              )}
+        <header className="row between">
+          <div className="stack">
+            <p className="eyebrow">
+              {t('Your symptom assessment', 'आपके लक्षणों का मूल्यांकन', 'तुमच्या लक्षणांचे मूल्यांकन')}
+            </p>
+            <h1>{reportTitle}</h1>
+            <p className="muted">
+              {new Date().toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+              })}
             </p>
           </div>
-          <button
-            className="btn btn-secondary"
-            onClick={() => setTriageScreen('language')}
-            style={{ borderRadius: '10px', padding: '9px 18px', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}
-          >
-            {language === 'Hindi' ? 'पुनः प्रारंभ' : language === 'Marathi' ? 'पुन्हा सुरू करा' : 'Restart'}
-          </button>
-        </div>
-
-        {/* ── Gauges ── */}
-        <div className="card" style={{ padding: '32px', borderRadius: '24px', boxShadow: 'var(--shadow-md)' }}>
-          <div style={{ textAlign: 'center', marginBottom: '28px' }}>
-            <h2 style={{ fontSize: '16px', fontWeight: '800', color: 'var(--text-1)', margin: '0 0 4px 0' }}>
-              {language === 'Hindi' ? 'मूल्यांकन सारांश' : language === 'Marathi' ? 'मूल्यांकन सारांश' : 'Assessment Summary'}
-            </h2>
-            <p style={{ fontSize: '12px', color: 'var(--text-4)', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Symptom Triage Summary
-            </p>
+          <div className="row gap-2">
+            <Button variant="secondary" onClick={() => window.print()} title={t('Print this clinical report', 'रिपोर्ट प्रिंट करें', 'अहवाल मुद्रित करा')}>
+              <Printer className="w-4 h-4" aria-hidden="true" />
+              <span>{t('Print report', 'प्रिंट करें', 'प्रिंट करा')}</span>
+            </Button>
+            <Button variant="secondary" onClick={() => setTriageScreen('language')}>
+              {t('Start again', 'फिर से शुरू करें', 'पुन्हा सुरू करा')}
+            </Button>
           </div>
+        </header>
 
-          <div className="mobile-flex-stack" style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'flex-start', gap: '24px' }}>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <RiskGauge
-                score={riskScore}
-                urgency={(riskLevel.charAt(0) + riskLevel.slice(1).toLowerCase()) as Urgency}
-                explanation={riskReasoning}
-              />
-            </div>
-            <div className="mobile-hide" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100px', textAlign: 'center', alignSelf: 'center' }}>
-              <div style={{ width: '1px', height: '36px', background: 'var(--border-faint)', marginBottom: '10px' }} />
-              <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                Risk indicates <span style={{ color: 'var(--text-1)' }}>URGENCY</span>
-              </p>
-              <div style={{ height: '20px' }} />
-              <p style={{ fontSize: '10px', fontWeight: '800', color: 'var(--text-4)', lineHeight: '1.4', textTransform: 'uppercase' }}>
-                Model score describes <span style={{ color: 'var(--text-1)' }}>INPUT</span> patterns
-              </p>
-              <div style={{ width: '1px', height: '36px', background: 'var(--border-faint)', marginTop: '10px' }} />
-            </div>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
-              <ConfidenceMeter score={mlScore} level={mlLevel} explanation={mlExplanation} />
-            </div>
-          </div>
-        </div>
+        <Notice>
+          <strong>
+            {t(
+              'Decision support only. This is not a diagnosis.',
+              'केवल निर्णय में सहायता के लिए। यह निदान नहीं है।',
+              'केवळ निर्णय घेण्यास मदत. हे निदान नाही.'
+            )}
+          </strong>
+          <p>
+            {t(
+              'Always consult a qualified healthcare professional. The model score is a heuristic and has not been clinically validated.',
+              'हमेशा योग्य स्वास्थ्य पेशेवर से सलाह लें। मॉडल का स्कोर अनुमान आधारित है और चिकित्सकीय रूप से प्रमाणित नहीं है।',
+              'नेहमी पात्र आरोग्य व्यावसायिकांचा सल्ला घ्या. मॉडेलचा स्कोअर अंदाजाधारित असून वैद्यकीयदृष्ट्या प्रमाणित नाही.'
+            )}
+          </p>
+        </Notice>
 
         <DiseaseResults result={diseasePrediction} status={diseaseStatus} error={diseaseError} />
 
-        {/* ── Why this risk level? ── */}
         {(displaySummary || displayFactors.length > 0) && (
-          <div className="card" style={{ padding: '28px', borderRadius: '20px', borderLeft: '5px solid ' + riskColor }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>🔍</span>
-              {language === 'Hindi' ? 'यह जोखिम स्तर क्यों?' : language === 'Marathi' ? 'हा जोखीम स्तर का?' : 'Why this risk level?'}
-            </h3>
-            {displaySummary && (
-              <p style={{ fontSize: '14px', color: 'var(--text-2)', lineHeight: '1.6', marginBottom: '16px', fontStyle: 'italic' }}>
-                {displaySummary}
+          <Section title={t('Why this urgency level?', 'यह तात्कालिकता क्यों?', 'ही तातडीची पातळी का?')}>
+            {displaySummary && <p>{displaySummary}</p>}
+            <ul className="plain-list">
+              {displayFactors.map((factor, i) => (
+                <li key={i}>{factor}</li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {keyInsights.length > 0 && (
+          <Section title={t('What to keep in mind', 'ध्यान देने योग्य बातें', 'लक्षात ठेवण्याच्या गोष्टी')}>
+            <ul className="plain-list">
+              {keyInsights.map((insight, i) => (
+                <li key={i}>{insight}</li>
+              ))}
+            </ul>
+          </Section>
+        )}
+
+        {(displayPrimary || displaySteps.length > 0) && (
+          <Section title={t('What to do next', 'अब क्या करें', 'पुढे काय करावे')}>
+            <div>
+              <Badge urgency={riskLevel}>
+                {riskLevel === 'High'
+                  ? t('High urgency', 'उच्च तात्कालिकता', 'उच्च तातडी')
+                  : riskLevel === 'Medium'
+                  ? t('Medium urgency', 'मध्यम तात्कालिकता', 'मध्यम तातडी')
+                  : t('Low urgency', 'कम तात्कालिकता', 'कमी तातडी')}
+              </Badge>
+            </div>
+            {displayPrimary && (
+              <p>
+                <strong>{displayPrimary}</strong>
               </p>
             )}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              {displayFactors.map((factor, i) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: riskColor, flexShrink: 0, marginTop: '7px' }} />
-                  <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.5' }}>{factor}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── Key Insights from Groq ── */}
-        {keyInsights.length > 0 && (
-          <div className="card" style={{ padding: '28px', borderRadius: '20px' }}>
-            <h3 style={{ fontSize: '15px', fontWeight: '800', color: 'var(--text-1)', marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>💡</span>
-              {language === 'Hindi' ? 'मुख्य निष्कर्ष' : language === 'Marathi' ? 'मुख्य निष्कर्ष' : 'Key Insights'}
-            </h3>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {keyInsights.map((insight: string, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                  <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary)', flexShrink: 0, marginTop: '7px' }} />
-                  <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.5' }}>{insight}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* ── What you should do now ── */}
-        {(displayPrimary || displaySteps.length > 0) && (
-          <div className="card" style={{ padding: '0', overflow: 'hidden', borderRadius: '20px', boxShadow: 'var(--shadow-sm)' }}>
-            <div style={{ background: riskBg, padding: '24px 28px', borderBottom: '1px solid var(--border-faint)' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                <h3 style={{ fontSize: '16px', fontWeight: '900', color: 'var(--text-1)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <span>💊</span>
-                  {language === 'Hindi' ? 'एआई उपचार और सलाह' : language === 'Marathi' ? 'एआय उपचार आणि सल्ला' : 'Recommended next steps'}
-                </h3>
-                <span style={{ background: riskColor, color: 'white', padding: '3px 12px', borderRadius: '999px', fontSize: '11px', fontWeight: '800' }}>
-                  {riskLevel.toUpperCase()}
-                </span>
-              </div>
-              {riskLevel === 'High' && (
-                <a
-                  href="tel:108"
-                  style={{
-                    display: 'inline-flex', alignItems: 'center', gap: '10px',
-                    marginTop: '14px', padding: '13px 22px',
-                    background: 'var(--red)', color: 'white', borderRadius: '12px',
-                    fontSize: '14px', fontWeight: '800', textDecoration: 'none',
-                    boxShadow: '0 8px 20px -4px rgba(185, 28, 28, 0.45)',
-                  }}
-                >
-                  <Phone size={18} strokeWidth={2.5} />
-                  {language === 'Hindi' ? 'आपातकालीन नंबर कॉल करें (108)' : language === 'Marathi' ? 'आपत्कालीन क्रमांकांवर कॉल करा (108)' : 'Call Emergency Services (108)'}
-                </a>
-              )}
-              {displayPrimary && (
-                <p style={{ fontSize: '16px', fontWeight: '700', color: riskColor, margin: 0 }}>
-                  {displayPrimary}
-                </p>
-              )}
-              {mlLevel !== 'unavailable' && mlScore < 60 && (
-                <p style={{ marginTop: '12px', fontSize: '12px', color: '#B45309', fontWeight: '600', padding: '8px 14px', background: '#FEF3C7', borderRadius: '8px', display: 'inline-block' }}>
-                  Notice: More precise inputs may refine this recommendation.
-                </p>
-              )}
-            </div>
-            {displaySteps.length > 0 && (
-              <div style={{ padding: '20px 28px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {displaySteps.map((step, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-                      <div style={{ width: '22px', height: '22px', borderRadius: '50%', background: 'var(--bg)', border: '1.5px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '11px', fontWeight: '800', color: 'var(--text-3)', flexShrink: 0 }}>
-                        {i + 1}
-                      </div>
-                      <span style={{ fontSize: '13.5px', color: 'var(--text-2)', lineHeight: '1.55', paddingTop: '2px' }}>{step}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {mlLevel !== 'unavailable' && mlScore < 60 && (
+              <Notice tone="warning">
+                {t(
+                  'More precise symptom details may refine this recommendation.',
+                  'लक्षणों की अधिक सटीक जानकारी से यह सलाह बेहतर हो सकती है।',
+                  'लक्षणांची अधिक नेमकी माहिती दिल्यास हा सल्ला अधिक योग्य होऊ शकतो.'
+                )}
+              </Notice>
             )}
-          </div>
+            <ol className="plain-list">
+              {displaySteps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+          </Section>
         )}
 
-        {/* ── Footer ── */}
-        <div style={{ textAlign: 'center', padding: '24px 0', borderTop: '1px solid var(--border-faint)' }}>
-          <p style={{ fontSize: '13px', color: 'var(--text-4)', marginBottom: '12px' }}>
-            {saveStatus === 'saved' ? 'Assessment saved to your account.' : saveStatus === 'saving' ? 'Saving your assessment…' : 'Assessment has not been saved.'}
+        <Section title={t('Questions for your healthcare provider', 'डॉक्टर से पूछने योग्य प्रश्न', 'वैद्यकीय व्यावसायिकांशी चर्चा करण्याचे प्रश्न')}>
+          <p className="muted text-xs">
+            {t(
+              'Take these questions with you to your consultation to ensure all key diagnostic factors are covered.',
+              'अपनी जांच के दौरान डॉक्टर से ये प्रश्न पूछें ताकि सभी महत्वपूर्ण बिंदुओं पर बात हो सके।',
+              'तपासणीदरम्यान या मुद्द्यांवर डॉक्टरांशी चर्चा करा जेणेकरून सर्व महत्त्वाच्या बाबींची माहिती मिळेल.'
+            )}
           </p>
-          {saveStatus === 'failed' && <div role="alert"><p>{saveError}</p><button className="btn btn-secondary" onClick={retrySave}>Retry saving</button></div>}
-          <p style={{ fontSize: '12px', color: 'var(--text-4)' }}>This assessment is not a diagnosis. The model score is a heuristic and has not been clinically validated.</p>
-          <button
-            onClick={() => window.location.href = '/dashboard/reports'}
-            className="btn btn-ghost"
-            style={{ fontWeight: '700', color: 'var(--primary)' }}
-          >
-            {language === 'Hindi' ? 'पुरानी रिपोर्ट देखें →' : language === 'Marathi' ? 'जुने अहवाल पहा →' : 'View History →'}
-          </button>
-        </div>
+          <ul className="plain-list">
+            <li>{t('Could these symptoms be related to my recent health history or medications?', 'क्या ये लक्षण मेरे हालिया स्वास्थ्य इतिहास या दवाओं से संबंधित हो सकते हैं?', 'ही लक्षणे माझ्या अलीकडील आरोग्याच्या इतिहासाशी किंवा औषधांशी संबंधित असू शकतात का?')}</li>
+            <li>{t('What specific tests or examinations are recommended to confirm a diagnosis?', 'निदान की पुष्टि के लिए किन परीक्षणों या जांच की सलाह दी जाती है?', 'निदान निश्चित करण्यासाठी कोणत्या चाचण्या किंवा तपासणीची आवश्यकता आहे?')}</li>
+            <li>{t('What red-flag signs should prompt me to go to an emergency room immediately?', 'किन चेतावनी संकेतों पर मुझे तुरंत आपातकालीन कक्ष जाना चाहिए?', 'कोणती धोक्याची लक्षणे दिसल्यास मी लगेच आपत्कालीन कक्षात जावे?')}</li>
+          </ul>
+        </Section>
 
+        <Section title={t('Understanding the scores', 'स्कोर को समझें', 'स्कोअर समजून घ्या')}>
+          <div className="metric-grid">
+            <RiskGauge
+              score={riskScore}
+              urgency={(riskLevel.charAt(0) + riskLevel.slice(1).toLowerCase()) as Urgency}
+              explanation={riskReasoning}
+            />
+            <ConfidenceMeter score={mlScore} level={mlLevel} explanation={mlExplanation} />
+          </div>
+        </Section>
+
+        <footer className="stack">
+          <p role="status">
+            {saveStatus === 'saved'
+              ? t('Assessment saved to your account.', 'मूल्यांकन आपके खाते में सहेजा गया।', 'मूल्यांकन तुमच्या खात्यात जतन झाले.')
+              : saveStatus === 'saving'
+              ? t('Saving your assessment…', 'मूल्यांकन सहेजा जा रहा है…', 'मूल्यांकन जतन होत आहे…')
+              : t('Assessment has not been saved.', 'मूल्यांकन सहेजा नहीं गया है।', 'मूल्यांकन जतन झालेले नाही.')}
+          </p>
+          {saveStatus === 'failed' && (
+            <Notice tone="warning" role="alert">
+              <p>{saveError}</p>
+              <Button variant="secondary" onClick={retrySave}>
+                {t('Retry saving', 'फिर से सहेजें', 'पुन्हा जतन करा')}
+              </Button>
+            </Notice>
+          )}
+          <div>
+            <Button variant="secondary" onClick={() => (window.location.href = '/dashboard/reports')}>
+              {t('View past reports', 'पिछली रिपोर्ट देखें', 'जुने अहवाल पहा')}
+            </Button>
+          </div>
+        </footer>
       </div>
     </div>
   );
