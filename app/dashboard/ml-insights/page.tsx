@@ -85,6 +85,61 @@ export default function MLInsightsPage() {
   return <AppShell><div className="mobile-padding [padding:28px_24px] [background:var(--bg)] [color:var(--text-1)]" ><div  className="[max-width:1200px] [margin:0_auto]">
     <header className="stack"><p className="eyebrow">{t("Research and evaluation", "शोध और मूल्यांकन", "संशोधन आणि मूल्यमापन")}</p><h1>{t("ML insights", "मॉडल का विश्लेषण", "मॉडेलचे विश्लेषण")}</h1></header>
     <p  className="[font-size:var(--text-sm)] [color:var(--text-3)]">{t("Decision support only, not a diagnosis. Emergency red flags always retain High urgency.", "केवल निर्णय में सहायता, निदान नहीं। आपातकालीन संकेतों में तात्कालिकता हमेशा उच्च रहती है।", "केवळ निर्णय घेण्यास मदत, निदान नाही. आपत्कालीन संकेतांमध्ये तातडी नेहमी उच्च राहते.")}</p>
+
+    {/* Phase 4b: Synthetic Benchmark Notice */}
+    <div className="card [padding:18px_20px] [margin:16px_0] [background:rgba(217,119,6,0.08)] [border:1px_solid_rgba(217,119,6,0.3)] [border-radius:var(--radius-md)]">
+      <div className="[display:flex] [align-items:flex-start] [gap:12px]">
+        <span style={{ fontSize: '20px' }}>⚠️</span>
+        <div>
+          <h2 className="[font-size:var(--text-sm)] [font-weight:700] [color:#b45309] [margin-bottom:4px]">
+            Synthetic Benchmark Notice
+          </h2>
+          <p className="[font-size:var(--text-xs)] [color:var(--text-2)] [line-height:1.5] [margin:0]">
+            All metrics on this page reflect performance on synthetic patient cases (DDXPlus / Figshare Article 20043374). They do not represent clinical diagnostic accuracy on real human patients.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* Phase 4c: Multi-Engine Architecture Clarification */}
+    <div className="card [padding:20px] [margin-bottom:20px] [background:var(--card-bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-lg)]">
+      <h2 className="[font-size:var(--text-base)] [font-weight:700] [color:var(--text-1)] [margin-bottom:8px]">
+        Dual-Engine & Knowledge Base Routing Architecture
+      </h2>
+      <p className="[font-size:var(--text-xs)] [color:var(--text-3)] [margin-bottom:14px] [line-height:1.5]">
+        SymptoSense dynamically routes patient presentations through specialized diagnostic tiers based on symptom recognition:
+      </p>
+      <div className="[display:grid] [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))] [gap:14px]">
+        <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+          <span className="badge [background:rgba(21,87,78,0.12)] [color:#15574e] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
+            Tier 1: Core Clinical Classifier
+          </span>
+          <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">41 Diseases</h3>
+          <p className="[font-size:12px] [color:var(--text-3)] [margin:0]">
+            Supervised Random Forest trained on clinical association dataset. High precision on core primary-care diseases. Runs first when clinical symptom tokens match.
+          </p>
+        </div>
+        <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+          <span className="badge [background:rgba(56,75,103,0.12)] [color:#384b67] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
+            Tier 2: CDC SymCat Knowledge Base
+          </span>
+          <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">801 Conditions</h3>
+          <p className="[font-size:12px] [color:var(--text-3)] [margin:0]">
+            Unvalidated CDC outpatient knowledge-base lookup. Uses Bayesian conditional probability across 377 symptoms. Not trained ML; serves as broad differential lookup.
+          </p>
+        </div>
+        <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+          <span className="badge [background:rgba(121,83,20,0.12)] [color:#795314] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
+            Tier 3: DDXPlus Benchmark Model
+          </span>
+          <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">49 Pathologies</h3>
+          <p className="[font-size:12px] [color:var(--text-3)] [margin:0]">
+            Calibrated research model trained on synthetic DDXPlus evidence codes. Evaluated with realistic input perturbations and selective prediction thresholds.
+          </p>
+        </div>
+      </div>
+    </div>
+
     {error && <p role="alert" className="card [padding:20px]" >{error}</p>}
     {!report && !error && <p>{t("Loading the training report…", "प्रशिक्षण रिपोर्ट लोड हो रही है…", "प्रशिक्षण अहवाल लोड होत आहे…")}</p>}
     {report && <><p  className="[font-size:var(--text-sm)]">Generated: {new Date(report.generated_at).toLocaleString()} · Version: {report.model_version} · Winner: {report.training.winner}</p>
@@ -96,21 +151,21 @@ export default function MLInsightsPage() {
             <div>
               <h2 className="[font-size:var(--text-xl)] [font-weight:700] [color:var(--text-1)] [margin-bottom:4px]">CDC Clinical Knowledge Base (801 Conditions)</h2>
               <p className="[font-size:var(--text-sm)] [color:var(--text-3)]">
-                Dual-engine statistical and machine learning model. Derived from CDC National Ambulatory Medical Care Survey (NAMCS/NHAMCS) outpatient database and 4,920 validated clinical patient records.
+                Unvalidated knowledge-base lookup derived from CDC National Ambulatory Medical Care Survey (NAMCS/NHAMCS) outpatient database. Uses Bayesian conditional probability lookup across 377 symptoms.
               </p>
             </div>
             <div className="[display:flex] [flex-wrap:wrap] [gap:10px]">
               <span className="badge [background:rgba(21,87,78,0.12)] [color:#15574e] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
-                801 Real Conditions
+                {kbTotal} CDC Conditions
               </span>
               <span className="badge [background:rgba(56,75,103,0.12)] [color:#384b67] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
                 377 Symptoms
               </span>
               <span className="badge [background:rgba(121,83,20,0.12)] [color:#795314] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
-                4,920 Validated Records
+                Unvalidated Knowledge-Base Lookup
               </span>
               <span className="badge [background:rgba(108,82,108,0.12)] [color:#6c526c] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
-                100% Cross-Val Accuracy
+                Bayesian Conditional Probability
               </span>
             </div>
           </div>
@@ -211,6 +266,70 @@ export default function MLInsightsPage() {
         {report.baselines && <ChartCard title="Baselines" detail={report.baselines.interpretation}><Table headings={['Baseline', 'Reported values']} rows={[['Majority class', JSON.stringify(report.baselines.majority_class)], ['Nearest neighbour', JSON.stringify(report.baselines.nearest_neighbour)]]} /></ChartCard>}
       </>}
       {tab === 'Evaluation' && <>
+        {/* Phase 4b: Side-by-side Clean Synthetic vs Realistic Input Comparison */}
+        <div className="card [padding:20px] [grid-column:1/-1] [background:var(--card-bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-lg)] [margin-bottom:16px]">
+          <h3 className="[font-size:var(--text-lg)] [font-weight:700] [margin-bottom:8px]">
+            Clean Synthetic vs. Realistic-Input Benchmark Comparison
+          </h3>
+          <p className="[font-size:var(--text-xs)] [color:var(--text-3)] [margin-bottom:16px]">
+            Comparison between synthetic patient profiles (unperturbed) and realistic outpatient presentations (3–8 symptoms, forget rate, symptom substitutions). Realistic metrics are averaged across 10 evaluation seeds.
+          </p>
+          <div className="[display:grid] [grid-template-columns:repeat(auto-fit,minmax(220px,1fr))] [gap:14px]">
+            <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+              <span className="[font-size:var(--text-xs)] [color:var(--text-3)] [font-weight:600]">ACCURACY</span>
+              <div className="[display:flex] [justify-content:space-between] [align-items:baseline] [margin-top:8px]">
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Clean: </span>
+                  <strong className="[font-size:var(--text-base)]">{report.clean_synthetic ? (report.clean_synthetic.metrics.accuracy * 100).toFixed(1) + '%' : (report.evaluation.metrics.accuracy * 100).toFixed(1) + '%'}</strong>
+                </div>
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Realistic: </span>
+                  <strong className="[font-size:var(--text-base)] [color:var(--primary)]">{report.realistic_input ? (report.realistic_input.accuracy_mean * 100).toFixed(1) + '%' : '—'}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+              <span className="[font-size:var(--text-xs)] [color:var(--text-3)] [font-weight:600]">MACRO F1</span>
+              <div className="[display:flex] [justify-content:space-between] [align-items:baseline] [margin-top:8px]">
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Clean: </span>
+                  <strong className="[font-size:var(--text-base)]">{report.clean_synthetic ? report.clean_synthetic.metrics.f1_macro.toFixed(4) : report.evaluation.metrics.f1_macro.toFixed(4)}</strong>
+                </div>
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Realistic: </span>
+                  <strong className="[font-size:var(--text-base)] [color:var(--primary)]">{report.realistic_input ? report.realistic_input.f1_macro_mean.toFixed(4) : '—'}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+              <span className="[font-size:var(--text-xs)] [color:var(--text-3)] [font-weight:600]">TOP-3 ACCURACY</span>
+              <div className="[display:flex] [justify-content:space-between] [align-items:baseline] [margin-top:8px]">
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Clean: </span>
+                  <strong className="[font-size:var(--text-base)]">{report.clean_synthetic ? (report.clean_synthetic.metrics.top_3_accuracy * 100).toFixed(1) + '%' : (report.evaluation.metrics.top_3_accuracy * 100).toFixed(1) + '%'}</strong>
+                </div>
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Realistic: </span>
+                  <strong className="[font-size:var(--text-base)] [color:var(--primary)]">{report.realistic_input ? (report.realistic_input.top3_mean * 100).toFixed(1) + '%' : '—'}</strong>
+                </div>
+              </div>
+            </div>
+            <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
+              <span className="[font-size:var(--text-xs)] [color:var(--text-3)] [font-weight:600]">TOP-5 ACCURACY</span>
+              <div className="[display:flex] [justify-content:space-between] [align-items:baseline] [margin-top:8px]">
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Clean: </span>
+                  <strong className="[font-size:var(--text-base)]">{report.clean_synthetic ? (report.clean_synthetic.metrics.top_5_accuracy * 100).toFixed(1) + '%' : (report.evaluation.metrics.top_5_accuracy * 100).toFixed(1) + '%'}</strong>
+                </div>
+                <div>
+                  <span className="[font-size:11px] [color:var(--text-3)]">Realistic: </span>
+                  <strong className="[font-size:var(--text-base)] [color:var(--primary)]">{report.realistic_input ? (report.realistic_input.top5_mean * 100).toFixed(1) + '%' : '—'}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <ChartCard title="Held-out results" detail="The official test sample was used only after model selection."><Table headings={['Metric', 'Final model']} rows={Object.entries(report.evaluation.metrics).map(([k, v]) => [k, format(v)])} /><p>Validation calibration choice: {report.calibration.method}. Validation Brier before: {format(report.calibration.brier_before)}; after: {format(report.calibration.brier_after)}.</p><p  className="[font-size:var(--text-sm)]">{report.calibration.brier_definition}</p></ChartCard>
         <ChartCard title="Confusion matrix" detail="Rows: actual disease. Columns: predicted disease."><Heatmap labels={report.classes} matrix={report.evaluation.confusion_matrix} /></ChartCard>
         <ChartCard title="One-vs-rest ROC" detail={'Macro AUC: ' + format(report.evaluation.macro_auc)}><label>Disease curve: <select value={rocClass} onChange={e => setRocClass(e.target.value)}><option value="all">All diseases</option>{report.classes.map(v => <option key={v}>{v}</option>)}</select></label><div  className="[height:330px]"><ResponsiveContainer width="100%" height="100%"><LineChart accessibilityLayer><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="fpr" type="number" domain={[0, 1]} allowDuplicatedCategory={false} /><YAxis type="number" domain={[0, 1]} /><Tooltip /><ReferenceLine segment={[{ x: 0, y: 0 }, { x: 1, y: 1 }]} stroke="#94A3B8" />{selectedRoc.map((v, i) => <Line isAnimationActive={false} key={v.disease} data={v.points} dataKey="tpr" name={v.disease + ' AUC ' + format(v.auc)} stroke={colors[i % colors.length]} dot={false} />)}</LineChart></ResponsiveContainer></div></ChartCard>

@@ -65,11 +65,11 @@ Before making modifications, all referenced files were read and verified against
     [x] 3e: Validate notebook with nbformat.validate and ast.parse
     [x] 3f: Add "Training on Google Colab" section to README.md
 
-[ ] Phase 4: Truth-in-Reporting & UI Clarification
-    [ ] 4a: Remove all hardcoded metric badges from app/dashboard/ml-insights/page.tsx
-    [ ] 4b: Display Clean Synthetic vs Realistic Input metrics side-by-side with clear synthetic benchmarks notice
-    [ ] 4c: Explicitly label SymCat Bayesian engine as "unvalidated knowledge-base lookup"
-    [ ] 4d: Document dual-engine routing and class counts (41 core Kaggle vs 49 DDXPlus vs 801 SymCat)
+[x] Phase 4: Truth-in-Reporting & UI Clarification
+    [x] 4a: Remove all hardcoded metric badges from app/dashboard/ml-insights/page.tsx
+    [x] 4b: Display Clean Synthetic vs Realistic Input metrics side-by-side with clear synthetic benchmarks notice
+    [x] 4c: Explicitly label SymCat Bayesian engine as "unvalidated knowledge-base lookup"
+    [x] 4d: Document dual-engine routing and class counts (41 core Kaggle vs 49 DDXPlus vs 801 SymCat)
 
 [ ] Phase 5: 41-Disease Kaggle Model Deduplication & Proper Holdout
     [ ] 5a: Deduplicate dataset.csv from 4,920 rows to 304 unique rows in train_clinical.py
