@@ -51,7 +51,6 @@ export default function MLInsightsPage() {
   const [rocClass, setRocClass] = useState('all');
   const [cvMetric, setCvMetric] = useState<keyof MLReport['training']['comparison'][number]['metrics']>('f1_macro');
   const [kbConditions, setKbConditions] = useState<any[]>([]);
-  const [kbStats, setKbStats] = useState<any>(null);
   const [kbSearch, setKbSearch] = useState('');
   const [kbUrgency, setKbUrgency] = useState('');
   const [kbLoading, setKbLoading] = useState(false);
@@ -65,7 +64,6 @@ export default function MLInsightsPage() {
       .then(data => {
         if (data.conditions) {
           setKbConditions(data.conditions);
-          setKbStats(data.stats);
           setKbTotal(data.total);
         }
       })
@@ -91,7 +89,7 @@ export default function MLInsightsPage() {
 
   const selectedRoc = report?.evaluation.roc.filter(v => rocClass === 'all' || v.disease === rocClass) ?? [];
   return <AppShell><div className="mobile-padding [padding:28px_24px] [background:var(--bg)] [color:var(--text-1)]" ><div  className="[max-width:1200px] [margin:0_auto]">
-    <header className="stack"><p className="eyebrow">{t("Research and evaluation", "शोध और मूल्यांकन", "संशोधन आणि मूल्यमापन")}</p><h1>{t("ML insights", "मॉडल का विश्लेषण", "मॉडेलचे विश्लेषण")}</h1></header>
+    <header className="stack"><p className="eyebrow">{t("Research and evaluation", "शोध और मूल्यांकन", "संशोधन आणि मूल्यमापन")}</p><h1>{t("ML Insights", "मॉडल का विश्लेषण", "मॉडेलचे विश्लेषण")}</h1></header>
     <p  className="[font-size:var(--text-sm)] [color:var(--text-3)]">{t("Decision support only, not a diagnosis. Emergency red flags always retain High urgency.", "केवल निर्णय में सहायता, निदान नहीं। आपातकालीन संकेतों में तात्कालिकता हमेशा उच्च रहती है।", "केवळ निर्णय घेण्यास मदत, निदान नाही. आपत्कालीन संकेतांमध्ये तातडी नेहमी उच्च राहते.")}</p>
 
     {/* Phase 4b: Synthetic Benchmark Notice */}

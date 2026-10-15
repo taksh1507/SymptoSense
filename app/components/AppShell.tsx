@@ -34,27 +34,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  if (status === "loading") {
-    return (
-      <div className="app-shell">
-        <header className="app-topbar">
-          <AppLogo />
-        </header>
-        <main id="main-content" className="app-main page">
-          <div className="content-wrapper stack-lg" style={{ paddingTop: "24px" }}>
-            <div className="skeleton" style={{ height: "40px", width: "260px", marginBottom: "16px" }} />
-            <div className="action-grid">
-              {[0, 1, 2, 3].map((i) => (
-                <div key={i} className="skeleton" style={{ height: "140px" }} />
-              ))}
-            </div>
-            <div className="skeleton" style={{ height: "220px", marginTop: "24px" }} />
-          </div>
-        </main>
-      </div>
-    );
-  }
-
   const nav = [
     ["/dashboard", LayoutDashboard, t("Dashboard", "डैशबोर्ड", "डॅशबोर्ड")],
     [
