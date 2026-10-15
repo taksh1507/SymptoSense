@@ -400,9 +400,26 @@ def predict_disease(data: DiseaseInput):
 
     return {'top3': top3, 'confidence': confidence, 'uncertain': confidence < threshold, 'urgency': final_urgency, 'model_urgency': model_urgency, 'red_flag_override': override, 'disease_safety_override': safety_override, 'disease_safety_floor': safety_floor, 'disease_safety_conditions': safety_conditions, 'shap_top5': contributions, 'ignored_symptoms': ignored, 'mapped_symptoms': mapped, 'symptoms_used': used, 'age_used': float(age), 'age_group_used': age_group(age), 'age_source':age_source, 'sex_used': sex_display, 'uncertainty_threshold': threshold, 'model_version': bundle['report']['model_version'], 'probability_mode': bundle['report']['deployment']['probability_mode'], 'limited_information': limited_info, 'confident': is_confident, 'operating_point': op, 'disclaimer': bundle['report']['disclaimer'], 'context_note': 'Predictions use DDXPlus synthetic patient data and are not a medical diagnosis. Age and sex are included when supplied; omitted sex is treated as unknown. Model urgency is a dataset-severity research proxy. Rule red flags and project safety floors can raise urgency.'}
 
+CLINICAL_REPORT_PATH = SERVICE / 'reports' / 'clinical_report.json'
+
 @router.get('/ml-report')
 def ml_report():
     try:
         return json.loads(REPORT_PATH.read_text(encoding='utf-8'))
     except (OSError, ValueError) as error:
         raise HTTPException(503, {'status': 'unavailable', 'error': 'Training report unavailable'}) from error
+
+@router.get('/clinical-report')
+def clinical_report():
+    try:
+        if CLINICAL_REPORT_PATH.exists():
+            return json.loads(CLINICAL_REPORT_PATH.read_text(encoding='utf-8'))
+        alt = ARTIFACTS / 'clinical' / 'clinical_report.json'
+        if alt.exists():
+            return json.loads(alt.read_text(encoding='utf-8'))
+        raise HTTPException(404, {'status': 'unavailable', 'error': 'Clinical report unavailable'})
+    except HTTPException:
+        raise
+    except (OSError, ValueError) as error:
+        raise HTTPException(503, {'status': 'unavailable', 'error': 'Clinical report unavailable'}) from error
+

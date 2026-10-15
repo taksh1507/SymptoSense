@@ -71,11 +71,11 @@ Before making modifications, all referenced files were read and verified against
     [x] 4c: Explicitly label SymCat Bayesian engine as "unvalidated knowledge-base lookup"
     [x] 4d: Document dual-engine routing and class counts (41 core Kaggle vs 49 DDXPlus vs 801 SymCat)
 
-[ ] Phase 5: 41-Disease Kaggle Model Deduplication & Proper Holdout
-    [ ] 5a: Deduplicate dataset.csv from 4,920 rows to 304 unique rows in train_clinical.py
-    [ ] 5b: Implement stratified train/test holdout split on deduplicated data
-    [ ] 5c: Train Random Forest strictly on training split; report test accuracy strictly on holdout
-    [ ] 5d: Save evaluation results to ml-service/reports/clinical_report.json and expose in UI
+[x] Phase 5: 41-Disease Kaggle Model Deduplication & Proper Holdout
+    [x] 5a: Deduplicate dataset.csv from 4,920 rows to 304 unique rows in train_clinical.py
+    [x] 5b: Implement stratified train/test holdout split on deduplicated data
+    [x] 5c: Train Random Forest strictly on training split; report test accuracy strictly on holdout
+    [x] 5d: Save evaluation results to ml-service/reports/clinical_report.json and expose in UI
 
 [ ] Phase 6: Codebase & Git Cleanup
     [ ] 6a: Move PROJECT_ANALYSIS.md, FIXES.md, DATASET_EXPANSION_GUIDE.md into docs/ and fix links

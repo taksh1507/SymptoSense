@@ -60,3 +60,46 @@ export type MLReport = ExistingReport & {
   };
   dataset: ExistingReport['dataset'] & { sample_sizes?: Record<string, { rows_before_sampling: number; rows_after_sampling: number }>; split_overlap_fingerprints?: Record<string, number>; input_sha256?: Record<string, string> };
 };
+
+export interface ClinicalReport {
+  schema_version: number;
+  model_name: string;
+  created_at: string;
+  dataset: {
+    name: string;
+    raw_rows: number;
+    unique_rows: number;
+    num_diseases: number;
+    num_symptoms: number;
+    deduplication_ratio: number;
+    data_hygiene: string;
+  };
+  split: {
+    train_rows: number;
+    test_rows: number;
+    test_size: number;
+    stratified: boolean;
+    random_state: number;
+  };
+  cv_metrics: {
+    cv_folds: number;
+    accuracy_mean: number;
+    accuracy_std: number;
+  };
+  holdout_test_metrics: {
+    accuracy: number;
+    macro_f1: number;
+    weighted_f1: number;
+    top3_accuracy: number;
+    top5_accuracy: number;
+    multiclass_brier_score: number;
+    log_loss: number;
+  };
+  per_disease_metrics: Record<string, { precision: number; recall: number; 'f1-score': number; support: number }>;
+  calibration: {
+    method: string;
+    cv: number;
+  };
+  disclaimer: string;
+}
+

@@ -6,7 +6,7 @@ import AppShell from '@/app/components/AppShell';
 import { Section, Table as DataTable } from '@/components/ui/primitives';
 import { useUiText } from '@/components/ui/use-ui-text';
 import { useTechnicalText } from '@/components/ui/technical-copy';
-import type { MLReport } from '@/lib/ml/report';
+import type { MLReport, ClinicalReport } from '@/lib/ml/report';
 const colors = ['#15574e', '#384b67', '#795314', '#6c526c', '#52664d'];
 const tabs = ['Clinical Knowledge Base (801 Diseases)', 'Dataset', 'Training', 'Evaluation', 'Explainability', 'Live Model'] as const;
 const format = (v: number) => v.toFixed(4);
@@ -45,6 +45,7 @@ export default function MLInsightsPage() {
   const t = useUiText();
   const lt = useTechnicalText();
   const [report, setReport] = useState<MLReport | null>(null);
+  const [clinicalReport, setClinicalReport] = useState<ClinicalReport | null>(null);
   const [tab, setTab] = useState<(typeof tabs)[number]>('Clinical Knowledge Base (801 Diseases)');
   const [error, setError] = useState('');
   const [rocClass, setRocClass] = useState('all');
@@ -79,8 +80,15 @@ export default function MLInsightsPage() {
       if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'You do not have access to this page.' : 'Training report unavailable. Start the ML service and run train_pipeline.py.');
       setReport(await response.json());
     }).catch(e => { if (!controller.signal.aborted) setError(e.message); });
+
+    void fetch('/api/ml/clinical-report', { signal: controller.signal })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data && data.schema_version === 1) setClinicalReport(data); })
+      .catch(() => {});
+
     return () => controller.abort();
   }, []);
+
   const selectedRoc = report?.evaluation.roc.filter(v => rocClass === 'all' || v.disease === rocClass) ?? [];
   return <AppShell><div className="mobile-padding [padding:28px_24px] [background:var(--bg)] [color:var(--text-1)]" ><div  className="[max-width:1200px] [margin:0_auto]">
     <header className="stack"><p className="eyebrow">{t("Research and evaluation", "शोध और मूल्यांकन", "संशोधन आणि मूल्यमापन")}</p><h1>{t("ML insights", "मॉडल का विश्लेषण", "मॉडेलचे विश्लेषण")}</h1></header>
@@ -111,13 +119,26 @@ export default function MLInsightsPage() {
       </p>
       <div className="[display:grid] [grid-template-columns:repeat(auto-fit,minmax(280px,1fr))] [gap:14px]">
         <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
-          <span className="badge [background:rgba(21,87,78,0.12)] [color:#15574e] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
-            Tier 1: Core Clinical Classifier
-          </span>
-          <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">41 Diseases</h3>
-          <p className="[font-size:12px] [color:var(--text-3)] [margin:0]">
-            Supervised Random Forest trained on clinical association dataset. High precision on core primary-care diseases. Runs first when clinical symptom tokens match.
+          <div className="[display:flex] [justify-content:space-between] [align-items:center]">
+            <span className="badge [background:rgba(21,87,78,0.12)] [color:#15574e] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
+              Tier 1: Core Clinical Classifier
+            </span>
+            {clinicalReport && (
+              <span className="badge [background:rgba(21,87,78,0.08)] [color:#15574e] [padding:3px_6px] [border-radius:8px] [font-weight:700] [font-size:10px]">
+                {(clinicalReport.holdout_test_metrics.accuracy * 100).toFixed(0)}% Holdout
+              </span>
+            )}
+          </div>
+          <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">41 Diseases (Deduplicated)</h3>
+          <p className="[font-size:12px] [color:var(--text-3)] [margin:0_0_8px]">
+            Supervised Random Forest trained on deduplicated clinical associations. Evaluated on an independent stratified holdout split (zero train/test overlap).
           </p>
+          {clinicalReport && (
+            <div className="[font-size:11px] [color:var(--text-2)] [background:rgba(0,0,0,0.03)] [padding:6px_8px] [border-radius:6px]">
+              <div><strong>Hygiene:</strong> {clinicalReport.dataset.raw_rows} raw → {clinicalReport.dataset.unique_rows} unique patterns ({clinicalReport.dataset.deduplication_ratio}x)</div>
+              <div><strong>Holdout:</strong> {clinicalReport.split.train_rows} train / {clinicalReport.split.test_rows} test (zero leakage)</div>
+            </div>
+          )}
         </div>
         <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
           <span className="badge [background:rgba(56,75,103,0.12)] [color:#384b67] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
@@ -250,6 +271,31 @@ export default function MLInsightsPage() {
         </div>
       </>}
       {tab === 'Dataset' && <>
+        {clinicalReport && (
+          <ChartCard title="Tier 1: Kaggle 41-Disease Dataset Deduplication & Hygiene" detail={clinicalReport.dataset.data_hygiene}>
+            <Table
+              headings={['Measure', 'Value']}
+              rows={[
+                ['Dataset', clinicalReport.dataset.name],
+                ['Raw rows (before deduplication)', clinicalReport.dataset.raw_rows],
+                ['Unique symptom-disease patterns', clinicalReport.dataset.unique_rows],
+                ['Deduplication reduction ratio', `${clinicalReport.dataset.deduplication_ratio}x`],
+                ['Total disease classes', clinicalReport.dataset.num_diseases],
+                ['Distinct symptom features', clinicalReport.dataset.num_symptoms],
+                ['Stratified train split (80%)', `${clinicalReport.split.train_rows} patterns`],
+                ['Held-out test split (20%)', `${clinicalReport.split.test_rows} patterns`],
+                ['Train/Test leakage', '0.0% (strictly disjoint unique patterns)'],
+                ['Holdout test accuracy', `${(clinicalReport.holdout_test_metrics.accuracy * 100).toFixed(1)}%`],
+                ['Holdout macro-F1', clinicalReport.holdout_test_metrics.macro_f1.toFixed(4)],
+                ['Holdout multiclass Brier score', clinicalReport.holdout_test_metrics.multiclass_brier_score.toFixed(4)],
+                ['Holdout log-loss', clinicalReport.holdout_test_metrics.log_loss.toFixed(4)],
+              ]}
+            />
+            <p className="[font-size:var(--text-xs)] [color:var(--text-3)] [margin-top:8px]">
+              {clinicalReport.disclaimer}
+            </p>
+          </ChartCard>
+        )}
         <ChartCard title="Dataset source and quality" detail={report.dataset.representation}><p><a href={report.dataset.source} target="_blank" rel="noreferrer">DDXPlus source (Figshare)</a></p><Table headings={['Measure', 'Value']} rows={[[ 'Training rows before sample', report.dataset.sample_sizes?.train?.rows_before_sampling ?? report.dataset.raw_rows ], ['Train / validation / test sampled', [report.dataset.sample_sizes?.train?.rows_after_sampling, report.dataset.sample_sizes?.validate?.rows_after_sampling, report.dataset.sample_sizes?.test?.rows_after_sampling].join(' / ')], ['Distinct evidence patterns in sample', (report.dataset as any).unique_rows ?? report.dataset.unique_evidence_patterns], ['Repeated evidence patterns in sample', (report.dataset as any).duplicate_patterns_removed ?? report.dataset.duplicate_evidence_patterns_kept], ['Disease classes', report.dataset.class_count], ['Evidence features', report.dataset.feature_count], ['Train / test rows', report.split.train_rows + ' / ' + report.split.test_rows]]} /><p  className="[font-size:var(--text-sm)]">{report.dataset.missing_interpretation}</p><p  className="[overflow-wrap:anywhere] [font-size:var(--text-sm)]">Dataset SHA-256: {report.dataset.sha256}</p>{report.dataset.split_overlap_fingerprints && <p  className="[font-size:var(--text-sm)]">Exact-row overlap fingerprints: {JSON.stringify(report.dataset.split_overlap_fingerprints)} (source has no patient IDs).</p>}</ChartCard>
         <ChartCard title="Class distribution" detail="Raw rows and distinct symptom patterns per disease."><Bars data={report.dataset.class_distribution} name="disease" series={['count', 'unique_count']} /></ChartCard>
         <ChartCard title="Most frequent symptoms"><Bars data={report.dataset.top_symptoms} name="symptom" series={['count']} /></ChartCard>
