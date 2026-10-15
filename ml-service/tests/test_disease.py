@@ -55,6 +55,19 @@ def test_valid_prediction_contract(client):
     assert data.uncertain==(data.confidence < data.uncertainty_threshold)
     assert data.age_group_used=="adult" and data.sex_used=="Female"
     assert "not a medical diagnosis" in data.disclaimer.lower()
+    # Phase 2 selective prediction contract
+    assert data.limited_information is True, "Single symptom should trigger limited_information"
+    assert data.confident is False, "Limited information should prevent confident flag"
+    assert data.operating_point is not None
+    assert "threshold" in data.operating_point and "margin" in data.operating_point
+
+def test_selective_prediction_with_sufficient_symptoms(client):
+    response=client.post("/predict-disease",json={"symptoms":["E_91","E_201","E_53"],"age_group":"adult","sex":"F"})
+    assert response.status_code == 200
+    data=DiseaseOutput.model_validate(response.json())
+    assert data.limited_information is False, "Three recognized symptoms should not trigger limited_information"
+    assert isinstance(data.confident, bool)
+    assert isinstance(data.operating_point, dict)
 
 def test_invalid_unknown_and_empty_symptoms(client):
     for symptoms in [[],["not_a_real_evidence"],[""]]:

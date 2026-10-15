@@ -25,10 +25,23 @@ from scipy.sparse import vstack, csr_matrix
 from .model_input import to_sparse, explain_matrix, predict_proba as sparse_predict_proba
 from .ddxplus_data import DATA, SERVICE, SEED, load_metadata, load_splits, vocabulary, feature_schema, encode_rows, parse_evidence
 from .perturb import perturb_frame
+from .confidence_metrics import (
+    expected_calibration_error,
+    reliability_curve_data,
+    wrong_and_confident_rate,
+    find_optimal_operating_point
+)
 
 ART = SERVICE/'artifacts'; REPORT_PATH=SERVICE/'reports'/'ml_report.json'; FIG=SERVICE/'reports'/'figures'
 RANK={'Low':0,'Medium':1,'High':2}
-TIME_CRITICAL={'Anaphylaxis':'High','Larygospasm':'High','Ebola':'High','Possible NSTEMI / STEMI':'High','Acute pulmonary edema':'High','Pulmonary embolism':'High','Unstable angina':'High','Spontaneous pneumothorax':'High','Boerhaave':'High','Epiglottitis':'High','Guillain-Barré syndrome':'High','Croup':'High','Myocarditis':'High'}
+TIME_CRITICAL={
+    'Anaphylaxis':'High','Larygospasm':'High','Ebola':'High','Possible NSTEMI / STEMI':'High',
+    'Acute pulmonary edema':'High','Pulmonary embolism':'High','Unstable angina':'High',
+    'Spontaneous pneumothorax':'High','Boerhaave':'High','Epiglottitis':'High',
+    'Guillain-Barré syndrome':'High','Croup':'High','Myocarditis':'High',
+    # Safety floors reconciled with disease_inference.py:
+    'PSVT':'Medium','Scombroid food poisoning':'Medium','Acute dystonic reactions':'Medium','Stable angina':'Medium'
+}
 
 def digest(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
 def csr_from_dense(values): return csr_matrix(values, dtype=np.float32)
@@ -252,12 +265,44 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         except Exception as exc:
             calibration['validation'][method] = {'error': str(exc)}
             
-    # Fit urgency labels from verified DDXPlus severity
+    # 2b: Expected Calibration Error (ECE) and reliability curve data
+    ece_before = expected_calibration_error(yval, val_raw, n_bins=15)
+    ece_after = expected_calibration_error(yval, selected_val_prob, n_bins=15)
+    calibration['ece_before'] = float(ece_before)
+    calibration['ece_after'] = float(ece_after)
+    calibration['reliability_curve_before'] = reliability_curve_data(yval, val_raw, n_bins=15)
+    calibration['reliability_curve_after'] = reliability_curve_data(yval, selected_val_prob, n_bins=15)
+    
+    # 2c: Optimal (threshold t, margin m) operating point search on realistic validation data
+    op_search = find_optimal_operating_point(yval, selected_val_prob, min_precision=0.90)
+    optimal_operating_point = {
+        'threshold': op_search['threshold'],
+        'margin': op_search['margin'],
+        'expected_precision': op_search['expected_precision'],
+        'expected_coverage': op_search['expected_coverage'],
+        'min_precision_target': op_search['min_precision_target']
+    }
+    (ART / 'operating_point.json').write_text(json.dumps(optimal_operating_point, indent=2), encoding='utf-8')
+    
+    # Fit urgency labels from verified DDXPlus severity reconciled with safety floors
     evidence_metadata, conditions = load_metadata()
     disease_severity = {v['cond-name-eng']: int(v['severity']) for v in conditions.values()}
     severity_levels = sorted(set(disease_severity.values()))
-    severity_to_urgency = {s: ('High' if s <= 2 else 'Medium' if s == 3 else 'Low') for s in severity_levels}
-    urgency_by_disease = {k: severity_to_urgency[v] for k, v in disease_severity.items()}
+    
+    # Reconcile safety floors: severity <= 2 is High, EXCEPT conditions explicitly mapped
+    # to Medium safety floors (PSVT, Scombroid, Acute dystonic reactions, Stable angina).
+    medium_floor_diseases = {'PSVT', 'Scombroid food poisoning', 'Acute dystonic reactions', 'Stable angina'}
+    urgency_by_disease = {}
+    for k, v in disease_severity.items():
+        if k in medium_floor_diseases:
+            urgency_by_disease[k] = 'Medium'
+        elif v <= 2:
+            urgency_by_disease[k] = 'High'
+        elif v == 3:
+            urgency_by_disease[k] = 'Medium'
+        else:
+            urgency_by_disease[k] = 'Low'
+            
     uy = np.array([urgency_by_disease[d] for d in train_combined['PATHOLOGY']])
     urgency = LogisticRegression(max_iter=1000, class_weight='balanced', random_state=SEED).fit(Xtr, uy)
     
@@ -365,6 +410,14 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         'gtpa_at_5': gtpa5,
         'top1_in_gt_differential_rate': diff_top1_in_gt,
         'differential_evaluated_cases': differential_valid_count
+    }
+    
+    # 2b & 2c: Wrong-and-confident rates and selective prediction summary
+    wrong_conf = wrong_and_confident_rate(yte, prob, threshold=0.80)
+    selective_prediction = {
+        'operating_point': optimal_operating_point,
+        'wrong_and_confident_at_80': wrong_conf.to_dict(),
+        'all_grid_points': op_search['all_grid_points']
     }
     
     # 1g: TypeScript rule agreement subprocess with graceful fallback
@@ -530,6 +583,7 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         'clean_synthetic': clean_synthetic,
         'realistic_input': realistic_input,
         'differential_metrics': differential_metrics,
+        'selective_prediction': selective_prediction,
         'dataset': {
             'source': 'https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374',
             'representation': 'DDXPlus patient evidence lists expanded into schema-defined sparse symptom and antecedent features; INITIAL_EVIDENCE excluded because not collected at inference',
@@ -596,6 +650,10 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
             'validation': calibration['validation'],
             'brier_before': bs_raw,
             'brier_after': calibration['validation'].get(calibration['method'], {}).get('brier', bs_raw),
+            'ece_before': calibration['ece_before'],
+            'ece_after': calibration['ece_after'],
+            'reliability_curve_before': calibration['reliability_curve_before'],
+            'reliability_curve_after': calibration['reliability_curve_after'],
             'brier_definition': 'Validation multiclass Brier score is mean sum of squared class-probability errors.',
             'curve_before': calibration['curve_before'],
             'curve_after': calibration['curve_after']

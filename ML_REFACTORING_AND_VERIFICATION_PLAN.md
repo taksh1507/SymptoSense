@@ -49,13 +49,13 @@ Before making modifications, all referenced files were read and verified against
     [x] 1g: Make TypeScript rule-agreement subprocess optional with graceful fallback
     [x] 1h: Add CUDA GPU support for XGBoost via DDX_XGB_DEVICE=cuda
 
-[ ] Phase 2: Confidence Quality, Selective Prediction & Inference Integration
-    [ ] 2a: Fit and evaluate calibration (sigmoid/isotonic) on realistic validation data
-    [ ] 2b: Create ml_pipeline/confidence_metrics.py (ECE, reliability curve, wrong-and-confident rates)
-    [ ] 2c: Implement grid search for optimal (threshold t, margin m) operating point on validation data
-    [ ] 2d: Update disease_inference.py with limited_information and confident flags, and reconcile safety floors
-    [ ] 2e: Update lib/ml/disease.ts and ResultsPage.tsx UI with low-confidence and limited-information alerts
-    [ ] 2f: Add unit tests for perturbation, confidence metrics, and response contracts
+[x] Phase 2: Confidence Quality, Selective Prediction & Inference Integration
+    [x] 2a: Fit and evaluate calibration (sigmoid/isotonic) on realistic validation data
+    [x] 2b: Create ml_pipeline/confidence_metrics.py (ECE, reliability curve, wrong-and-confident rates)
+    [x] 2c: Implement grid search for optimal (threshold t, margin m) operating point on validation data
+    [x] 2d: Update disease_inference.py with limited_information and confident flags, and reconcile safety floors
+    [x] 2e: Update lib/ml/disease.ts and ResultsPage.tsx UI with low-confidence and limited-information alerts
+    [x] 2f: Add unit tests for perturbation, confidence metrics, and response contracts
 
 [ ] Phase 3: Google Colab Training Notebook (SymptoSense_Colab_Training.ipynb)
     [ ] 3a: Create valid nbformat v4 notebook with 10 sequential cells

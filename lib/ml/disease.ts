@@ -16,6 +16,14 @@ export interface DiseasePrediction {
   uncertainty_threshold: number; model_version: string; disclaimer: string; context_note: string;
   age_used: number | null; age_group_used: string | null; age_source: string; sex_used: string | null;
   explanation?: string;
+  limited_information?: boolean;
+  confident?: boolean;
+  operating_point?: {
+    threshold: number;
+    margin: number;
+    expected_precision: number;
+    expected_coverage: number;
+  } | null;
 }
 export interface DiseaseRequest { symptoms: string[]; age_group?: string; age?: number; sex?: string; severity?: string; duration?: string }
 export function parseDiseaseRequest(value: unknown): DiseaseRequest {
@@ -31,8 +39,10 @@ export function validateDiseasePrediction(value: unknown): DiseasePrediction {
   if (!value || typeof value !== 'object') throw new Error('Invalid disease response');
   const result = value as DiseasePrediction;
   const probability = (v: unknown) => typeof v === 'number' && Number.isFinite(v) && v >= 0 && v <= 1;
-  if (!Array.isArray(result.top3) || result.top3.length !== 3 || result.top3.some(v => typeof v.disease !== 'string' || !v.disease || !probability(v.probability)) || !probability(result.confidence) || result.confidence !== result.top3[0].probability || !probability(result.uncertainty_threshold) || typeof result.uncertain !== 'boolean' || result.uncertain !== (result.confidence < result.uncertainty_threshold) || !['Low', 'Medium', 'High'].includes(result.urgency) || !['Low', 'Medium', 'High'].includes(result.model_urgency) || typeof result.red_flag_override !== 'boolean' || (result.red_flag_override && result.urgency !== 'High') || typeof result.disease_safety_override !== 'boolean' || ![null, 'Medium', 'High'].includes(result.disease_safety_floor) || !Array.isArray(result.disease_safety_conditions) || result.disease_safety_conditions.some(v => typeof v !== 'string') || result.probability_mode !== 'uncalibrated predict_proba') throw new Error('Invalid disease probability');
+  if (!Array.isArray(result.top3) || result.top3.length !== 3 || result.top3.some(v => typeof v.disease !== 'string' || !v.disease || !probability(v.probability)) || !probability(result.confidence) || result.confidence !== result.top3[0].probability || !probability(result.uncertainty_threshold) || typeof result.uncertain !== 'boolean' || result.uncertain !== (result.confidence < result.uncertainty_threshold) || !['Low', 'Medium', 'High'].includes(result.urgency) || !['Low', 'Medium', 'High'].includes(result.model_urgency) || typeof result.red_flag_override !== 'boolean' || (result.red_flag_override && result.urgency !== 'High') || typeof result.disease_safety_override !== 'boolean' || ![null, 'Medium', 'High'].includes(result.disease_safety_floor) || !Array.isArray(result.disease_safety_conditions) || result.disease_safety_conditions.some(v => typeof v !== 'string') || !result.probability_mode || !result.probability_mode.includes('predict_proba')) throw new Error('Invalid disease probability');
   if (!Array.isArray(result.shap_top5) || result.shap_top5.length !== 5 || result.shap_top5.some(v => typeof v.symptom !== 'string' || !Number.isFinite(v.contribution) || typeof v.present !== 'boolean') || !Array.isArray(result.ignored_symptoms) || result.ignored_symptoms.some(v => typeof v !== 'string') || !Array.isArray(result.symptoms_used) || result.symptoms_used.some(v => typeof v !== 'string' || !v) || typeof result.model_version !== 'string' || typeof result.disclaimer !== 'string' || !(result.age_used === null || (typeof result.age_used === 'number' && Number.isFinite(result.age_used))) || !(result.age_group_used === null || typeof result.age_group_used === 'string') || typeof result.age_source !== 'string' || typeof result.sex_used !== 'string' || typeof result.probability_mode !== 'string') throw new Error('Invalid disease explanation');
+  if (result.limited_information !== undefined && typeof result.limited_information !== 'boolean') throw new Error('Invalid limited_information flag');
+  if (result.confident !== undefined && typeof result.confident !== 'boolean') throw new Error('Invalid confident flag');
   return result;
 }
 export async function requestDisease(input: DiseaseRequest): Promise<DiseasePrediction> {

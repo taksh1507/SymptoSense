@@ -28,6 +28,24 @@ def get_bayesian_engine():
     return _bayesian_engine
 REPORT_PATH = SERVICE / 'reports' / 'ml_report.json'
 ARTIFACTS = SERVICE / 'artifacts'
+OPERATING_POINT_PATH = ARTIFACTS / 'operating_point.json'
+_operating_point = None
+
+def get_operating_point() -> dict[str, float]:
+    global _operating_point
+    try:
+        if OPERATING_POINT_PATH.exists():
+            data = json.loads(OPERATING_POINT_PATH.read_text(encoding='utf-8'))
+            return {
+                'threshold': float(data.get('threshold', 0.50)),
+                'margin': float(data.get('margin', 0.10)),
+                'expected_precision': float(data.get('expected_precision', 0.90)),
+                'expected_coverage': float(data.get('expected_coverage', 0.50))
+            }
+    except Exception:
+        pass
+    return {'threshold': 0.50, 'margin': 0.10, 'expected_precision': 0.90, 'expected_coverage': 0.50}
+
 _lock = threading.RLock()
 _cache = None
 _cache_version = None
@@ -100,6 +118,9 @@ class DiseaseOutput(BaseModel):
     age_source: str
     sex_used: str | None = None
     probability_mode: str
+    limited_information: bool = False
+    confident: bool = False
+    operating_point: dict[str, float] | None = None
 
 def load_bundle():
     global _cache, _cache_version
@@ -234,6 +255,11 @@ def predict_disease(data: DiseaseInput):
         normalized_sex = (data.sex or '').strip().lower()
         sex_display = 'Male' if normalized_sex in ('m', 'male') else 'Female' if normalized_sex in ('f', 'female') else 'unknown'
 
+        op = get_operating_point()
+        limited_info = bool(len(clinical_used) < 3)
+        second_prob = float(top3[1]['probability']) if len(top3) > 1 else 0.0
+        is_confident = bool((confidence >= op['threshold']) and ((confidence - second_prob) >= op['margin']) and not limited_info)
+
         return {
             'top3': top3,
             'confidence': confidence,
@@ -255,6 +281,9 @@ def predict_disease(data: DiseaseInput):
             'uncertainty_threshold': threshold,
             'model_version': 'clinical-41-rf',
             'probability_mode': 'uncalibrated predict_proba',
+            'limited_information': limited_info,
+            'confident': is_confident,
+            'operating_point': op,
             'disclaimer': 'Statistical symptom associations and clinical research dataset. Always consult a licensed medical provider.',
             'context_note': 'Classified using the 41-disease clinical association model with doctor-verified precautions.',
         }
@@ -286,6 +315,11 @@ def predict_disease(data: DiseaseInput):
             normalized_sex = (data.sex or '').strip().lower()
             sex_display = 'Male' if normalized_sex in ('m', 'male') else 'Female' if normalized_sex in ('f', 'female') else 'unknown'
 
+            op = get_operating_point()
+            limited_info = bool(len(symcat_used) < 3)
+            second_prob = float(top3[1]['probability']) if len(top3) > 1 else 0.0
+            is_confident = bool((confidence >= op['threshold']) and ((confidence - second_prob) >= op['margin']) and not limited_info)
+
             return {
                 'top3': top3,
                 'confidence': confidence,
@@ -307,6 +341,9 @@ def predict_disease(data: DiseaseInput):
                 'uncertainty_threshold': threshold,
                 'model_version': 'symcat-cdc-801-bayesian',
                 'probability_mode': 'uncalibrated predict_proba',
+                'limited_information': limited_info,
+                'confident': is_confident,
+                'operating_point': op,
                 'disclaimer': 'Statistical symptom associations from CDC outpatient database (801 conditions, 377 symptoms). Always consult a licensed medical provider.',
                 'context_note': f"Classified across 801 CDC conditions using SymCat Bayesian clinical engine. Top candidate: {symcat_res[0]['disease']}.",
             }
@@ -355,7 +392,13 @@ def predict_disease(data: DiseaseInput):
     safety_override = bool(safety_floor and URGENCY_RANK[safety_floor] > URGENCY_RANK[model_urgency])
     normalized_sex=(data.sex or '').strip().lower()
     sex_display='Male' if normalized_sex in ('m','male') else 'Female' if normalized_sex in ('f','female') else 'unknown'
-    return {'top3': top3, 'confidence': confidence, 'uncertain': confidence < threshold, 'urgency': final_urgency, 'model_urgency': model_urgency, 'red_flag_override': override, 'disease_safety_override': safety_override, 'disease_safety_floor': safety_floor, 'disease_safety_conditions': safety_conditions, 'shap_top5': contributions, 'ignored_symptoms': ignored, 'mapped_symptoms': mapped, 'symptoms_used': used, 'age_used': float(age), 'age_group_used': age_group(age), 'age_source':age_source, 'sex_used': sex_display, 'uncertainty_threshold': threshold, 'model_version': bundle['report']['model_version'], 'probability_mode': bundle['report']['deployment']['probability_mode'], 'disclaimer': bundle['report']['disclaimer'], 'context_note': 'Predictions use DDXPlus synthetic patient data and are not a medical diagnosis. Age and sex are included when supplied; omitted sex is treated as unknown. Model urgency is a dataset-severity research proxy. Rule red flags and project safety floors can raise urgency.'}
+
+    op = get_operating_point()
+    limited_info = bool(len(used) < 3)
+    second_prob = float(top3[1]['probability']) if len(top3) > 1 else 0.0
+    is_confident = bool((confidence >= op['threshold']) and ((confidence - second_prob) >= op['margin']) and not limited_info)
+
+    return {'top3': top3, 'confidence': confidence, 'uncertain': confidence < threshold, 'urgency': final_urgency, 'model_urgency': model_urgency, 'red_flag_override': override, 'disease_safety_override': safety_override, 'disease_safety_floor': safety_floor, 'disease_safety_conditions': safety_conditions, 'shap_top5': contributions, 'ignored_symptoms': ignored, 'mapped_symptoms': mapped, 'symptoms_used': used, 'age_used': float(age), 'age_group_used': age_group(age), 'age_source':age_source, 'sex_used': sex_display, 'uncertainty_threshold': threshold, 'model_version': bundle['report']['model_version'], 'probability_mode': bundle['report']['deployment']['probability_mode'], 'limited_information': limited_info, 'confident': is_confident, 'operating_point': op, 'disclaimer': bundle['report']['disclaimer'], 'context_note': 'Predictions use DDXPlus synthetic patient data and are not a medical diagnosis. Age and sex are included when supplied; omitted sex is treated as unknown. Model urgency is a dataset-severity research proxy. Rule red flags and project safety floors can raise urgency.'}
 
 @router.get('/ml-report')
 def ml_report():
