@@ -67,6 +67,24 @@ DDXPlus severity is lower-number-is-more-severe. The urgency research target map
 
 The notebook `ml-service/notebooks/SymptoSense_ML.ipynb` documents data, EDA, preprocessing, training/tuning, evaluation, baselines, robustness, explainability and limitations. `python ml-service/execute_notebook.py` executes and validates it. The derived models and report are generated artifacts; figures are in `ml-service/reports/figures/`. Authenticated app routes remain `/api/ml/extract` and `/api/ml/disease`; FastAPI exposes `/predict-disease` and `/ml-report`. Unknown evidences are returned in the ignored list; if none are recognized, the endpoint returns 422. Rule-engine red flags remain active even when prediction service is unavailable.
 
+## Training on Google Colab
+
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/taksh1507/SymptoSense/blob/new-master/ml-service/notebooks/SymptoSense_Colab_Training.ipynb)
+
+A dedicated, self-contained Google Colab notebook is provided at [`ml-service/notebooks/SymptoSense_Colab_Training.ipynb`](ml-service/notebooks/SymptoSense_Colab_Training.ipynb) for training the full DDXPlus pipeline using GPU acceleration (e.g., T4/V100/A100).
+
+### Key Workflow Steps in Colab:
+1. **Environment Check**: Detects CUDA GPUs (auto-enabling `DDX_XGB_DEVICE=cuda` for XGBoost acceleration), CPU cores, and system RAM.
+2. **Google Drive Mount**: Optional checkbox to persist trained artifacts across Colab runtime disconnects.
+3. **Repository Setup**: Clones the SymptoSense repository and configures the `ml-service` working directory.
+4. **Pinned Dependencies**: Installs exact locked packages from `requirements.txt`.
+5. **Automated Figshare API Download**: Queries the Figshare v2 API for [DDXPlus Article 20043374](https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374) to download dataset files with automated SHA-256 integrity verification before archive extraction. Manual dataset downloading is not required.
+6. **Dataset Verification & EDA**: Verifies all 49 conditions and 223 evidence codes, and inspects class balance.
+7. **Realistic-Input Training**: Runs `train_pipeline.py` with configurable row budgets (default 150,000), realistic perturbation (symptom recall constraints, forget rates, and token mutations), and group-safe 5-fold cross-validation.
+8. **Interactive Diagnostic Widget**: Provides an interactive test interface displaying top-3 condition predictions, calibrated confidence, selective prediction operating point, and `limited_information` / `confident` flags.
+9. **Inline Visualizations**: Displays model comparison bar charts, calibration reliability curves, confusion matrices, SHAP attributions, and robustness plots directly in the notebook.
+10. **Artifact Export**: Packages all trained joblib models, `operating_point.json`, schemas, and `ml_report.json` into `SymptoSense_artifacts.zip` with an automated browser download trigger. Extract this archive into `ml-service/artifacts/` to update your local deployment.
+
 ## Retained legacy confidence and reviewed-outcome evaluation
 
 The synthetic generator uses a fixed seed and the current shared rule weights/thresholds for the supported model symptom subset. It generates heuristic targets, not clinical correctness labels. Regenerating the dataset and model is an explicit development operation:

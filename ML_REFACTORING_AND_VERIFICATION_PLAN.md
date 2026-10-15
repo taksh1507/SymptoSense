@@ -57,13 +57,13 @@ Before making modifications, all referenced files were read and verified against
     [x] 2e: Update lib/ml/disease.ts and ResultsPage.tsx UI with low-confidence and limited-information alerts
     [x] 2f: Add unit tests for perturbation, confidence metrics, and response contracts
 
-[ ] Phase 3: Google Colab Training Notebook (SymptoSense_Colab_Training.ipynb)
-    [ ] 3a: Create valid nbformat v4 notebook with 10 sequential cells
-    [ ] 3b: Implement Figshare API automated streaming download and SHA-256 verification
-    [ ] 3c: Assert exact pinned dependencies from requirements.txt
-    [ ] 3d: Add Drive persistence, CLI execution, and artifact packaging (.zip)
-    [ ] 3e: Validate notebook with nbformat.validate and ast.parse
-    [ ] 3f: Add "Training on Google Colab" section to README.md
+[x] Phase 3: Google Colab Training Notebook (SymptoSense_Colab_Training.ipynb)
+    [x] 3a: Create valid nbformat v4 notebook with 10 sequential cells
+    [x] 3b: Implement Figshare API automated streaming download and SHA-256 verification
+    [x] 3c: Assert exact pinned dependencies from requirements.txt
+    [x] 3d: Add Drive persistence, CLI execution, and artifact packaging (.zip)
+    [x] 3e: Validate notebook with nbformat.validate and ast.parse
+    [x] 3f: Add "Training on Google Colab" section to README.md
 
 [ ] Phase 4: Truth-in-Reporting & UI Clarification
     [ ] 4a: Remove all hardcoded metric badges from app/dashboard/ml-insights/page.tsx
