@@ -77,14 +77,14 @@ Before making modifications, all referenced files were read and verified against
     [x] 5c: Train Random Forest strictly on training split; report test accuracy strictly on holdout
     [x] 5d: Save evaluation results to ml-service/reports/clinical_report.json and expose in UI
 
-[ ] Phase 6: Codebase & Git Cleanup
-    [ ] 6a: Move PROJECT_ANALYSIS.md, FIXES.md, DATASET_EXPANSION_GUIDE.md into docs/ and fix links
-    [ ] 6b: Convert Sympto-senese.png to WebP and update app/redesign.css reference
-    [ ] 6c: Remove unused scripts (test_api.py, build_symcat_801.py) with grep verification
-    [ ] 6d: Remove duplicate *.db line in .gitignore
-    [ ] 6e: Manage large binaries and legacy confidence stack cleanly
-    [ ] 6f: Ensure symptom-list.json single source of truth and verify parity
-    [ ] 6g: Fix README documentation drift (Python 3.14 alignment and architecture docs)
+[x] Phase 6: Codebase & Git Cleanup
+    [x] 6a: Move PROJECT_ANALYSIS.md, FIXES.md, DATASET_EXPANSION_GUIDE.md into docs/ and fix links
+    [x] 6b: Convert Sympto-senese.png to WebP and update app/redesign.css reference
+    [x] 6c: Remove unused scripts (test_api.py, build_symcat_801.py) with grep verification
+    [x] 6d: Remove duplicate *.db line in .gitignore
+    [x] 6e: Manage large binaries and legacy confidence stack cleanly
+    [x] 6f: Ensure symptom-list.json single source of truth and verify parity
+    [x] 6g: Fix README documentation drift (Python 3.14 alignment and architecture docs)
 
 [ ] Phase 7: Comprehensive Verification & Acceptance
     [ ] 7a: Run npm ci

@@ -64,4 +64,3 @@ ml-service/data/ddxplus/*
 !ml-service/data/ddxplus/release_evidences.json
 !ml-service/data/ddxplus/release_conditions.json
 !ml-service/data/ddxplus/CC-BY-4.0.txt
-*.db
