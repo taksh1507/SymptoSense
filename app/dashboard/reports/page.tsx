@@ -1,168 +1,145 @@
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import Link from 'next/link';
-import { FileText, ChevronRight } from 'lucide-react';
-import { Badge, Button, Notice, Section, Table, Skeleton, EmptyState } from '@/components/ui/primitives';
-import { useUiText } from '@/components/ui/use-ui-text';
-import AppShell from '@/app/components/AppShell';
-import { useApp } from '@/app/context/AppContext';
-
-interface Report {
-  id: string;
-  createdAt: string;
-  score: number;
-  urgency: string;
-  primaryCategory: string;
-  recommendation: string;
-}
-
+"use client";
+import { useState } from "react";
+import { FileText } from "lucide-react";
+import AppShell from "@/app/components/AppShell";
+import { useRecords, AssessmentRow } from "@/components/ui/assessment-records";
+import {
+  Button,
+  Field,
+  Notice,
+  Section,
+  Skeleton,
+  EmptyState,
+} from "@/components/ui/primitives";
+import { useUiText } from "@/components/ui/use-ui-text";
 export default function ReportsPage() {
-  const { language } = useApp();
-  const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
-
-  const { data: session } = useSession();
-  const text = useUiText();
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(0);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    if (!session) {
-      setLoading(false);
-      return;
-    }
-    let active = true;
-    setLoading(true);
-    setError('');
-    fetch('/api/sessions?page=' + page)
-      .then(r => {
-        if (!r.ok) throw new Error('Could not load reports.');
-        return r.json();
-      })
-      .then(data => {
-        if (active) {
-          setReports(data.sessions ?? []);
-          setTotal(data.total ?? 0);
-        }
-      })
-      .catch(e => {
-        if (active) setError(e.message);
-      })
-      .finally(() => {
-        if (active) setLoading(false);
-      });
-    return () => {
-      active = false;
-    };
-  }, [session, page]);
-
-  const t = {
-    title: { en: 'Past Reports', hi: 'पिछली रिपोर्ट', mr: 'जुने अहवाल' },
-    summary: { en: 'total assessments on record', hi: 'कुल मूल्यांकन रिकॉर्ड पर', mr: 'एकूण मूल्यांकन रेकॉर्डवर' },
-    noReports: { en: 'No reports yet', hi: 'अभी तक कोई रिपोर्ट नहीं', mr: 'अद्याप कोणतेही अहवाल नाहीत' },
-    noReportsDesc: {
-      en: 'Complete your first symptom assessment to see verified records here.',
-      hi: 'यहाँ सत्यापित रिकॉर्ड देखने के लिए अपना पहला लक्षण मूल्यांकन पूरा करें।',
-      mr: 'येथे पडताळलेले अहवाल पाहण्यासाठी पहिले मूल्यांकन पूर्ण करा.',
-    },
-  };
-
+  const [search, setSearch] = useState("");
+  const [subject, setSubject] = useState("all");
+  const { records, total, loading, error, retry } = useRecords(
+    page,
+    search,
+    subject,
+  );
+  const t = useUiText();
   return (
     <AppShell>
       <div className="page">
         <div className="content-wrapper stack-lg">
-          <header className="stack">
-            <p className="eyebrow">{text('Your health record', 'आपका स्वास्थ्य रिकॉर्ड', 'तुमची आरोग्य नोंद')}</p>
-            <h1>{t.title[langKey]}</h1>
-            <p className="muted">
-              {total} {t.summary[langKey]}
+          <header className="page-heading">
+            <h1>
+              {t(
+                "Your Assessment History",
+                "आपके मूल्यांकन का इतिहास",
+                "तुमच्या मूल्यांकनांचा इतिहास",
+              )}
+            </h1>
+            <p>
+              {t(
+                "View and manage your past symptom assessments.",
+                "अपने पिछले लक्षण मूल्यांकन देखें।",
+                "तुमची मागील लक्षण मूल्यांकने पहा.",
+              )}
             </p>
           </header>
-
-          {error && <Notice tone="warning" role="alert">{error}</Notice>}
-
-          {loading ? (
-            <div className="stack">
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
-              <Skeleton className="h-14 w-full" />
+          <div className="history-toolbar">
+            <div className="filter-tabs">
+              {[
+                ["all", t("All", "सभी", "सर्व")],
+                [
+                  "self",
+                  t("My Assessments", "मेरे मूल्यांकन", "माझी मूल्यांकने"),
+                ],
+                [
+                  "family",
+                  t(
+                    "Family Assessments",
+                    "परिवार के मूल्यांकन",
+                    "कुटुंबाची मूल्यांकने",
+                  ),
+                ],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  aria-pressed={subject === value}
+                  onClick={() => {
+                    setSubject(value);
+                    setPage(1);
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
             </div>
-          ) : reports.length === 0 ? (
+            <Field
+              className="history-search"
+              id="history-search"
+              label={t(
+                "Search assessments",
+                "मूल्यांकन खोजें",
+                "मूल्यांकने शोधा",
+              )}
+              type="search"
+              placeholder="Search by subject or assessment…"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+            />
+          </div>
+          {loading ? (
+            <Skeleton className="h-48" />
+          ) : error ? (
+            <Notice tone="warning" role="alert">
+              {error}
+              <Button variant="secondary" onClick={retry}>
+                Try again
+              </Button>
+            </Notice>
+          ) : records.length ? (
+            <Section>
+              <div>
+                {records.map((r) => (
+                  <AssessmentRow key={r.id} record={r} />
+                ))}
+              </div>
+            </Section>
+          ) : (
             <EmptyState
-              icon={<FileText className="w-8 h-8 text-teal-700" />}
-              title={t.noReports[langKey]}
-              description={t.noReportsDesc[langKey]}
-              action={
-                <Button onClick={() => (window.location.href = '/dashboard')}>
-                  {text('Start an assessment', 'मूल्यांकन शुरू करें', 'मूल्यांकन सुरू करा')}
-                </Button>
+              icon={<FileText />}
+              title={t(
+                "No assessments found",
+                "कोई मूल्यांकन नहीं मिला",
+                "मूल्यांकन सापडले नाही",
+              )}
+              description={
+                search
+                  ? "Try another search or filter."
+                  : "Complete an assessment to see your saved report here."
               }
             />
-          ) : (
-            <Section>
-              <Table className="reports-table" aria-label={t.title[langKey]}>
-                <thead>
-                  <tr>
-                    <th>{text('Assessment', 'मूल्यांकन', 'मूल्यांकन')}</th>
-                    <th>{text('Urgency', 'तात्कालिकता', 'तातडी')}</th>
-                    <th>{text('Score', 'स्कोर', 'स्कोअर')}</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.map(r => (
-                    <tr key={r.id}>
-                      <td>
-                        <Link className="table-report-link font-semibold text-teal-800 hover:text-teal-900" href={`/dashboard/reports/${r.id}`}>
-                          {new Date(r.createdAt).toLocaleDateString(
-                            langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US',
-                            { year: 'numeric', month: 'short', day: 'numeric' }
-                          )}
-                        </Link>
-                        <p className="text-xs text-slate-700 mt-0.5">{r.primaryCategory || text('General', 'सामान्य', 'सामान्य')}</p>
-                        <p className="muted text-xs mt-0.5">{r.recommendation}</p>
-                      </td>
-                      <td>
-                        <Badge urgency={r.urgency}>
-                          {r.urgency === 'High'
-                            ? text('High', 'उच्च', 'उच्च')
-                            : r.urgency === 'Medium'
-                            ? text('Medium', 'मध्यम', 'मध्यम')
-                            : text('Low', 'कम', 'कमी')}
-                        </Badge>
-                      </td>
-                      <td className="font-semibold text-slate-800">{r.score} / 100</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </Table>
-            </Section>
           )}
-
-          {total > 20 && (
-            <nav className="row between" aria-label={text('Report pages', 'रिपोर्ट के पृष्ठ', 'अहवालाची पाने')}>
-              <Button
-                variant="secondary"
-                disabled={page === 1 || loading}
-                onClick={() => setPage(p => p - 1)}
-              >
-                {text('Previous', 'पिछला', 'मागील')}
-              </Button>
-              <span className="text-xs text-slate-500 font-medium">
-                {text('Page', 'पृष्ठ', 'पान')} {page}
-              </span>
-              <Button
-                variant="secondary"
-                disabled={page * 20 >= total || loading}
-                onClick={() => setPage(p => p + 1)}
-              >
-                {text('Next', 'अगला', 'पुढील')}
-              </Button>
-            </nav>
-          )}
+          <nav className="row between" aria-label="Assessment pages">
+            <Button
+              variant="secondary"
+              disabled={page === 1 || loading}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span className="muted">
+              {total} assessments · Page {page} of{" "}
+              {Math.max(1, Math.ceil(total / 20))}
+            </span>
+            <Button
+              variant="secondary"
+              disabled={page * 20 >= total || loading}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </nav>
         </div>
       </div>
     </AppShell>

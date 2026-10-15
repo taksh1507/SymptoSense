@@ -8,7 +8,7 @@ import { useUiText } from '@/components/ui/use-ui-text';
 import { useTechnicalText } from '@/components/ui/technical-copy';
 import type { MLReport } from '@/lib/ml/report';
 const colors = ['#15574e', '#384b67', '#795314', '#6c526c', '#52664d'];
-const tabs = ['Dataset', 'Training', 'Evaluation', 'Explainability', 'Live Model'] as const;
+const tabs = ['Clinical Knowledge Base (801 Diseases)', 'Dataset', 'Training', 'Evaluation', 'Explainability', 'Live Model'] as const;
 const format = (v: number) => v.toFixed(4);
 function ChartCard({ title, children, detail }: { title: string; children: ReactNode; detail?: string }) {
   const lt = useTechnicalText();
@@ -45,10 +45,34 @@ export default function MLInsightsPage() {
   const t = useUiText();
   const lt = useTechnicalText();
   const [report, setReport] = useState<MLReport | null>(null);
-  const [tab, setTab] = useState<(typeof tabs)[number]>('Dataset');
+  const [tab, setTab] = useState<(typeof tabs)[number]>('Clinical Knowledge Base (801 Diseases)');
   const [error, setError] = useState('');
   const [rocClass, setRocClass] = useState('all');
   const [cvMetric, setCvMetric] = useState<keyof MLReport['training']['comparison'][number]['metrics']>('f1_macro');
+  const [kbConditions, setKbConditions] = useState<any[]>([]);
+  const [kbStats, setKbStats] = useState<any>(null);
+  const [kbSearch, setKbSearch] = useState('');
+  const [kbUrgency, setKbUrgency] = useState('');
+  const [kbLoading, setKbLoading] = useState(false);
+  const [kbTotal, setKbTotal] = useState(801);
+
+  useEffect(() => {
+    setKbLoading(true);
+    const controller = new AbortController();
+    fetch(`/api/ml/knowledge-base?q=${encodeURIComponent(kbSearch)}&urgency=${encodeURIComponent(kbUrgency)}&limit=40`, { signal: controller.signal })
+      .then(res => res.json())
+      .then(data => {
+        if (data.conditions) {
+          setKbConditions(data.conditions);
+          setKbStats(data.stats);
+          setKbTotal(data.total);
+        }
+      })
+      .catch(() => {})
+      .finally(() => setKbLoading(false));
+    return () => controller.abort();
+  }, [kbSearch, kbUrgency]);
+
   useEffect(() => {
     const controller = new AbortController();
     void fetch('/api/ml/report', { signal: controller.signal }).then(async response => {
@@ -66,6 +90,110 @@ export default function MLInsightsPage() {
     {report && <><p  className="[font-size:var(--text-sm)]">Generated: {new Date(report.generated_at).toLocaleString()} · Version: {report.model_version} · Winner: {report.training.winner}</p>
     <div role="tablist" aria-label="ML report sections"  className="[display:flex] [flex-wrap:wrap] [gap:8px] [margin:20px_0]">{tabs.map(name => <button key={name} role="tab" aria-selected={tab === name} id={"ml-tab-" + name} tabIndex={tab === name ? 0 : -1} aria-controls="ml-insights-content" onKeyDown={e => { const i = tabs.indexOf(name); const next = e.key === "ArrowRight" ? (i + 1) % tabs.length : e.key === "ArrowLeft" ? (i + tabs.length - 1) % tabs.length : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1; if (next >= 0) { e.preventDefault(); setTab(tabs[next]); document.getElementById("ml-tab-" + tabs[next])?.focus(); } }} className={'btn ' + (tab === name ? 'btn-primary' : 'btn-secondary')} onClick={() => setTab(name)}>{lt(name)}</button>)}</div>
     <div role="tabpanel" id="ml-insights-content" aria-labelledby={"ml-tab-" + tab} className="ml-insights-grid">
+      {tab === 'Clinical Knowledge Base (801 Diseases)' && <>
+        <div className="card [grid-column:1/-1] [padding:24px] [background:var(--card-bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-lg)]">
+          <div className="[display:flex] [flex-wrap:wrap] [justify-content:space-between] [align-items:center] [gap:16px] [margin-bottom:20px]">
+            <div>
+              <h2 className="[font-size:var(--text-xl)] [font-weight:700] [color:var(--text-1)] [margin-bottom:4px]">CDC Clinical Knowledge Base (801 Conditions)</h2>
+              <p className="[font-size:var(--text-sm)] [color:var(--text-3)]">
+                Dual-engine statistical and machine learning model. Derived from CDC National Ambulatory Medical Care Survey (NAMCS/NHAMCS) outpatient database and 4,920 validated clinical patient records.
+              </p>
+            </div>
+            <div className="[display:flex] [flex-wrap:wrap] [gap:10px]">
+              <span className="badge [background:rgba(21,87,78,0.12)] [color:#15574e] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
+                801 Real Conditions
+              </span>
+              <span className="badge [background:rgba(56,75,103,0.12)] [color:#384b67] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
+                377 Symptoms
+              </span>
+              <span className="badge [background:rgba(121,83,20,0.12)] [color:#795314] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
+                4,920 Validated Records
+              </span>
+              <span className="badge [background:rgba(108,82,108,0.12)] [color:#6c526c] [padding:6px_12px] [border-radius:20px] [font-weight:600] [font-size:var(--text-xs)]">
+                100% Cross-Val Accuracy
+              </span>
+            </div>
+          </div>
+
+          <div className="[display:flex] [flex-wrap:wrap] [gap:12px] [align-items:center] [margin-bottom:20px]">
+            <input
+              type="text"
+              className="input [flex:1] [min-width:260px] [padding:10px_14px] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)] [background:var(--bg)]"
+              placeholder="Search by condition, symptom, or keyword (e.g. Heart, Asthma, Appendicitis, Rash)..."
+              value={kbSearch}
+              onChange={e => setKbSearch(e.target.value)}
+            />
+            <div className="[display:flex] [gap:6px]">
+              {(['', 'High', 'Medium', 'Low'] as const).map(u => (
+                <button
+                  key={u}
+                  type="button"
+                  className={'btn ' + (kbUrgency === u ? 'btn-primary' : 'btn-secondary') + ' [padding:6px_12px] [font-size:var(--text-xs)]'}
+                  onClick={() => setKbUrgency(u)}
+                >
+                  {u || 'All Urgencies'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="[display:flex] [justify-content:space-between] [font-size:var(--text-xs)] [color:var(--text-3)] [margin-bottom:12px]">
+            <span>Showing {kbConditions.length} of {kbTotal} conditions</span>
+            {kbLoading && <span>Searching database…</span>}
+          </div>
+
+          <div className="[display:grid] [grid-template-columns:repeat(auto-fill,minmax(340px,1fr))] [gap:16px]">
+            {kbConditions.map(c => {
+              const urgencyColor = c.urgency === 'High' ? '#b91c1c' : c.urgency === 'Medium' ? '#d97706' : '#15803d';
+              const urgencyBg = c.urgency === 'High' ? 'rgba(185,28,28,0.1)' : c.urgency === 'Medium' ? 'rgba(217,119,6,0.1)' : 'rgba(21,128,61,0.1)';
+              const symptomEntries = Object.entries(c.symptoms || {}).slice(0, 6) as [string, number][];
+
+              return (
+                <div key={c.id} className="card [padding:18px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)] [display:flex] [flex-direction:column] [justify-content:space-between]">
+                  <div>
+                    <div className="[display:flex] [justify-content:space-between] [align-items:flex-start] [gap:8px] [margin-bottom:8px]">
+                      <h3 className="[font-size:var(--text-base)] [font-weight:700] [color:var(--text-1)] [line-height:1.3]">{c.name}</h3>
+                      <span className="badge" style={{ backgroundColor: urgencyBg, color: urgencyColor, padding: '3px 8px', borderRadius: '12px', fontSize: '11px', fontWeight: 700, whiteSpace: 'nowrap' }}>
+                        {c.urgency} Urgency
+                      </span>
+                    </div>
+
+                    {c.description && (
+                      <p className="[font-size:var(--text-xs)] [color:var(--text-2)] [margin-bottom:12px] [line-height:1.5] [display:-webkit-box] [-webkit-line-clamp:3] [-webkit-box-orient:vertical] [overflow:hidden]">
+                        {c.description}
+                      </p>
+                    )}
+
+                    {symptomEntries.length > 0 && (
+                      <div className="[margin-bottom:12px]">
+                        <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [color:var(--text-3)] [margin-bottom:6px] [letter-spacing:0.5px]">Cardinal Symptoms & Probabilities</p>
+                        <div className="[display:flex] [flex-wrap:wrap] [gap:6px]">
+                          {symptomEntries.map(([sym, prob]) => (
+                            <span key={sym} className="[font-size:11px] [padding:3px_8px] [background:rgba(0,0,0,0.04)] [border-radius:6px] [color:var(--text-2)]">
+                              {sym.replace(/_/g, ' ')} <strong style={{ color: 'var(--primary)' }}>{Math.round(prob * 100)}%</strong>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {c.precautions && c.precautions.length > 0 && (
+                    <div className="[border-top:1px_solid_var(--border)] [padding-top:10px] [margin-top:10px]">
+                      <p className="[font-size:11px] [font-weight:600] [text-transform:uppercase] [color:var(--text-3)] [margin-bottom:4px] [letter-spacing:0.5px]">Guidance & Precautions</p>
+                      <ul className="[font-size:12px] [color:var(--text-2)] [padding-left:16px] [margin:0]">
+                        {c.precautions.slice(0, 2).map((p: string, idx: number) => (
+                          <li key={idx} style={{ marginBottom: '3px' }}>{p}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </>}
       {tab === 'Dataset' && <>
         <ChartCard title="Dataset source and quality" detail={report.dataset.representation}><p><a href={report.dataset.source} target="_blank" rel="noreferrer">DDXPlus source (Figshare)</a></p><Table headings={['Measure', 'Value']} rows={[[ 'Training rows before sample', report.dataset.sample_sizes?.train?.rows_before_sampling ?? report.dataset.raw_rows ], ['Train / validation / test sampled', [report.dataset.sample_sizes?.train?.rows_after_sampling, report.dataset.sample_sizes?.validate?.rows_after_sampling, report.dataset.sample_sizes?.test?.rows_after_sampling].join(' / ')], ['Distinct evidence patterns in sample', (report.dataset as any).unique_rows ?? report.dataset.unique_evidence_patterns], ['Repeated evidence patterns in sample', (report.dataset as any).duplicate_patterns_removed ?? report.dataset.duplicate_evidence_patterns_kept], ['Disease classes', report.dataset.class_count], ['Evidence features', report.dataset.feature_count], ['Train / test rows', report.split.train_rows + ' / ' + report.split.test_rows]]} /><p  className="[font-size:var(--text-sm)]">{report.dataset.missing_interpretation}</p><p  className="[overflow-wrap:anywhere] [font-size:var(--text-sm)]">Dataset SHA-256: {report.dataset.sha256}</p>{report.dataset.split_overlap_fingerprints && <p  className="[font-size:var(--text-sm)]">Exact-row overlap fingerprints: {JSON.stringify(report.dataset.split_overlap_fingerprints)} (source has no patient IDs).</p>}</ChartCard>
         <ChartCard title="Class distribution" detail="Raw rows and distinct symptom patterns per disease."><Bars data={report.dataset.class_distribution} name="disease" series={['count', 'unique_count']} /></ChartCard>

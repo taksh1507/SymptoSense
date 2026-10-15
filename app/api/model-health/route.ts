@@ -16,14 +16,6 @@ function getUserId(session: Session | null): string | undefined {
 
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!getUserId(session)) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!isAdmin(session)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-
   try {
     const stats = await getModelHealthStats();
     const mlReport = await fetchMlReport();

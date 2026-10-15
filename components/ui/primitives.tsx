@@ -32,7 +32,19 @@ export function Button({
       {...props}
     >
       {loading ? (
-        <span className="inline-block w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin mr-2" />
+        <span
+          style={{
+            display: 'inline-block',
+            width: '15px',
+            height: '15px',
+            border: '2px solid currentColor',
+            borderTopColor: 'transparent',
+            borderRadius: '50%',
+            animation: 'spin 0.7s linear infinite',
+            flexShrink: 0,
+          }}
+          aria-hidden="true"
+        />
       ) : null}
       {children}
     </button>
@@ -56,25 +68,33 @@ export function Field({
 }) {
   return (
     <label className={`field ${className}`} htmlFor={id}>
-      <span className="flex items-center justify-between">
+      <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <span>{label}</span>
-        {hint && <span className="text-xs font-normal text-slate-500">{hint}</span>}
+        {hint && <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)' }}>{hint}</span>}
       </span>
-      <div className="relative flex items-center">
+      <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
         <input
           id={id}
-          className={`input ${suffixAction ? '!pr-10' : ''} ${error ? 'border-red-500 focus:ring-red-500' : ''}`}
+          className={`input${suffixAction ? ' input-with-suffix' : ''}${error ? ' input-error' : ''}`}
           aria-invalid={!!error}
           aria-describedby={error ? `${id}-error` : undefined}
           {...props}
         />
         {suffixAction && (
-          <div className="absolute right-2.5 flex items-center">
+          <div style={{ position: 'absolute', right: '4px', display: 'flex', alignItems: 'center' }}>
             {suffixAction}
           </div>
         )}
       </div>
-      {error && <span id={`${id}-error`} className="text-xs text-red-600 font-medium" role="alert">{error}</span>}
+      {error && (
+        <span
+          id={`${id}-error`}
+          style={{ fontSize: 'var(--text-xs)', color: 'var(--urgency-high)', fontWeight: 600 }}
+          role="alert"
+        >
+          {error}
+        </span>
+      )}
     </label>
   );
 }
@@ -88,7 +108,7 @@ export function Notice({
   tone?: 'info' | 'warning' | 'danger' | 'success';
 }) {
   const toneClass = {
-    info: 'notice-info',
+    info: '',
     warning: 'notice-warning',
     danger: 'notice-danger',
     success: 'notice-success',
@@ -152,14 +172,14 @@ export function Badge({
   children?: ReactNode;
   className?: string;
 }) {
-  const level = urgency.toLowerCase();
-  const validLevel = ['low', 'medium', 'high'].includes(level) ? level : 'low';
+  const level = urgency?.toLowerCase();
+  const validLevel = ['low', 'medium', 'high'].includes(level) ? level : 'unknown';
   return (
     <span
       className={`badge badge-${validLevel} ${className}`}
       aria-label={typeof children === 'string' ? children : urgency}
     >
-      {children || urgency}
+      {children || urgency || 'Not available'}
     </span>
   );
 }
@@ -170,7 +190,7 @@ export function Skeleton({
 }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={`animate-pulse bg-slate-200 rounded ${className}`}
+      className={`skeleton ${className}`}
       aria-hidden="true"
       {...props}
     />
@@ -191,11 +211,56 @@ export function EmptyState({
   className?: string;
 }) {
   return (
-    <div className={`p-8 text-center grid place-items-center gap-3 bg-white border border-slate-200 rounded-xl shadow-xs ${className}`}>
-      {icon && <div className="text-slate-400 p-3 bg-slate-50 rounded-full">{icon}</div>}
-      <h3 className="text-lg font-bold text-slate-800">{title}</h3>
-      <p className="text-sm text-slate-500 max-w-md">{description}</p>
-      {action && <div className="mt-2">{action}</div>}
+    <div
+      className={`empty-state ${className}`}
+      style={{
+        padding: '48px 32px',
+        textAlign: 'center',
+        display: 'grid',
+        placeItems: 'center',
+        gap: '16px',
+        background: 'var(--bg-surface)',
+        border: '1px solid var(--border-subtle)',
+        borderRadius: 'var(--radius-lg)',
+        boxShadow: 'var(--shadow-xs)',
+      }}
+    >
+      {icon && (
+        <div
+          style={{
+            color: 'var(--text-muted)',
+            padding: '14px',
+            background: 'var(--bg-canvas)',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {icon}
+        </div>
+      )}
+      <h3
+        style={{
+          fontSize: 'var(--text-lg)',
+          fontWeight: 700,
+          color: 'var(--text-heading)',
+          margin: 0,
+        }}
+      >
+        {title}
+      </h3>
+      <p
+        style={{
+          fontSize: 'var(--text-sm)',
+          color: 'var(--text-secondary)',
+          maxWidth: '380px',
+          margin: 0,
+        }}
+      >
+        {description}
+      </p>
+      {action && <div style={{ marginTop: '8px' }}>{action}</div>}
     </div>
   );
 }

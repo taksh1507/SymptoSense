@@ -139,6 +139,22 @@ try {
     assert.equal(db.prepare('SELECT COUNT(*) n FROM PredictionLog WHERE mlAvailable=0 AND predictedConfidence IS NULL').get().n, 1);
     for (const row of db.prepare('SELECT features FROM PredictionLog').all()) assert.equal(Object.keys(JSON.parse(row.features)).length, 18);
   } finally { db.close(); }
+  const family = await alice('/api/sessions', 'POST', { personName: 'Family test fixture', isSelf: false, relation: 'Parent', gender: 'Female' });
+  await alice('/api/sessions', 'PATCH', { sessionId: family.sessionId, assessment: low });
+  assert.equal((await alice('/api/sessions?subject=family')).total, 1);
+  assert.equal((await alice('/api/sessions?search=Family%20test')).total, 1);
+  const members = await alice('/api/sessions?view=family');
+  assert.equal(members.members[0].assessmentCount, 1);
+  assert.equal((await bob('/api/sessions?view=family')).members.length, 0);
+  if (process.argv.includes('--visual')) {
+    const visualMl = launch(python, ['-X', 'utf8', 'ml-service/server.py']);
+    await ready(mlUrl + '/health', visualMl);
+    await new Promise((resolve, reject) => {
+      const child = spawn(process.execPath, ['scripts/visual-check.cjs'], { cwd: root, env: { ...env, UI_URL: url, UI_AUTH_CHECK: '1' }, windowsHide: true, stdio: 'inherit' });
+      child.on('exit', code => code === 0 ? resolve() : reject(new Error('Visual checks failed: ' + code)));
+      child.on('error', reject);
+    });
+  }
   console.log('PASS: real login, ownership, server scoring, persistence, full payload, localized emergency, linked inference, idempotency, outcomes, admin denial, validation, preferences model outage, disease inference, SHAP, extraction fallback, report authorization and ML Insights route.');
 } catch (error) { console.error(logs); throw error; }
 finally { for (const child of children) stop(child); await new Promise(r => redis.close(r)); }

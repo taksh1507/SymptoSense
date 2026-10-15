@@ -55,19 +55,29 @@ export async function fetchMlReport(timeoutMs = 5000): Promise<unknown | null> {
     const t = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const token = process.env.RETRAIN_TOKEN;
-      if (!token) return null;
-      const res = await fetch(`${getMlServerUrl()}/api/retrain/report`, {
-        headers: { "X-Retrain-Token": token },
-        signal: controller.signal,
-      });
-      if (!res.ok) return null;
-      return await res.json();
+      if (token) {
+        const res = await fetch(`${getMlServerUrl()}/api/retrain/report`, {
+          headers: { "X-Retrain-Token": token },
+          signal: controller.signal,
+        });
+        if (res.ok) return await res.json();
+      }
     } finally {
       clearTimeout(t);
     }
-  } catch {
-    return null;
-  }
+  } catch {}
+
+  // Fallback to local file if available
+  try {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const reportPath = path.join(process.cwd(), "ml-service", "retrain_report.json");
+    if (fs.existsSync(reportPath)) {
+      return JSON.parse(fs.readFileSync(reportPath, "utf-8"));
+    }
+  } catch {}
+
+  return null;
 }
 
 export async function triggerMlRetrain(): Promise<{ ok: boolean; detail?: string }> {

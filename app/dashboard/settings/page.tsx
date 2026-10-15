@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Button, Field, Notice, Section } from '@/components/ui/primitives';
 import AppShell from '@/app/components/AppShell';
 import { useApp, type Language } from '@/app/context/AppContext';
-import { Shield, Bell, User, Globe, Info, LogOut } from 'lucide-react';
+import { Shield, Bell, User, Globe, LogOut } from 'lucide-react';
 
 interface Strings {
   title: string;
@@ -105,7 +105,7 @@ const STRINGS: Record<'en' | 'hi' | 'mr', Strings> = {
 };
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { language, setLanguage } = useApp();
   const langKey = language === 'Hindi' ? 'hi' : language === 'Marathi' ? 'mr' : 'en';
   const t = STRINGS[langKey];
@@ -126,21 +126,23 @@ export default function SettingsPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [activeTab, setActiveTab] = useState('profile');
 
   useEffect(() => {
+    if (status !== 'authenticated') return;
     fetch('/api/profile')
       .then(async r =>
         r.ok
           ? ((await r.json()) as { phone?: string; emailReminders?: boolean; whatsappReminders?: boolean })
-          : {}
+          : Promise.reject(new Error('Could not load your preferences. Please reload before saving.'))
       )
       .then(p => {
         if (p && typeof p.phone === 'string') setPhone(p.phone);
         setEmailReminders(!!p.emailReminders);
         setWhatsappReminders(!!p.whatsappReminders);
       })
-      .catch(() => {});
-  }, []);
+      .catch(e => setError(e.message));
+  }, [status]);
 
   const savePhone = async () => {
     const digits = phone.replace(/[\s().-]/g, '');
@@ -174,14 +176,14 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <div className="page">
-        <div className="report">
+        <div className="content-wrapper stack-lg">
           <header className="stack">
-            <p className="eyebrow">{t.title}</p>
             <h1>{t.title}</h1>
             <p className="muted">{t.sub}</p>
           </header>
 
-          <Section title={t.profile}>
+          <div className="settings-layout"><nav className="settings-nav" role="tablist" aria-label={t.title}>{[['profile',User,t.profile],['language',Globe,t.language],['notifications',Bell,t.notifications],['privacy',Shield,t.privacy],['account',LogOut,t.account]].map(([key,Icon,label])=>{const Glyph=Icon as typeof User;return <button key={String(key)} id={'tab-'+key} role="tab" aria-selected={activeTab===key} aria-controls={'panel-'+key} onClick={()=>setActiveTab(String(key))}><Glyph/>{String(label)}</button>;})}</nav><div className="settings-content">
+          <Section title={t.profile} hidden={activeTab!=='profile'} role="tabpanel" id="panel-profile" aria-labelledby="tab-profile">
             <div className="account-summary">
               {userImage ? (
                 <Image src={userImage} alt="" width={48} height={48} unoptimized />
@@ -203,15 +205,16 @@ export default function SettingsPage() {
                 <dd>{userEmail}</dd>
               </div>
             </dl>
+            <p className="muted">Your account name and email are shown here. Profile editing and photo uploads are not currently supported.</p>
           </Section>
 
-          <Section title={t.language}>
+          <Section title={t.language} hidden={activeTab!=='language'} role="tabpanel" id="panel-language" aria-labelledby="tab-language">
             <p className="text-xs text-slate-600 mb-2">
               {langKey === 'hi'
                 ? 'मूल्यांकन और इंटरफेस के लिए अपनी पसंदीदा भाषा चुनें:'
                 : langKey === 'mr'
                 ? 'मूल्यांकन आणि इंटरफेससाठी तुमची पसंतीची भाषा निवडा:'
-                : 'Choose your preferred language for questionnaires, notifications, and reports:'}
+                : 'Choose your preferred language for the interface and questionnaires:'}
             </p>
             <div className="flex gap-2 flex-wrap">
               {(['English', 'Hindi', 'Marathi'] as Language[]).map(l => (
@@ -229,11 +232,11 @@ export default function SettingsPage() {
                 ? 'देवनागरी लिपि के लिए विशेष रूप से अनुकूलित टाइपोग्राफी।'
                 : langKey === 'mr'
                 ? 'देवनागरी लिपीसाठी विशेषतः अनुकूलित टायपोग्राफी.'
-                : 'Typography and line-heights are dynamically scaled for Noto Sans Devanagari.'}
+                : 'Your language preference is remembered on this browser.'}
             </p>
           </Section>
 
-          <Section title={t.notifications}>
+          <Section title={t.notifications} hidden={activeTab!=='notifications'} role="tabpanel" id="panel-notifications" aria-labelledby="tab-notifications">
             <p>{t.notifSub}</p>
             <div className="stack">
               <label className="checkbox-field flex items-center gap-3 cursor-pointer py-1">
@@ -312,20 +315,21 @@ export default function SettingsPage() {
             )}
           </Section>
 
-          <Section title={t.privacy}>
+          <Section title={t.privacy} hidden={activeTab!=='privacy'} role="tabpanel" id="panel-privacy" aria-labelledby="tab-privacy">
             <dl className="facts">
               <div>
-                <dt>{langKey === 'hi' ? 'डेटा एन्क्रिप्शन' : langKey === 'mr' ? 'डेटा एन्क्रिप्शन' : 'Data Encryption'}</dt>
-                <dd>{langKey === 'hi' ? 'ट्रांजिट और रेस्ट में सुरक्षित' : langKey === 'mr' ? 'ट्रान्झिट आणि रेस्टमध्ये सुरक्षित' : 'TLS 1.3 in transit, scoped session isolation'}</dd>
+                <dt>{langKey === 'hi' ? 'सहेजी रिपोर्ट' : langKey === 'mr' ? 'जतन केलेले अहवाल' : 'Saved reports'}</dt>
+                <dd>{langKey === 'hi' ? 'अपने खाते से उपलब्ध' : langKey === 'mr' ? 'तुमच्या खात्यात उपलब्ध' : 'Available through your authenticated account'}</dd>
               </div>
               <div>
                 <dt>{langKey === 'hi' ? 'तृतीय पक्ष शेयरिंग' : langKey === 'mr' ? 'तृतीय पक्ष शेअरिंग' : 'Third-Party Sharing'}</dt>
-                <dd>{langKey === 'hi' ? 'कोई विज्ञापनदाता या डेटा ब्रोकर शेयरिंग नहीं' : langKey === 'mr' ? 'जाहिरातदार किंवा डेटा ब्रोकर शेअरिंग नाही' : 'Zero third-party monetization or data sale'}</dd>
+                <dd>{langKey === 'hi' ? 'कॉन्फ़िगर होने पर AI और आवाज़ सेवाएँ इस्तेमाल होती हैं।' : langKey === 'mr' ? 'कॉन्फिगर केल्यावर AI आणि आवाज सेवा वापरल्या जातात.' : 'Configured AI and voice services process relevant assessment inputs. See the privacy information for details.'}</dd>
               </div>
             </dl>
+            <a href="/privacy">Read privacy information</a>
           </Section>
 
-          <Section title={t.about}>
+          <Section title={t.about} hidden={activeTab!=='account'}>
             <dl className="facts">
               <div>
                 <dt>{t.appVersion}</dt>
@@ -333,19 +337,20 @@ export default function SettingsPage() {
               </div>
               <div>
                 <dt>{langKey === 'hi' ? 'मॉडल आधार' : langKey === 'mr' ? 'मॉडेल आधार' : 'Inference Core'}</dt>
-                <dd>FastAPI ML Engine (DDXPlus Evidence Model v2.1)</dd>
+                <dd>DDXPlus research model · model availability varies</dd>
               </div>
             </dl>
           </Section>
 
-          <Section title={t.account}>
+          <Section title={t.account} hidden={activeTab!=='account'} role="tabpanel" id="panel-account" aria-labelledby="tab-account">
             <div>
-              <Button variant="danger" onClick={() => signOut({ callbackUrl: '/' })}>
+              <Button variant="danger" onClick={() => signOut({ callbackUrl: '/auth/login' })}>
                 <LogOut className="w-4 h-4 mr-2" aria-hidden="true" />
                 {t.signOut}
               </Button>
             </div>
           </Section>
+          </div></div>
         </div>
       </div>
     </AppShell>

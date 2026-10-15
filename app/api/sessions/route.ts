@@ -77,7 +77,14 @@ export async function GET(req: NextRequest) {
     if (id) { const found = await prisma.testSession.findFirst({ where: { id, userId } }); return found ? NextResponse.json(found) : NextResponse.json({ error: 'Not found' }, { status: 404 }); }
     const page = Math.floor(Math.max(1, Math.min(100000, Number(req.nextUrl.searchParams.get('page') ?? 1) || 1)));
     const take = 20;
-    const [sessions, total] = await prisma.$transaction([prisma.testSession.findMany({ where: { userId, completed: true }, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * take, take }), prisma.testSession.count({ where: { userId, completed: true } })]);
+    const search = (req.nextUrl.searchParams.get('search') ?? '').trim().slice(0,100);
+    const subject = req.nextUrl.searchParams.get('subject');
+    const where = { userId, completed: true, ...(subject === 'self' ? { isSelf: true } : subject === 'family' ? { isSelf: false } : {}), ...(search ? { OR: [{ personName: { contains: search } }, { primaryCategory: { contains: search } }] } : {}) };
+    if (req.nextUrl.searchParams.get('view') === 'family') {
+      const members = await prisma.testSession.groupBy({ by: ['personName','relation','gender'], where: { userId, completed: true, isSelf: false }, _count: { id: true }, _max: { createdAt: true }, orderBy: { _max: { createdAt: 'desc' } } });
+      return NextResponse.json({ members: members.map(m => ({ name: m.personName, relation: m.relation, gender: m.gender, assessmentCount: m._count.id, lastAssessment: m._max.createdAt })) });
+    }
+    const [sessions, total] = await prisma.$transaction([prisma.testSession.findMany({ where, orderBy: [{ createdAt: 'desc' }, { id: 'desc' }], skip: (page - 1) * take, take }), prisma.testSession.count({ where })]);
     return NextResponse.json({ sessions, total, page, pageSize: take });
   } catch (e) { return errorResponse(e); }
 }

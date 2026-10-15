@@ -7,10 +7,11 @@ import { DiseaseResults } from '@/components/results/DiseaseResults';
 import { generateRiskExplanation, generateRecommendations } from '@/lib/report/reasoningEngine';
 import { Badge, Button, Notice, Section } from '@/components/ui/primitives';
 import { useUiText } from '@/components/ui/use-ui-text';
-import { Phone, Printer, HelpCircle } from 'lucide-react';
+import { Phone, Printer, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 import type { Urgency } from '@/lib/ai-engine/scoring/types';
 
-export default function ResultsPage() {
+export default function ResultsPage({ onRestart }: { onRestart?: () => void } = {}) {
   const {
     language,
     riskScore,
@@ -81,9 +82,10 @@ export default function ResultsPage() {
 
   return (
     <div className="page">
-      <div className="report" lang={langKey}>
+      <div className="report results-layout" lang={langKey}>
+        <div className="row between no-print"><Link href="/dashboard" className="btn btn-secondary"><ArrowLeft/>Back to Dashboard</Link><Button variant="secondary" onClick={()=>window.print()}><Printer/>Print / save PDF</Button></div>
         <Notice
-          tone={riskLevel === 'High' ? 'danger' : riskLevel === 'Medium' ? 'warning' : 'info'}
+          tone={riskLevel === 'High' ? 'danger' : riskLevel === 'Medium' ? 'warning' : 'success'}
           role={riskLevel === 'High' ? 'alert' : 'status'}
         >
           <h2>{urgencyText}</h2>
@@ -121,7 +123,7 @@ export default function ResultsPage() {
               <Printer className="w-4 h-4" aria-hidden="true" />
               <span>{t('Print report', 'प्रिंट करें', 'प्रिंट करा')}</span>
             </Button>
-            <Button variant="secondary" onClick={() => setTriageScreen('language')}>
+            <Button variant="secondary" onClick={onRestart || (() => setTriageScreen('language'))}>
               {t('Start again', 'फिर से शुरू करें', 'पुन्हा सुरू करा')}
             </Button>
           </div>
@@ -144,7 +146,7 @@ export default function ResultsPage() {
           </p>
         </Notice>
 
-        <DiseaseResults result={diseasePrediction} status={diseaseStatus} error={diseaseError} />
+        <div className="results-columns"><div><DiseaseResults result={diseasePrediction} status={diseaseStatus} error={diseaseError} /></div><div className="stack results-side"><Section title={t('Your Symptoms','आपके लक्षण','तुमची लक्षणे')}><ul className="reported-symptoms">{[assessmentPayload?.primarySymptom,...(assessmentPayload?.additionalSymptoms || [])].filter(Boolean).map((s,i)=><li key={i}>{s!.replaceAll('_',' ')}</li>)}</ul></Section><Section title={t('Recommended Next Steps','अगले कदम','पुढील पावले')}><strong>{displayPrimary}</strong><ol className="plain-list">{displaySteps.map((s,i)=><li key={i}>{s}</li>)}</ol></Section></div></div>
 
         {(displaySummary || displayFactors.length > 0) && (
           <Section title={t('Why this urgency level?', 'यह तात्कालिकता क्यों?', 'ही तातडीची पातळी का?')}>

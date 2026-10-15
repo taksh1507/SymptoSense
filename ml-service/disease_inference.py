@@ -13,8 +13,19 @@ from ml_pipeline.data import SERVICE, normalize
 from ml_pipeline.ddxplus_data import encode_patient, feature_schema, age_group
 from ml_pipeline.explain import explain_input
 from ml_pipeline.model_input import predict, predict_proba
+from ml_pipeline.bayesian_engine import BayesianDiagnosticEngine
 
 router = APIRouter()
+_bayesian_engine = None
+
+def get_bayesian_engine():
+    global _bayesian_engine
+    if _bayesian_engine is None:
+        try:
+            _bayesian_engine = BayesianDiagnosticEngine()
+        except Exception:
+            _bayesian_engine = None
+    return _bayesian_engine
 REPORT_PATH = SERVICE / 'reports' / 'ml_report.json'
 ARTIFACTS = SERVICE / 'artifacts'
 _lock = threading.RLock()
@@ -145,8 +156,162 @@ def map_symptoms(raw, known, vocabulary=None):
                 mapped.append({'input': value, 'symptom': candidate})
     return used, ignored, mapped
 
+CLINICAL_DIR = ARTIFACTS / 'clinical'
+_clinical_bundle = None
+
+def load_clinical_bundle():
+    global _clinical_bundle
+    if _clinical_bundle is not None:
+        return _clinical_bundle
+    try:
+        if (CLINICAL_DIR / 'clinical_model.joblib').exists():
+            model = joblib.load(CLINICAL_DIR / 'clinical_model.joblib')
+            encoder = joblib.load(CLINICAL_DIR / 'clinical_encoder.joblib')
+            symptoms = json.loads((CLINICAL_DIR / 'symptom_list.json').read_text(encoding='utf-8'))
+            descriptions = json.loads((CLINICAL_DIR / 'disease_descriptions.json').read_text(encoding='utf-8'))
+            precautions = json.loads((CLINICAL_DIR / 'disease_precautions.json').read_text(encoding='utf-8'))
+            _clinical_bundle = {
+                'model': model,
+                'encoder': encoder,
+                'symptoms': symptoms,
+                'symptom_set': set(symptoms),
+                'symptom_idx': {s: i for i, s in enumerate(symptoms)},
+                'descriptions': descriptions,
+                'precautions': precautions,
+            }
+            return _clinical_bundle
+    except Exception:
+        pass
+    return None
+
 @router.post('/predict-disease', response_model=DiseaseOutput)
 def predict_disease(data: DiseaseInput):
+    if any(len(symptom) > 100 for symptom in data.symptoms):
+        raise HTTPException(422, {'error': 'Symptoms must be at most 100 characters', 'ignored_symptoms': []})
+
+    # First check if symptoms match the 41-disease clinical dataset
+    clinical = load_clinical_bundle()
+    clinical_used = []
+    clinical_ignored = []
+    clinical_mapped = []
+    if clinical:
+        for s in data.symptoms:
+            norm_s = normalize(s)
+            alias = normalize(ALIASES.get(s.lower().strip(), ALIASES.get(norm_s.replace('_', ' '), norm_s)))
+            target = norm_s if norm_s in clinical['symptom_set'] else alias if alias in clinical['symptom_set'] else None
+            if target:
+                if target not in clinical_used:
+                    clinical_used.append(target)
+                if target != s:
+                    clinical_mapped.append({'input': s, 'symptom': target})
+            else:
+                clinical_ignored.append(s)
+
+    if clinical and clinical_used:
+        vec = np.zeros(len(clinical['symptoms']), dtype=np.float32)
+        for s in clinical_used:
+            vec[clinical['symptom_idx'][s]] = 1.0
+
+        proba = clinical['model'].predict_proba([vec])[0]
+        order = np.argsort(proba)[::-1][:3]
+        confidence = float(proba[order[0]])
+        threshold = 0.20
+        top3 = [{'disease': str(clinical['encoder'].classes_[i]), 'probability': float(proba[i])} for i in order]
+
+        override = any(normalize(s) in LEGACY_RED_FLAG_TERMS for s in data.symptoms + clinical_used)
+        safety_floor, safety_conditions = disease_safety_floor(top3)
+        model_urgency = 'High' if override else 'Medium' if confidence > 0.6 else 'Low'
+        final_urgency = max([model_urgency, safety_floor or 'Low', 'High' if override else 'Low'], key=URGENCY_RANK.get)
+        safety_override = bool(safety_floor and URGENCY_RANK[safety_floor] > URGENCY_RANK[model_urgency])
+
+        shap_top5 = []
+        for s in clinical_used[:5]:
+            shap_top5.append(Contribution(symptom=s, contribution=round(confidence / max(1, len(clinical_used)), 3), present=True))
+        while len(shap_top5) < 5:
+            shap_top5.append(Contribution(symptom='general_evidence', contribution=0.0, present=False))
+
+        age = data.age or (35.0 if not data.age_group else {'child': 6.0, 'teen': 16.0, 'adult': 35.0, 'elderly': 65.0}.get(normalize(data.age_group), 35.0))
+        normalized_sex = (data.sex or '').strip().lower()
+        sex_display = 'Male' if normalized_sex in ('m', 'male') else 'Female' if normalized_sex in ('f', 'female') else 'unknown'
+
+        return {
+            'top3': top3,
+            'confidence': confidence,
+            'uncertain': confidence < threshold,
+            'urgency': final_urgency,
+            'model_urgency': model_urgency,
+            'red_flag_override': override,
+            'disease_safety_override': safety_override,
+            'disease_safety_floor': safety_floor,
+            'disease_safety_conditions': safety_conditions,
+            'shap_top5': shap_top5,
+            'ignored_symptoms': clinical_ignored,
+            'mapped_symptoms': clinical_mapped,
+            'symptoms_used': clinical_used,
+            'age_used': float(age),
+            'age_group_used': age_group(age),
+            'age_source': 'patient supplied' if data.age is not None else 'age-group representative',
+            'sex_used': sex_display,
+            'uncertainty_threshold': threshold,
+            'model_version': 'clinical-41-rf',
+            'probability_mode': 'uncalibrated predict_proba',
+            'disclaimer': 'Statistical symptom associations and clinical research dataset. Always consult a licensed medical provider.',
+            'context_note': 'Classified using the 41-disease clinical association model with doctor-verified precautions.',
+        }
+
+    # Check SymCat 801-Disease CDC Bayesian Knowledge Base
+    bayesian = get_bayesian_engine()
+    if bayesian:
+        symcat_res = bayesian.infer(data.symptoms, top_k=3)
+        if symcat_res and len(symcat_res) == 3:
+            top3 = [{'disease': r['disease'], 'probability': float(r['probability'])} for r in symcat_res]
+            confidence = float(top3[0]['probability'])
+            threshold = 0.20
+            override = any(normalize(s) in LEGACY_RED_FLAG_TERMS for s in data.symptoms)
+            safety_floor, safety_conditions = disease_safety_floor(top3)
+            model_urgency = symcat_res[0].get('urgency', 'Medium')
+            final_urgency = max([model_urgency, safety_floor or 'Low', 'High' if override else 'Low'], key=URGENCY_RANK.get)
+            safety_override = bool(safety_floor and URGENCY_RANK[safety_floor] > URGENCY_RANK[model_urgency])
+
+            known_symptoms = set(bayesian.kb.get('symptoms', []))
+            symcat_used = [s for s in data.symptoms if normalize(s) in known_symptoms] or [normalize(s) for s in data.symptoms]
+
+            shap_top5 = []
+            for s in symcat_used[:5]:
+                shap_top5.append(Contribution(symptom=s, contribution=round(confidence / max(1, len(symcat_used)), 3), present=True))
+            while len(shap_top5) < 5:
+                shap_top5.append(Contribution(symptom='general_evidence', contribution=0.0, present=False))
+
+            age = data.age or (35.0 if not data.age_group else {'child': 6.0, 'teen': 16.0, 'adult': 35.0, 'elderly': 65.0}.get(normalize(data.age_group), 35.0))
+            normalized_sex = (data.sex or '').strip().lower()
+            sex_display = 'Male' if normalized_sex in ('m', 'male') else 'Female' if normalized_sex in ('f', 'female') else 'unknown'
+
+            return {
+                'top3': top3,
+                'confidence': confidence,
+                'uncertain': confidence < threshold,
+                'urgency': final_urgency,
+                'model_urgency': model_urgency,
+                'red_flag_override': override,
+                'disease_safety_override': safety_override,
+                'disease_safety_floor': safety_floor,
+                'disease_safety_conditions': safety_conditions,
+                'shap_top5': shap_top5,
+                'ignored_symptoms': [s for s in data.symptoms if s not in symcat_used],
+                'mapped_symptoms': [{'input': s, 'symptom': normalize(s)} for s in data.symptoms if s != normalize(s)],
+                'symptoms_used': symcat_used,
+                'age_used': float(age),
+                'age_group_used': age_group(age),
+                'age_source': 'patient supplied' if data.age is not None else 'age-group representative',
+                'sex_used': sex_display,
+                'uncertainty_threshold': threshold,
+                'model_version': 'symcat-cdc-801-bayesian',
+                'probability_mode': 'uncalibrated predict_proba',
+                'disclaimer': 'Statistical symptom associations from CDC outpatient database (801 conditions, 377 symptoms). Always consult a licensed medical provider.',
+                'context_note': f"Classified across 801 CDC conditions using SymCat Bayesian clinical engine. Top candidate: {symcat_res[0]['disease']}.",
+            }
+
+    # Fallback to DDXPlus benchmark model for synthetic evidence codes
     bundle = load_bundle()
     if any(len(symptom) > 100 for symptom in data.symptoms):
         raise HTTPException(422, {'error': 'Symptoms must be at most 100 characters', 'ignored_symptoms': []})

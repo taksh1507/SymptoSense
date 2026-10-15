@@ -13,7 +13,7 @@ import {
   AI_QUESTION_COUNT,
   type FlowStage,
 } from "./questionFlow";
-import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext, RiskSnapshot } from "./types";
+import type { AnswerMap, EngineProps, Language, QuestionStep, QuestionContext, RiskSnapshot, FinalAssessmentPayload } from "./types";
 import { calculateRisk } from "@/lib/ai-engine/scoring/engine";
 import { collectSymptoms } from "@/lib/assessment/findings";
 
@@ -53,6 +53,10 @@ export interface QuestionEngineAPI {
   handleVoiceToggle: () => void;
   replayQuestion: () => void;
   reset: () => void;
+  handleBack: () => void;
+  canGoBack: boolean;
+  reviewPayload: FinalAssessmentPayload | null;
+  submitReview: () => void;
 }
 
 export function useQuestionEngine({
@@ -88,6 +92,14 @@ export function useQuestionEngine({
   const [currentAiStep, setCurrentAiStep] = useState(0);
   const [duration, setDuration] = useState("");
   const [severity, setSeverity] = useState("");
+  const [reviewPayload, setReviewPayload] = useState<FinalAssessmentPayload | null>(null);
+  const history = useRef<Array<{ stage: FlowStage; currentStep: number; currentQuestion: QuestionStep | null; selectedOptions: string[]; customInput: string; showCustomInput: boolean; age: string; symptoms: string[]; customSymptom: string | undefined; aiAnswers: AnswerMap; aiAnswerLabels: AnswerMap; previousQuestions: { question: string; answer: string; category?: string }[]; currentAiStep: number; duration: string; severity: string; riskSnapshot: RiskSnapshot | null }>>([]);
+  const handleBack = () => {
+    const previous = history.current.pop(); if (!previous || isLoading) return;
+    questionGeneration.current++; cancelRecording(); stop(); setReviewPayload(null);
+    setStage(previous.stage); setCurrentStep(previous.currentStep); setCurrentQuestion(previous.currentQuestion); setSelectedOptions(previous.selectedOptions); setCustomInput(previous.customInput); setShowCustomInput(previous.showCustomInput); setAge(previous.age); setSymptoms(previous.symptoms); setCustomSymptom(previous.customSymptom); setAiAnswers(previous.aiAnswers); setAiAnswerLabels(previous.aiAnswerLabels); setPreviousQuestions(previous.previousQuestions); setCurrentAiStep(previous.currentAiStep); setDuration(previous.duration); setSeverity(previous.severity); setRiskSnapshot(previous.riskSnapshot); setCustomInputError(null);
+  };
+  const submitReview = () => { if (!reviewPayload || isComplete) return; setIsComplete(true); onComplete(reviewPayload); };
 
   // Mute persistence
   useEffect(() => {
@@ -236,7 +248,8 @@ export function useQuestionEngine({
 
   // ── Advance to next stage ─────────────────────────────────────
   const handleNext = useCallback(async () => {
-    if (!currentQuestion) return;
+    if (!currentQuestion || isLoading) return;
+    if (!selectedOptions.length && !customInput.trim()) return;
 
     // Validate custom input if shown
     if (showCustomInput && customInput.trim()) {
@@ -244,6 +257,8 @@ export function useQuestionEngine({
     }
 
     stop();
+
+    history.current.push({ stage, currentStep, currentQuestion, selectedOptions: [...selectedOptions], customInput, showCustomInput, age, symptoms, customSymptom, aiAnswers, aiAnswerLabels, previousQuestions, currentAiStep, duration, severity, riskSnapshot });
 
     // Save answer based on current stage
     if (stage === "q1_age") {
@@ -334,8 +349,8 @@ export function useQuestionEngine({
     } else if (stage === "q11_medications") {
       const finalMeds = selectedOptions.filter((v) => v !== "other");
 
-      setIsComplete(true);
-      onComplete(buildFinalOutput(
+      setStage('review');
+      setReviewPayload(buildFinalOutput(
         age,
         symptoms,
         customSymptom,
@@ -352,7 +367,8 @@ export function useQuestionEngine({
     currentQuestion, stage, selectedOptions, customInput, showCustomInput,
     validateCustomInput, stop, loadStaticQuestion, loadAIQuestion,
     aiAnswers, currentAiStep, age, symptoms, customSymptom, duration, severity, language,
-    onComplete, previousQuestions, aiAnswerLabels,
+    previousQuestions, aiAnswerLabels,
+    isLoading, currentStep, riskSnapshot,
   ]);
 
   // ── Voice toggle ──────────────────────────────────────────────
@@ -486,5 +502,9 @@ export function useQuestionEngine({
     handleVoiceToggle,
     replayQuestion,
     reset,
+    handleBack,
+    canGoBack: history.current.length > 0,
+    reviewPayload,
+    submitReview,
   };
 }

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./redesign.css";
 import { AppProvider } from "./context/AppContext";
 import { Providers } from "./providers";
-import { Source_Serif_4, IBM_Plex_Sans, Noto_Sans_Devanagari } from 'next/font/google';
+import { Inter, Noto_Sans_Devanagari } from 'next/font/google';
 
-const serif = Source_Serif_4({ subsets: ['latin'], variable: '--font-serif', display: 'swap' });
-const sans = IBM_Plex_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-body', display: 'swap' });
+const sans = Inter({ subsets: ['latin'], variable: '--font-body', display: 'swap' });
 const devanagari = Noto_Sans_Devanagari({ subsets: ['devanagari'], weight: ['400', '500', '600', '700'], variable: '--font-devanagari', display: 'swap' });
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${serif.variable} ${sans.variable} ${devanagari.variable}`}>
+      <body className={`${sans.variable} ${devanagari.variable}`}>
         <Providers>
           <AppProvider>
             {children}

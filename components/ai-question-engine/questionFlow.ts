@@ -117,6 +117,7 @@ export type FlowStage =
   | "q9_duration"
   | "q10_severity"
   | "q11_medications"
+  | "review"
   | "complete";
 
 export function getStaticQuestion(stage: FlowStage): QuestionStep | null {

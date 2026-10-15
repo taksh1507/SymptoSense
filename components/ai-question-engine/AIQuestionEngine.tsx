@@ -1,6 +1,7 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
+import { ProgressStepper } from '@/components/ui/brand';
 import {
   Check,
   Volume2,
@@ -11,7 +12,6 @@ import {
   Languages,
   AlertTriangle,
   Loader2,
-  ShieldAlert,
 } from 'lucide-react';
 import { Badge, Button, Field, Notice, Section } from '@/components/ui/primitives';
 import { useQuestionEngine } from "./useQuestionEngine";
@@ -50,6 +50,7 @@ export function AIQuestionEngine({
   gender,
 }: EngineProps) {
   const engine = useQuestionEngine({ defaultLanguage, onComplete, onCancel, initialSymptom, gender });
+  const [search, setSearch] = useState('');
   const {
     currentQuestion,
     currentStep,
@@ -101,6 +102,11 @@ export function AIQuestionEngine({
     stage === "q2_symptoms" || stage === "q11_medications"
       ? selectedOptions.length > 0 || customInput.trim().length >= 3
       : selectedOptions.length > 0;
+
+  if (stage === 'review' && engine.reviewPayload) {
+    const data = engine.reviewPayload;
+    return <div className="question-flow"><ProgressStepper step={3}/><Section title={t('Review your assessment','मूल्यांकन की समीक्षा करें','मूल्यांकनाचा आढावा घ्या')}><p>{t('Check your answers before submitting.','जमा करने से पहले अपने उत्तर जाँचें।','सादर करण्यापूर्वी तुमची उत्तरे तपासा.')}</p><dl className="facts">{[[t('Age group','आयु वर्ग','वयोगट'),data.age],[t('Symptoms','लक्षण','लक्षणे'),[...data.symptoms,data.customSymptom].filter(Boolean).join(', ').replaceAll('_',' ')],[t('Duration','अवधि','कालावधी'),data.duration],[t('Severity','गंभीरता','तीव्रता'),data.severity],[t('Health history','स्वास्थ्य इतिहास','आरोग्य इतिहास'),[...data.medications,data.customMedication].filter(Boolean).join(', ')],[t('Language','भाषा','भाषा'),data.language],...Object.entries(data.aiAnswerLabels)].map(([label,value])=><div key={label}><dt>{label.replaceAll('_',' ')}</dt><dd>{value}</dd></div>)}</dl><div className="row between"><Button variant="secondary" onClick={engine.handleBack}>{t('Back to edit','संपादित करने के लिए वापस','बदल करण्यासाठी मागे')}</Button><Button onClick={engine.submitReview}>{t('Submit Assessment','मूल्यांकन जमा करें','मूल्यांकन सादर करा')}</Button></div></Section></div>;
+  }
 
   if (isComplete) {
     return (
@@ -187,6 +193,7 @@ export function AIQuestionEngine({
 
   return (
     <div className="question-flow" lang={language}>
+      <ProgressStepper step={stage === 'q1_age' ? 0 : stage === 'q2_symptoms' ? 1 : 2}/>
       <header className="stack">
         <div className="row between">
           <p className="eyebrow">{stageLabel[stage]?.[language] ?? stage}</p>
@@ -286,8 +293,9 @@ export function AIQuestionEngine({
                 {t('Select all that apply.', 'सभी लागू विकल्प चुनें।', 'लागू असलेले सर्व पर्याय निवडा.')}
               </p>
             )}
-            <div className="stack mt-4">
-              {currentQuestion.options.map(opt => (
+            {stage === 'q2_symptoms' && <><Field id="symptom-search" label={t('Search symptoms','लक्षण खोजें','लक्षणे शोधा')} type="search" value={search} onChange={e=>setSearch(e.target.value)} placeholder={t('Search symptoms…','लक्षण खोजें…','लक्षणे शोधा…')}/>{search && <Button variant="ghost" onClick={()=>setSearch('')}>Clear search</Button>}<div className="symptom-chips">{currentQuestion.options.filter(o=>selectedOptions.includes(o.value)).map(o=><button key={o.value} onClick={()=>handleOptionToggle(o.value)} aria-label={'Remove '+o.label[language]}>{o.label[language]} ×</button>)}</div></>}
+            <div className={stage === 'q2_symptoms' ? 'symptom-options mt-4' : 'stack mt-4'}>
+              {currentQuestion.options.filter(opt => stage !== 'q2_symptoms' || opt.label[language].toLowerCase().includes(search.toLowerCase())).map(opt => (
                 <OptionButton
                   key={opt.value}
                   label={opt.label[language]}
@@ -333,6 +341,7 @@ export function AIQuestionEngine({
 
       <div className="row between">
         <div className="question-tools">
+          {engine.canGoBack && <Button variant="secondary" onClick={engine.handleBack} disabled={isLoading}>{t('Back','पीछे','मागे')}</Button>}
           <Button
             variant="secondary"
             onClick={handleVoiceToggle}
@@ -358,7 +367,7 @@ export function AIQuestionEngine({
         </div>
         <Button onClick={handleNext} disabled={!canProceed || isLoading}>
           {stage === 'q11_medications'
-            ? t('See results', 'परिणाम देखें', 'निकाल पहा')
+            ? t('Review answers', 'उत्तर जाँचें', 'उत्तरे तपासा')
             : t('Continue', 'आगे बढ़ें', 'पुढे जा')}
         </Button>
       </div>

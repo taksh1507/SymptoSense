@@ -49,6 +49,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const pending = useRef<{ data: FinalAssessmentPayload; personName: string; isSelf: boolean; relation: Relation | null; gender: Gender | null; id: number; sessionId?: string } | null>(null);
   const saving = useRef<number | null>(null);
   useEffect(() => () => { generation.current++; controller.current?.abort(); diseaseController.current?.abort(); }, []);
+  useEffect(() => { try { const language = localStorage.getItem('symptosense_language'); if (language === 'English' || language === 'Hindi' || language === 'Marathi') setState(s => ({ ...s, language })); } catch { /* Storage can be disabled. */ } }, []);
   const reset = (screen: TriageScreen) => {
     generation.current++;
     controller.current?.abort(); diseaseController.current?.abort(); pending.current = null;
@@ -83,6 +84,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       if (!res.ok) throw new Error('Could not save the assessment. Please retry.');
       const body = await res.json();
       if (request.id !== generation.current) return;
+      if (!body.result || !['Low', 'Medium', 'High'].includes(body.result.urgency) || typeof body.result.score !== 'number' || !Number.isFinite(body.result.score)) throw new Error('The server returned an invalid assessment. Please retry.');
       applyResult(body.result);
       setState(s => ({ ...s, saveStatus: 'saved', saveError: '', sessionId: request.sessionId ?? null }));
       // Reasoning is optional; the rule result and saved record are already available.
@@ -139,7 +141,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   };
   return <AppContext.Provider value={{ ...state,
     setTriageScreen: screen => screen === 'dashboard' || screen === 'language' ? reset(screen) : setState(s => ({ ...s, triageScreen: screen })),
-    setLanguage: language => setState(s => ({ ...s, language })), setPersonType: personType => setState(s => ({ ...s, personType })),
+    setLanguage: language => { setState(s => ({ ...s, language })); try { localStorage.setItem('symptosense_language', language); } catch { /* In-memory preference remains available. */ } }, setPersonType: personType => setState(s => ({ ...s, personType })),
     setPatientInfo: (patientName, relation, gender) => setState(s => ({ ...s, patientName, relation, gender })),
     setAnswer: (index, answer) => setState(s => ({ ...s, selectedAnswers: { ...s.selectedAnswers, [index]: answer } })),
     goToPrevQuestion: () => setState(s => ({ ...s, currentQuestion: Math.max(0, s.currentQuestion - 1) })),
