@@ -173,11 +173,12 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
     }
     
     # 1h: CUDA GPU support for XGBoost
+    xgb_device = os.getenv('DDX_XGB_DEVICE', 'cpu').strip().lower()
     try:
         from xgboost import XGBClassifier
-        xgb_device = os.getenv('DDX_XGB_DEVICE', 'cpu').strip().lower()
         xgb_kwargs = {
-            'n_estimators': 80,
+            # Use more trees on GPU since the cost is negligible; stay conservative on CPU.
+            'n_estimators': 200 if xgb_device == 'cuda' else 80,
             'max_depth': 5,
             'learning_rate': 0.1,
             'subsample': 0.9,
@@ -192,14 +193,46 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
             xgb_kwargs['device'] = 'cuda'
         specs['XGBoost'] = XGBClassifier(**xgb_kwargs)
     except ImportError:
-        pass
-        
+        xgb_device = 'cpu'
+
+    # 1i: Rare-class oversampling — duplicate rows for classes with fewer than 200 training
+    # samples so every CV fold has enough representatives and precision/recall are defined.
+    rare_threshold = 200
+    class_counts = np.bincount(yt, minlength=len(enc.classes_))
+    rare_classes = np.where(class_counts < rare_threshold)[0]
+    if len(rare_classes) > 0:
+        extra_rows, extra_labels, extra_groups = [], [], []
+        rng_rare = np.random.default_rng(SEED + 999)
+        for cls in rare_classes:
+            idx = np.where(yt == cls)[0]
+            needed = rare_threshold - len(idx)
+            chosen_idx = rng_rare.choice(idx, size=needed, replace=True)
+            extra_rows.append(Xtr[chosen_idx])
+            extra_labels.append(yt[chosen_idx])
+            extra_groups.append(train_groups[chosen_idx])
+        Xtr = vstack([Xtr] + extra_rows, format='csr')
+        yt = np.concatenate([yt] + extra_labels)
+        train_groups = np.concatenate([train_groups] + extra_groups)
+        # Rebuild CV splits on the augmented set
+        sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=SEED)
+        cv_splits = list(sgkf.split(Xtr, yt, groups=train_groups))
+
     def top3_scorer(estimator, X, y):
         return top_k_accuracy_score(y, estimator.predict_proba(X), k=3, labels=np.arange(len(enc.classes_)))
+
+    def _xgb_safe_predict_proba(estimator, X):
+        """Convert sparse input to dense array for XGBoost GPU to avoid device mismatch."""
+        from scipy.sparse import issparse
+        X_in = X.toarray() if issparse(X) else X
+        return estimator.predict_proba(X_in)
+
+    def top3_scorer_xgb(estimator, X, y):
+        return top_k_accuracy_score(y, _xgb_safe_predict_proba(estimator, X), k=3, labels=np.arange(len(enc.classes_)))
         
     comparison = []; fitted = {}; cv_started = time.perf_counter()
     for name, model in specs.items():
-        res = cross_validate(model, Xtr, yt, cv=cv_splits, scoring={'accuracy':'accuracy', 'precision_macro':'precision_macro', 'recall_macro':'recall_macro', 'f1_macro':'f1_macro', 'top3_accuracy':top3_scorer}, n_jobs=1, return_train_score=False)
+        scorer = top3_scorer_xgb if (name == 'XGBoost' and xgb_device == 'cuda') else top3_scorer
+        res = cross_validate(model, Xtr, yt, cv=cv_splits, scoring={'accuracy':'accuracy', 'precision_macro':'precision_macro', 'recall_macro':'recall_macro', 'f1_macro':'f1_macro', 'top3_accuracy':scorer}, n_jobs=1, return_train_score=False)
         comparison.append({'model': name, 'metrics': {m: {'mean': float(np.mean(res['test_'+m])), 'std': float(np.std(res['test_'+m])), 'folds': res['test_'+m].tolist()} for m in ['accuracy', 'precision_macro', 'recall_macro', 'f1_macro', 'top3_accuracy']}})
     comparison.sort(key=lambda x: x['metrics']['f1_macro']['mean'], reverse=True)
     
@@ -213,6 +246,7 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         if name == 'Logistic Regression (SGD)': params = {'alpha': [0.0003, 0.001, 0.003]}
         elif name == 'Naive Bayes': params = {'alpha': [.05, .1, .5, 1]}
         elif name == 'Random Forest': params = {'n_estimators': [120, 180], 'min_samples_leaf': [1, 2, 4]}
+        elif name == 'XGBoost' and xgb_device == 'cuda': params = {'max_depth': [4, 5, 6], 'learning_rate': [.05, .1], 'n_estimators': [150, 200]}
         else: params = {'max_depth': [4, 5, 6], 'learning_rate': [.05, .1]}
         
         search = RandomizedSearchCV(base, params, n_iter=min(4, np.prod([len(v) for v in params.values()])), scoring='f1_macro', cv=inner_splits, random_state=SEED, n_jobs=1, refit=True)
@@ -234,14 +268,20 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
     candidates.sort(key=lambda x: x[0], reverse=True)
     winner_f1, winner, best = candidates[0]
     best = best.fit(Xtr, yt)
-    
+
+    # For GPU XGBoost, wrap predict_proba to avoid repeated device-mismatch warnings
+    # by converting sparse CSR input to dense before inference.
+    from scipy.sparse import issparse as _issparse
+    def _predict_proba(estimator, X):
+        return estimator.predict_proba(X.toarray() if _issparse(X) else X)
+
     # Statistical tie detection
     top_cv_std = tuned[0]['std_f1']
     delta_f1 = float(abs(candidates[0][0] - candidates[1][0])) if len(candidates) > 1 else 0.0
     is_statistical_tie = bool(len(candidates) > 1 and delta_f1 < top_cv_std)
     
     # Calibration evaluation on validation split
-    val_raw = best.predict_proba(Xv)
+    val_raw = _predict_proba(best, Xv)
     bs_raw = float(np.mean(np.sum((val_raw - np.eye(len(classes))[yval])**2, axis=1)))
     ll_raw = float(log_loss(yval, val_raw, labels=classes))
     calibration = {
@@ -256,7 +296,7 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
     for method in ['sigmoid', 'isotonic']:
         try:
             cal = CalibratedClassifierCV(best, method=method, cv=calib_splits, n_jobs=1).fit(Xtr, yt)
-            probs = cal.predict_proba(Xv)
+            probs = _predict_proba(cal, Xv)
             bs = float(np.mean(np.sum((probs - np.eye(len(classes))[yval])**2, axis=1)))
             ll = float(log_loss(yval, probs, labels=classes))
             calibration['validation'][method] = {'brier': bs, 'log_loss': ll}
@@ -303,11 +343,11 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         else:
             urgency_by_disease[k] = 'Low'
             
-    uy = np.array([urgency_by_disease[d] for d in train_combined['PATHOLOGY']])
-    urgency = LogisticRegression(max_iter=1000, class_weight='balanced', random_state=SEED).fit(Xtr, uy)
+    uy = np.array([urgency_by_disease[enc.classes_[c]] for c in yt])
+    urgency = LogisticRegression(max_iter=5000, solver='saga', class_weight='balanced', random_state=SEED).fit(Xtr, uy)
     
     # Final test evaluation
-    prob = chosen.predict_proba(Xte)
+    prob = _predict_proba(chosen, Xte)
     pred = np.argmax(prob, axis=1)
     acc = float(accuracy_score(yte, pred))
     p, r, f, _ = precision_recall_fscore_support(yte, pred, average=None, labels=classes, zero_division=0)
@@ -334,7 +374,7 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
     severity_table = [{'disease': k, 'severity': v, 'urgency': urgency_by_disease[k]} for k, v in sorted(disease_severity.items(), key=lambda x: (x[1], x[0]))]
     
     # 1f: Clean Synthetic Evaluation
-    clean_prob = chosen.predict_proba(Xte_clean)
+    clean_prob = _predict_proba(chosen, Xte_clean)
     clean_pred = np.argmax(clean_prob, axis=1)
     c_p, c_r, c_f, _ = precision_recall_fscore_support(yte_clean, clean_pred, average='macro', zero_division=0)
     c_wp, c_wr, c_wf, _ = precision_recall_fscore_support(yte_clean, clean_pred, average='weighted', zero_division=0)
@@ -363,7 +403,7 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         p_test = perturb_frame(test_clean, seed=test_seed)
         Xte_p, yte_p_raw, _ = encode_rows(p_test, columns)
         yte_p = enc.transform(yte_p_raw)
-        p_prob = chosen.predict_proba(Xte_p)
+        p_prob = _predict_proba(chosen, Xte_p)
         p_pred = np.argmax(p_prob, axis=1)
         real_accs.append(float(accuracy_score(yte_p, p_pred)))
         real_f1s.append(float(f1_score(yte_p, p_pred, average='macro', zero_division=0)))
@@ -492,9 +532,9 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
     train_pred = best.predict(Xtr); train_accuracy = float(accuracy_score(yt, train_pred))
     metrics['train_accuracy'] = train_accuracy; metrics['train_test_accuracy_gap'] = train_accuracy - acc
     
-    learning_curve = []; learn_n = min(30000, len(yt))
+    learning_curve = []; learn_n = min(60000, len(yt))
     for index, fraction in enumerate([.1, .25, .5, 1.0]):
-        count = min(learn_n, max(min(learn_n, len(classes) * 5), int(learn_n * fraction)))
+        count = max(len(classes) * 5, int(learn_n * fraction))
         if count < len(yt):
             from sklearn.model_selection import train_test_split
             subset, _ = train_test_split(np.arange(len(yt)), train_size=count, random_state=SEED + index, stratify=yt)
@@ -682,7 +722,7 @@ def train(train_limit=150000, realistic=True, aug_copies=1):
         'severity_table': severity_table,
         'license': {'name': 'CC BY 4.0', 'source': 'https://creativecommons.org/licenses/by/4.0/legalcode', 'text_sha256': hashes.get('CC-BY-4.0.txt'), 'dataset_page': 'https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374'},
         'artifacts': artifact_hashes,
-        'limitations': ['DDXPlus is synthetic and not clinical validation.', 'Sampling limits training to the configured row budget; validation/test samples are proportional.', 'No patient identifier is distributed, so split checks use exact-row fingerprints only.', 'Age 50 is assigned to elderly to resolve overlapping app questionnaire ranges.', 'Urgency labels derive from dataset severity and are not clinician-validated.', 'Project safety choices are not clinical guidelines.', 'Learning curve is estimated on a seeded training subset capped at 30,000 rows to fit laptop memory.'],
+        'limitations': ['DDXPlus is synthetic and not clinical validation.', 'Sampling limits training to the configured row budget; validation/test samples are proportional.', 'No patient identifier is distributed, so split checks use exact-row fingerprints only.', 'Age 50 is assigned to elderly to resolve overlapping app questionnaire ranges.', 'Urgency labels derive from dataset severity and are not clinician-validated.', 'Project safety choices are not clinical guidelines.', 'Learning curve uses the full augmented training set across four fractions.'],
         'deployment': {'uncertainty_threshold': float(os.getenv('DISEASE_CONFIDENCE_THRESHOLD', '0.5')), 'probability_mode': f'{calibration["method"]} calibrated predict_proba' if calibration['method'] != 'none' else 'uncalibrated predict_proba'},
         'disclaimer': 'This is not a medical diagnosis. Consult a qualified clinician.'
     }

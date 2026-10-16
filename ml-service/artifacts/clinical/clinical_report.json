@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "model_name": "RandomForestClassifier (Calibrated Sigmoid)",
-  "created_at": "2026-10-15T11:57:15.439638+00:00",
+  "created_at": "2026-10-16T07:37:45.778453+00:00",
   "dataset": {
     "name": "Kaggle 41-Disease Clinical Symptom Dataset",
     "raw_rows": 4920,

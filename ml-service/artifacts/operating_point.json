@@ -1,7 +1,7 @@
 {
-  "threshold": 0.50,
-  "margin": 0.10,
-  "expected_precision": 0.90,
-  "expected_coverage": 0.65,
-  "min_precision_target": 0.90
+  "threshold": 0.3,
+  "margin": 0.0,
+  "expected_precision": 0.958817703174686,
+  "expected_coverage": 0.9961055145913387,
+  "min_precision_target": 0.9
 }
