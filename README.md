@@ -83,19 +83,41 @@ The notebook `ml-service/notebooks/SymptoSense_ML.ipynb` documents data, EDA, pr
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/taksh1507/SymptoSense/blob/new-master/ml-service/notebooks/SymptoSense_Colab_Training.ipynb)
 
-A dedicated, self-contained Google Colab notebook is provided at [`ml-service/notebooks/SymptoSense_Colab_Training.ipynb`](ml-service/notebooks/SymptoSense_Colab_Training.ipynb) for training the full DDXPlus pipeline using GPU acceleration (e.g., T4/V100/A100).
+A dedicated, self-contained Google Colab notebook is provided at [`ml-service/notebooks/SymptoSense_Colab_Training.ipynb`](ml-service/notebooks/SymptoSense_Colab_Training.ipynb) to train and compile all three diagnostic tiers end to end:
+1. **Tier 1 (41 Core Clinical Conditions)**: Calibrated Random Forest model trained on deduplicated clinical associations (`train_clinical.py`).
+2. **Tier 2 (801 CDC Conditions)**: Full SymCat outpatient conditional probability knowledge base parsed from CDC NAMCS/NHAMCS statistics (`parse_symcat_801.py`).
+3. **Tier 3 (49 DDXPlus Benchmark Pathologies)**: Calibrated gradient boosted model (XGBoost) trained on the DDXPlus patient benchmark with realistic input perturbation and selective prediction (`train_pipeline.py`).
 
-### Key Workflow Steps in Colab:
-1. **Environment Check**: Detects CUDA GPUs (auto-enabling `DDX_XGB_DEVICE=cuda` for XGBoost acceleration), CPU cores, and system RAM.
-2. **Google Drive Mount**: Optional checkbox to persist trained artifacts across Colab runtime disconnects.
-3. **Repository Setup**: Clones the SymptoSense repository and configures the `ml-service` working directory.
-4. **Pinned Dependencies**: Installs exact locked packages from `requirements.txt`.
-5. **Automated Figshare API Download**: Queries the Figshare v2 API for [DDXPlus Article 20043374](https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374) to download dataset files with automated SHA-256 integrity verification before archive extraction. Manual dataset downloading is not required.
-6. **Dataset Verification & EDA**: Verifies all 49 conditions and 223 evidence codes, and inspects class balance.
-7. **Realistic-Input Training**: Runs `train_pipeline.py` with configurable row budgets (default 150,000), realistic perturbation (symptom recall constraints, forget rates, and token mutations), and group-safe 5-fold cross-validation.
-8. **Interactive Diagnostic Widget**: Provides an interactive test interface displaying top-3 condition predictions, calibrated confidence, selective prediction operating point, and `limited_information` / `confident` flags.
-9. **Inline Visualizations**: Displays model comparison bar charts, calibration reliability curves, confusion matrices, SHAP attributions, and robustness plots directly in the notebook.
-10. **Artifact Export**: Packages all trained joblib models, `operating_point.json`, schemas, and `ml_report.json` into `SymptoSense_artifacts.zip` with an automated browser download trigger. Extract this archive into `ml-service/artifacts/` to update your local deployment.
+### Runtime Recommendations
+- **Hardware Acceleration**: GPU is optional. The pipeline runs on standard CPU or GPU runtimes. If a CUDA GPU (e.g., T4/V100/A100) is detected, `DDX_XGB_DEVICE=cuda` is configured automatically for XGBoost training.
+- **Session Durability**: Free Google Colab sessions can disconnect during longer training runs. Keep `USE_DRIVE = True` enabled so that intermediate logs (`training.log`) and output archives are saved directly to your Google Drive (`MyDrive/SymptoSense_Outputs`).
+
+### What the Notebook Produces
+The training pipeline generates `symptosense_artifacts.zip` containing:
+- `ml-service/artifacts/` (`best_model.joblib`, `label_encoder.joblib`, `shap_background.joblib`, `urgency_model.joblib`, `feature_columns.json`, `symptom_list.json`, `red_flags.json`).
+- `ml-service/artifacts/clinical/` (`symcat_knowledge_base.json`, `clinical_model.joblib`, `clinical_encoder.joblib`, `disease_descriptions.json`, `disease_precautions.json`, `clinical_report.json`).
+- `ml-service/reports/` (`ml_report.json`, `clinical_report.json`, and all generated diagnostic evaluation figures).
+- `lib/ml/symptom-list.json` (frontend evidence schema).
+- `manifest.json` (environment provenance recording git commit hash, Python version, pinned library versions, timestamp, row budget, and CLI flags).
+
+### How to Copy Artifacts into the Repo
+Download `symptosense_artifacts.zip` (via Colab browser download or Google Drive), place it at your repository root, and run:
+```bash
+# Python cross-platform:
+python -m zipfile -e symptosense_artifacts.zip .
+
+# Linux / macOS:
+unzip -o symptosense_artifacts.zip
+
+# Windows PowerShell:
+Expand-Archive -Path symptosense_artifacts.zip -DestinationPath . -Force
+```
+
+### Library Version Pinning Warning
+Joblib-serialized model artifacts (`.joblib`) are sensitive to library versions. They only load reliably when evaluated using the exact same library versions they were trained with, especially `scikit-learn==1.8.0` and `xgboost==3.1.3`. The notebook installs the pinned versions from `ml-service/requirements.txt` and asserts them before training begins. Do not attempt to load artifacts across mismatched scikit-learn or xgboost versions.
+
+### Large Model Files and Version Control
+Trained model weights and background explanation matrices (`best_model.joblib`, `shap_background.joblib`, etc.) can exceed standard GitHub commit file size limits. Do not commit large binary `.joblib` files directly to Git; track them with Git LFS or attach them to tagged GitHub Releases.
 
 ## Retained legacy confidence and reviewed-outcome evaluation
 
