@@ -1,1 +1,7 @@
--r ml-service/inference-requirements.txt
+fastapi==0.129.0
+uvicorn==0.41.0
+pandas==3.0.1
+numpy==2.4.2
+scikit-learn==1.8.0
+joblib==1.5.3
+python-dotenv==1.2.1
