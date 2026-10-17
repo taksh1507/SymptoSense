@@ -28,6 +28,5 @@ export async function allowRequest(req: Request, key: string, limit: number, win
       return Array.isArray(result) && typeof result[0]?.result === 'number' && result[0].result <= limit;
     } catch { return false; }
   }
-  if (process.env.NODE_ENV === 'production') return false;
   return rateLimit(key, limit, windowMs);
 }
