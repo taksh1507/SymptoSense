@@ -417,6 +417,42 @@ progress::-moz-progress-bar { background: var(--color-primary); border-radius: v
 .facts dd { margin: 0; color: var(--text-heading); font-size: var(--text-sm); }
 .plain-list { padding-left: 20px; display: grid; gap: 10px; }
 
+/* ── Report body ───────────────────────────────────────────────── */
+.lead { font-size: var(--text-md); color: var(--text-body); }
+.report-header h1 { margin: 0; }
+.report-hero-title { font-size: var(--text-xl); margin: 0; color: var(--text-heading); }
+.report-details {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  background: var(--bg-surface-subtle);
+}
+.report-details > summary { cursor: pointer; font-weight: 600; color: var(--text-heading); }
+.report-details[open] > summary { margin-bottom: var(--space-4); }
+
+.condition-list { list-style: none; padding: 0; display: grid; gap: var(--space-4); }
+.condition-list li { display: grid; gap: 6px; font-variant-numeric: tabular-nums; }
+.condition-name { display: inline-flex; align-items: center; gap: 10px; color: var(--text-heading); font-weight: 600; }
+.condition-rank {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg-surface-subtle);
+  border: 1px solid var(--border-subtle);
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--text-muted);
+}
+.condition-top .condition-rank { background: var(--color-primary-soft); border-color: var(--color-primary-border); color: var(--color-primary); }
+.condition-pct { font-variant-numeric: tabular-nums; color: var(--text-heading); }
+
+.checkin-options { border: 0; padding: 0; margin: 0; display: grid; gap: var(--space-2); }
+.checkin-options legend { font-weight: 600; color: var(--text-heading); margin-bottom: var(--space-2); padding: 0; }
+.option-compact { width: auto; padding: 10px 16px; }
+
 /* ── Metrics ───────────────────────────────────────────────────── */
 .metric { border-top: 1px solid var(--border-subtle); padding-top: var(--space-4); display: grid; gap: var(--space-2); }
 .metric-value { font-size: var(--text-2xl); font-weight: 700; color: var(--text-heading); }

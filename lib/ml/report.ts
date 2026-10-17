@@ -61,6 +61,50 @@ export type MLReport = ExistingReport & {
   dataset: ExistingReport['dataset'] & { sample_sizes?: Record<string, { rows_before_sampling: number; rows_after_sampling: number }>; split_overlap_fingerprints?: Record<string, number>; input_sha256?: Record<string, string> };
 };
 
+export interface ClinicalClassRow { disease: string; raw: number; unique: number; }
+export interface ClinicalSymptomRow { symptom: string; unique_patterns: number; raw_cells: number; }
+export interface ClinicalCaseRow { count: number; cases: number; }
+export interface ClinicalPreprocessStep { step: number; name: string; input: number | string | null; output: number | string; formula: string; }
+
+export interface ClinicalDataset {
+  schema_version: number;
+  generated_at: string;
+  source: string;
+  raw_rows: number;
+  symptom_columns: number;
+  diseases: number;
+  distinct_symptoms: number;
+  unique_patterns: number;
+  deduplication_ratio: number;
+  cells: { total: number; blank: number; populated: number; blank_pct: number };
+  class_distribution: ClinicalClassRow[];
+  top_symptoms: ClinicalSymptomRow[];
+  symptoms_per_case: ClinicalCaseRow[];
+  matrix: { rows: number; cols: number; cells: number; ones: number; density: number };
+  preprocessing: ClinicalPreprocessStep[];
+}
+
+export interface SymcatUrgencyRow { urgency: string; conditions: number; }
+export interface SymcatSymptomRow { symptom: string; conditions: number; avg_probability: number; }
+export interface SymcatBucketRow { bucket: string; conditions: number; }
+
+export interface SymcatDataset {
+  schema_version: number;
+  generated_at: string;
+  source: string;
+  version: string;
+  total_conditions: number;
+  total_symptoms: number;
+  symptom_links: number;
+  avg_symptoms_per_condition: number;
+  with_description: number;
+  with_precautions: number;
+  urgency_distribution: SymcatUrgencyRow[];
+  top_symptoms: SymcatSymptomRow[];
+  symptoms_per_condition: SymcatBucketRow[];
+  preprocessing: ClinicalPreprocessStep[];
+}
+
 export interface ClinicalReport {
   schema_version: number;
   model_name: string;

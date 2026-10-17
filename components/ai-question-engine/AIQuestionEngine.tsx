@@ -105,7 +105,33 @@ export function AIQuestionEngine({
 
   if (stage === 'review' && engine.reviewPayload) {
     const data = engine.reviewPayload;
-    return <div className="question-flow"><ProgressStepper step={3}/><Section title={t('Review your assessment','मूल्यांकन की समीक्षा करें','मूल्यांकनाचा आढावा घ्या')}><p>{t('Check your answers before submitting.','जमा करने से पहले अपने उत्तर जाँचें।','सादर करण्यापूर्वी तुमची उत्तरे तपासा.')}</p><dl className="facts">{[[t('Age group','आयु वर्ग','वयोगट'),data.age],[t('Symptoms','लक्षण','लक्षणे'),[...data.symptoms,data.customSymptom].filter(Boolean).join(', ').replaceAll('_',' ')],[t('Duration','अवधि','कालावधी'),data.duration],[t('Severity','गंभीरता','तीव्रता'),data.severity],[t('Health history','स्वास्थ्य इतिहास','आरोग्य इतिहास'),[...data.medications,data.customMedication].filter(Boolean).join(', ')],[t('Language','भाषा','भाषा'),data.language],...Object.entries(data.aiAnswerLabels)].map(([label,value])=><div key={label}><dt>{label.replaceAll('_',' ')}</dt><dd>{value}</dd></div>)}</dl><div className="row between"><Button variant="secondary" onClick={engine.handleBack}>{t('Back to edit','संपादित करने के लिए वापस','बदल करण्यासाठी मागे')}</Button><Button onClick={engine.submitReview}>{t('Submit Assessment','मूल्यांकन जमा करें','मूल्यांकन सादर करा')}</Button></div></Section></div>;
+    return (
+      <div className="question-flow">
+        <ProgressStepper step={3} />
+        <Section title={t('Review your assessment', 'मूल्यांकन की समीक्षा करें', 'मूल्यांकनाचा आढावा घ्या')}>
+          <p>{t('Check your answers before submitting.', 'जमा करने से पहले अपने उत्तर जाँचें।', 'सादर करण्यापूर्वी तुमची उत्तरे तपासा.')}</p>
+          <dl className="facts">
+            {([
+              [t('Age group', 'आयु वर्ग', 'वयोगट'), data.age],
+              [t('Symptoms', 'लक्षण', 'लक्षणे'), [...data.symptoms, data.customSymptom].filter(Boolean).join(', ').replaceAll('_', ' ')],
+              [t('Duration', 'अवधि', 'कालावधी'), data.duration],
+              [t('Severity', 'गंभीरता', 'तीव्रता'), data.severity],
+              [t('Health history', 'स्वास्थ्य इतिहास', 'आरोग्य इतिहास'), [...data.medications, data.customMedication].filter(Boolean).join(', ')],
+              [t('Language', 'भाषा', 'भाषा'), data.language],
+            ] as Array<[string, string]>).map(([label, value]) => (
+              <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
+            ))}
+            {engine.reviewQuestions.map((item, i) => (
+              <div key={'ai_answer_' + i}><dt>{item.question}</dt><dd>{item.answer}</dd></div>
+            ))}
+          </dl>
+          <div className="row between">
+            <Button variant="secondary" onClick={engine.handleBack}>{t('Back to edit', 'संपादित करने के लिए वापस', 'बदल करण्यासाठी मागे')}</Button>
+            <Button onClick={engine.submitReview}>{t('Submit Assessment', 'मूल्यांकन जमा करें', 'मूल्यांकन सादर करा')}</Button>
+          </div>
+        </Section>
+      </div>
+    );
   }
 
   if (isComplete) {

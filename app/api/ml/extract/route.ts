@@ -14,7 +14,7 @@ export async function POST(req: Request) {
   if (!process.env.GROQ_API_KEY) return unavailable();
   try {
     const client = new Groq({ apiKey: process.env.GROQ_API_KEY, timeout: 6000, maxRetries: 0 });
-    const completion = await client.chat.completions.create({ model: 'llama-3.3-70b-versatile', temperature: 0, max_tokens: 400, response_format: { type: 'json_object' }, messages: [
+    const completion = await client.chat.completions.create({ model: 'openai/gpt-oss-120b', temperature: 0, max_tokens: 400, response_format: { type: 'json_object' }, messages: [
       { role: 'system', content: 'Extract only explicitly affirmed current symptoms from English, Hindi or Marathi text. Exclude negated, hypothetical, family-history and uncertain symptoms. Do not extract antecedents unless the patient explicitly states them. Never diagnose or infer symptoms from a disease name. Return only JSON {"symptoms": [evidence_code]}. Use this fixed evidence-code and English-question vocabulary: ' + JSON.stringify(DISEASE_SYMPTOM_VOCABULARY.map(v => ({ code: v.code, name: v.name }))) },
       { role: 'user', content: body.text },
     ] });

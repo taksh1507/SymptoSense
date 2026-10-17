@@ -9,7 +9,7 @@ import { QuestionContext, QuestionStep } from "../../../components/ai-question-e
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 const GROQ_URL = "https://api.groq.com/openai/v1/chat/completions";
-const GROQ_MODEL = "llama-3.3-70b-versatile"; // Fast, high quality, generous free tier
+const GROQ_MODEL = "openai/gpt-oss-120b"; // Fast, high quality, generous free tier
 
 export async function POST(req: Request) {
   const auth = await requireUser(req, "questions", 30); if (auth.response) return auth.response;

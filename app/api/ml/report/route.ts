@@ -12,7 +12,7 @@ export async function GET(req: Request) {
     const response = await fetch(mlBaseUrl() + '/ml-report', { signal: AbortSignal.timeout(10000), cache: 'no-store' });
     if (!response.ok) throw new Error('Unavailable');
     const report = await response.json();
-    if (report.schema_version !== 1 || !report.dataset || !report.evaluation || !report.training || !report.explainability || !report.calibration || !report.urgency) {
+    if (typeof report.schema_version !== 'number' || !report.dataset || !report.evaluation || !report.training || !report.explainability || !report.calibration || !report.urgency) {
       throw new Error('Invalid report');
     }
     return NextResponse.json(report, { headers: { 'Cache-Control': 'no-store' } });

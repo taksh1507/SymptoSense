@@ -56,6 +56,7 @@ export interface QuestionEngineAPI {
   handleBack: () => void;
   canGoBack: boolean;
   reviewPayload: FinalAssessmentPayload | null;
+  reviewQuestions: { question: string; answer: string; category?: string }[];
   submitReview: () => void;
 }
 
@@ -505,6 +506,7 @@ export function useQuestionEngine({
     handleBack,
     canGoBack: history.current.length > 0,
     reviewPayload,
+    reviewQuestions: previousQuestions,
     submitReview,
   };
 }

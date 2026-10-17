@@ -6,10 +6,10 @@ import AppShell from '@/app/components/AppShell';
 import { Section, Table as DataTable } from '@/components/ui/primitives';
 import { useUiText } from '@/components/ui/use-ui-text';
 import { useTechnicalText } from '@/components/ui/technical-copy';
-import type { MLReport, ClinicalReport } from '@/lib/ml/report';
+import type { MLReport, ClinicalReport, ClinicalDataset, SymcatDataset } from '@/lib/ml/report';
 const colors = ['#15574e', '#384b67', '#795314', '#6c526c', '#52664d'];
 const tabs = ['Clinical Knowledge Base (801 Diseases)', 'Dataset', 'Training', 'Evaluation', 'Explainability', 'Live Model'] as const;
-const format = (v: number) => v.toFixed(4);
+const format = (v: number | null | undefined) => (typeof v === 'number' && Number.isFinite(v) ? v.toFixed(4) : '—');
 function ChartCard({ title, children, detail }: { title: string; children: ReactNode; detail?: string }) {
   const lt = useTechnicalText();
   const t = useUiText();
@@ -46,6 +46,8 @@ export default function MLInsightsPage() {
   const lt = useTechnicalText();
   const [report, setReport] = useState<MLReport | null>(null);
   const [clinicalReport, setClinicalReport] = useState<ClinicalReport | null>(null);
+  const [clinicalDataset, setClinicalDataset] = useState<ClinicalDataset | null>(null);
+  const [symcatDataset, setSymcatDataset] = useState<SymcatDataset | null>(null);
   const [tab, setTab] = useState<(typeof tabs)[number]>('Clinical Knowledge Base (801 Diseases)');
   const [error, setError] = useState('');
   const [rocClass, setRocClass] = useState('all');
@@ -74,14 +76,38 @@ export default function MLInsightsPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void fetch('/api/ml/report', { signal: controller.signal }).then(async response => {
-      if (!response.ok) throw new Error(response.status === 401 || response.status === 403 ? 'You do not have access to this page.' : 'Training report unavailable. Start the ML service and run train_pipeline.py.');
-      setReport(await response.json());
-    }).catch(e => { if (!controller.signal.aborted) setError(e.message); });
+    // The ML service may be cold on first request; retry a couple of times before surfacing an error.
+    let attempts = 0;
+    const loadReport = async () => {
+      try {
+        const response = await fetch('/api/ml/report', { signal: controller.signal, cache: 'no-store' });
+        if (!response.ok) {
+          if (response.status >= 500 && attempts < 2) { attempts++; setTimeout(() => { void loadReport(); }, 1500); return; }
+          throw new Error(response.status === 401 || response.status === 403 ? 'You do not have access to this page.' : 'Training report unavailable. Start the ML service and run train_pipeline.py.');
+        }
+        setReport(await response.json());
+        setError('');
+      } catch (e) {
+        if (controller.signal.aborted) return;
+        if (attempts < 2) { attempts++; setTimeout(() => { void loadReport(); }, 1500); return; }
+        setError((e as Error).message);
+      }
+    };
+    void loadReport();
 
     void fetch('/api/ml/clinical-report', { signal: controller.signal })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data && data.schema_version === 1) setClinicalReport(data); })
+      .catch(() => {});
+
+    void fetch('/api/ml/clinical-dataset', { signal: controller.signal })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data && data.schema_version === 1) setClinicalDataset(data); })
+      .catch(() => {});
+
+    void fetch('/api/ml/symcat-dataset', { signal: controller.signal })
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data && data.schema_version === 1) setSymcatDataset(data); })
       .catch(() => {});
 
     return () => controller.abort();
@@ -131,6 +157,7 @@ export default function MLInsightsPage() {
           <p className="[font-size:12px] [color:var(--text-3)] [margin:0_0_8px]">
             Supervised Random Forest trained on deduplicated clinical associations. Evaluated on an independent stratified holdout split (zero train/test overlap).
           </p>
+          <div className="[font-size:11px] [font-weight:700] [color:#15574e] [margin:0_0_8px]">✅ Trained model · supervised classification</div>
           {clinicalReport && (
             <div className="[font-size:11px] [color:var(--text-2)] [background:rgba(0,0,0,0.03)] [padding:6px_8px] [border-radius:6px]">
               <div><strong>Hygiene:</strong> {clinicalReport.dataset.raw_rows} raw → {clinicalReport.dataset.unique_rows} unique patterns ({clinicalReport.dataset.deduplication_ratio}x)</div>
@@ -143,19 +170,29 @@ export default function MLInsightsPage() {
             Tier 2: CDC SymCat Knowledge Base
           </span>
           <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">801 Conditions</h3>
-          <p className="[font-size:12px] [color:var(--text-3)] [margin:0]">
+          <p className="[font-size:12px] [color:var(--text-3)] [margin:0_0_8px]">
             Unvalidated CDC outpatient knowledge-base lookup. Uses Bayesian conditional probability across 377 symptoms. Not trained ML; serves as broad differential lookup.
           </p>
+          <div className="[font-size:11px] [font-weight:700] [color:#384b67]">⚙️ Not trained · Bayesian knowledge-base lookup</div>
         </div>
         <div className="[padding:14px] [background:var(--bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-md)]">
           <span className="badge [background:rgba(121,83,20,0.12)] [color:#795314] [padding:4px_8px] [border-radius:12px] [font-weight:600] [font-size:11px]">
             Tier 3: DDXPlus Benchmark Model
           </span>
           <h3 className="[font-size:var(--text-sm)] [font-weight:700] [margin:8px_0_4px]">49 Pathologies</h3>
-          <p className="[font-size:12px] [color:var(--text-3)] [margin:0]">
+          <p className="[font-size:12px] [color:var(--text-3)] [margin:0_0_8px]">
             Calibrated research model trained on synthetic DDXPlus evidence codes. Evaluated with realistic input perturbations and selective prediction thresholds.
           </p>
+          <div className="[font-size:11px] [font-weight:700] [color:#795314]">✅ Trained model · calibrated classification</div>
         </div>
+      </div>
+
+      <div className="[margin-top:16px]">
+        <Table headings={['Tier / engine', 'Trained?', 'Dataset', 'Classes', 'Reported accuracy']} rows={[
+          ['Tier 1 · Core Clinical (Random Forest + sigmoid)', 'Trained', 'Kaggle 41-disease (deduplicated)', '41', clinicalReport ? (clinicalReport.holdout_test_metrics.accuracy * 100).toFixed(1) + '% holdout' : '—'],
+          ['Tier 2 · CDC SymCat 801', 'Not trained (lookup)', 'CDC SymCat outpatient (NAMCS/NHAMCS)', '801', 'n/a (lookup)'],
+          ['Tier 3 · DDXPlus benchmark', 'Trained', 'DDXPlus synthetic evidence codes', '49', report ? ((report.clean_synthetic?.metrics.accuracy ?? report.evaluation.metrics.accuracy) * 100).toFixed(1) + '% test' : '—'],
+        ]} />
       </div>
     </div>
 
@@ -165,6 +202,33 @@ export default function MLInsightsPage() {
     <div role="tablist" aria-label="ML report sections"  className="[display:flex] [flex-wrap:wrap] [gap:8px] [margin:20px_0]">{tabs.map(name => <button key={name} role="tab" aria-selected={tab === name} id={"ml-tab-" + name} tabIndex={tab === name ? 0 : -1} aria-controls="ml-insights-content" onKeyDown={e => { const i = tabs.indexOf(name); const next = e.key === "ArrowRight" ? (i + 1) % tabs.length : e.key === "ArrowLeft" ? (i + tabs.length - 1) % tabs.length : e.key === "Home" ? 0 : e.key === "End" ? tabs.length - 1 : -1; if (next >= 0) { e.preventDefault(); setTab(tabs[next]); document.getElementById("ml-tab-" + tabs[next])?.focus(); } }} className={'btn ' + (tab === name ? 'btn-primary' : 'btn-secondary')} onClick={() => setTab(name)}>{lt(name)}</button>)}</div>
     <div role="tabpanel" id="ml-insights-content" aria-labelledby={"ml-tab-" + tab} className="ml-insights-grid">
       {tab === 'Clinical Knowledge Base (801 Diseases)' && <>
+        {symcatDataset && (
+          <ChartCard title="Tier 2 · CDC SymCat 801 knowledge base — visual summary" detail="Computed from ml-service/artifacts/clinical/symcat_knowledge_base.json. A Bayesian differential lookup over CDC outpatient data — not a trained model.">
+            <div className="metric-grid">
+              <div className="metric"><h3>Conditions</h3><p className="metric-value">{symcatDataset.total_conditions}</p><p className="muted">CDC differential</p></div>
+              <div className="metric"><h3>Symptoms</h3><p className="metric-value">{symcatDataset.total_symptoms}</p><p className="muted">lookup features</p></div>
+              <div className="metric"><h3>Symptom links</h3><p className="metric-value">{symcatDataset.symptom_links.toLocaleString()}</p><p className="muted">condition × symptom</p></div>
+              <div className="metric"><h3>Avg symptoms / condition</h3><p className="metric-value">{symcatDataset.avg_symptoms_per_condition}</p></div>
+              <div className="metric"><h3>Described</h3><p className="metric-value">{symcatDataset.with_description}</p><p className="muted">of {symcatDataset.total_conditions}</p></div>
+              <div className="metric"><h3>Urgency tags</h3><p className="metric-value">{symcatDataset.urgency_distribution.map(u => u.conditions).join(' / ')}</p><p className="muted">High / Medium / Low</p></div>
+            </div>
+          </ChartCard>
+        )}
+        {symcatDataset && (
+          <ChartCard title="Tier 2 preprocessing pipeline — step-by-step calculation" detail="How the SymCat CDC exports are compiled into the 801-condition knowledge base.">
+            <div className="table-scroll" role="region" aria-label="SymCat preprocessing steps" tabIndex={0}>
+              <DataTable className="ml-data-table">
+                <thead><tr><th scope="col">Step</th><th scope="col">Transformation</th><th scope="col">Input</th><th scope="col">Output</th><th scope="col">Formula / calculation</th></tr></thead>
+                <tbody>{symcatDataset.preprocessing.map(s => (
+                  <tr key={s.step}><td>{s.step}</td><td>{s.name}</td><td>{String(s.input ?? '—')}</td><td><strong>{String(s.output)}</strong></td><td>{s.formula}</td></tr>
+                ))}</tbody>
+              </DataTable>
+            </div>
+          </ChartCard>
+        )}
+        {symcatDataset && <ChartCard title="Conditions by urgency" detail="Rule-based red-flag tagging across the 801 CDC conditions."><Bars data={symcatDataset.urgency_distribution} name="urgency" series={['conditions']} /></ChartCard>}
+        {symcatDataset && <ChartCard title="Most common symptoms across conditions" detail="How many of the 801 conditions list each symptom as cardinal."><Bars data={symcatDataset.top_symptoms} name="symptom" series={['conditions']} /></ChartCard>}
+        {symcatDataset && <ChartCard title="Cardinal symptoms per condition" detail="How many symptoms each CDC condition lists as cardinal (bucketed)."><Bars data={symcatDataset.symptoms_per_condition} name="bucket" series={['conditions']} /></ChartCard>}
         <div className="card [grid-column:1/-1] [padding:24px] [background:var(--card-bg)] [border:1px_solid_var(--border)] [border-radius:var(--radius-lg)]">
           <div className="[display:flex] [flex-wrap:wrap] [justify-content:space-between] [align-items:center] [gap:16px] [margin-bottom:20px]">
             <div>
@@ -269,6 +333,33 @@ export default function MLInsightsPage() {
         </div>
       </>}
       {tab === 'Dataset' && <>
+        {clinicalDataset && (
+          <ChartCard title="Tier 1 · Kaggle 41-disease dataset — visual summary" detail="Computed directly from ml-service/data/dataset.csv. This is the clinical dataset used for the live 41-disease predictions.">
+            <div className="metric-grid">
+              <div className="metric"><h3>Raw rows</h3><p className="metric-value">{clinicalDataset.raw_rows.toLocaleString()}</p><p className="muted">Before deduplication</p></div>
+              <div className="metric"><h3>Unique patterns</h3><p className="metric-value">{clinicalDataset.unique_patterns}</p><p className="muted">{clinicalDataset.deduplication_ratio}× reduction</p></div>
+              <div className="metric"><h3>Disease classes</h3><p className="metric-value">{clinicalDataset.diseases}</p><p className="muted">Target labels</p></div>
+              <div className="metric"><h3>Symptom features</h3><p className="metric-value">{clinicalDataset.distinct_symptoms}</p><p className="muted">{clinicalDataset.symptom_columns} raw columns</p></div>
+              <div className="metric"><h3>Populated cells</h3><p className="metric-value">{clinicalDataset.cells.populated.toLocaleString()}</p><p className="muted">{clinicalDataset.cells.blank_pct}% blank</p></div>
+              <div className="metric"><h3>Matrix density</h3><p className="metric-value">{clinicalDataset.matrix.density}%</p><p className="muted">{clinicalDataset.matrix.ones.toLocaleString()} ones of {clinicalDataset.matrix.cells.toLocaleString()}</p></div>
+            </div>
+          </ChartCard>
+        )}
+        {clinicalDataset && (
+          <ChartCard title="Preprocessing pipeline — step-by-step calculation" detail="How the raw CSV becomes the model-ready feature matrix. Every count is computed from the file, not hard-coded.">
+            <div className="table-scroll" role="region" aria-label="Preprocessing steps" tabIndex={0}>
+              <DataTable className="ml-data-table">
+                <thead><tr><th scope="col">Step</th><th scope="col">Transformation</th><th scope="col">Input</th><th scope="col">Output</th><th scope="col">Formula / calculation</th></tr></thead>
+                <tbody>{clinicalDataset.preprocessing.map(s => (
+                  <tr key={s.step}><td>{s.step}</td><td>{s.name}</td><td>{String(s.input ?? '—')}</td><td><strong>{String(s.output)}</strong></td><td>{s.formula}</td></tr>
+                ))}</tbody>
+              </DataTable>
+            </div>
+          </ChartCard>
+        )}
+        {clinicalDataset && <ChartCard title="Class distribution — raw rows vs unique patterns" detail="Per-disease row counts before deduplication and the number of distinct symptom patterns retained after it."><Bars data={clinicalDataset.class_distribution} name="disease" series={['raw', 'unique']} /></ChartCard>}
+        {clinicalDataset && <ChartCard title="Most frequent symptoms" detail="Number of distinct disease patterns each symptom appears in, plus its raw cell count."><Bars data={clinicalDataset.top_symptoms} name="symptom" series={['unique_patterns', 'raw_cells']} /></ChartCard>}
+        {clinicalDataset && <ChartCard title="Symptoms per case" detail="Distribution of distinct symptom counts across the unique patterns."><Bars data={clinicalDataset.symptoms_per_case} name="count" series={['cases']} /></ChartCard>}
         {clinicalReport && (
           <ChartCard title="Tier 1: Kaggle 41-Disease Dataset Deduplication & Hygiene" detail={clinicalReport.dataset.data_hygiene}>
             <Table
