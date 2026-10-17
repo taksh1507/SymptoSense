@@ -5,7 +5,7 @@ import { allowRequest, getClientIp } from '@/lib/rateLimit';
 import { readJson } from '@/lib/http';
 import { InputError, record, text } from '@/lib/assessment/contracts';
 export async function POST(req: Request) {
-  if (!await allowRequest(req, 'register:' + getClientIp(req), 5, 3600000)) return NextResponse.json({ error: 'Too many registration attempts' }, { status: 429 });
+  if (!await allowRequest(req, 'register:' + getClientIp(req), 100, 3600000)) return NextResponse.json({ error: 'Too many registration attempts' }, { status: 429 });
   try {
     const body = record(await readJson(req, 4000));
     const email = text(body.email, 'email', 254).toLowerCase();
