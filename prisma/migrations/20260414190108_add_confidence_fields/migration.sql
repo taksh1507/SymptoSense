@@ -1,1 +1,0 @@
--- Included in the SQLite baseline. Retained migration name for existing installations.
