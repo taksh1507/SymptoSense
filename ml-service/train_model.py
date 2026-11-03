@@ -8,14 +8,14 @@ import os
 from storage import ROOT
 os.environ.setdefault('MPLCONFIGDIR', str(ROOT / '.local' / 'matplotlib'))
 import matplotlib
-matplotlib.use('Agg')  # non-interactive backend — safe for headless environments
+matplotlib.use('Agg')  # non-interactive backend ΓÇö safe for headless environments
 import matplotlib.pyplot as plt
 from pathlib import Path
 import json
 import hashlib
 
 # Configuration
-DATASET_FILE = ROOT / "synthetic_data.csv"
+DATASET_FILE = ROOT / "data" / "synthetic_data.csv"
 MODEL_FILE = ROOT / "ml-service" / "confidence_model.joblib"
 
 def train():
@@ -26,15 +26,15 @@ def train():
 
     # --- STEP 7: Pre-training distribution check ---
     bins = [0, 0.4, 0.6, 0.8, 1.01]
-    labels = ['<0.4 (low)', '0.4–0.6 (mid-lo)', '0.6–0.8 (mid-hi)', '0.8–1.0 (high)']
+    labels = ['<0.4 (low)', '0.4ΓÇô0.6 (mid-lo)', '0.6ΓÇô0.8 (mid-hi)', '0.8ΓÇô1.0 (high)']
     df['conf_bucket'] = pd.cut(df['confidence'], bins=bins, labels=labels, right=False)
     print("\nConfidence distribution in dataset:")
     dist = df['conf_bucket'].value_counts().sort_index()
     print(dist)
     mid_pct  = ((df['confidence'] >= 0.6) & (df['confidence'] < 0.8)).mean()
     high_pct = (df['confidence'] >= 0.8).mean()
-    print(f"\nMid-zone  (0.6–0.8): {mid_pct:.1%}")
-    print(f"High-conf (≥0.8):    {high_pct:.1%}")
+    print(f"\nMid-zone  (0.6ΓÇô0.8): {mid_pct:.1%}")
+    print(f"High-conf (ΓëÑ0.8):    {high_pct:.1%}")
     if mid_pct < 0.15:
         print("WARNING: Mid-zone still under-represented. Consider re-running generate_dataset.py.")
     df.drop(columns=['conf_bucket'], inplace=True)
@@ -52,9 +52,9 @@ def train():
     # --- STEP 6: Improved RandomForestRegressor hyperparameters ---
     print("\nTraining RandomForestRegressor (tuned for high-confidence expressiveness)...")
     model = RandomForestRegressor(
-        n_estimators=250,        # was 150 — more trees = better high-conf region coverage
-        max_depth=12,            # was 10 — slightly deeper to capture stable patterns
-        min_samples_leaf=6,      # was 10 — finer granularity in leaf nodes
+        n_estimators=250,        # was 150 ΓÇö more trees = better high-conf region coverage
+        max_depth=12,            # was 10 ΓÇö slightly deeper to capture stable patterns
+        min_samples_leaf=6,      # was 10 ΓÇö finer granularity in leaf nodes
         max_features='sqrt',
         random_state=42,
         n_jobs=-1
@@ -68,7 +68,7 @@ def train():
     mae = mean_absolute_error(y_test, y_pred)
 
     print(f"\nTraining Complete.")
-    print(f"R² Score:              {r2:.4f}")
+    print(f"R┬▓ Score:              {r2:.4f}")
     print(f"Mean Absolute Error:   {mae:.4f}")
 
     # --- STEP 7: Validation checks ---
@@ -79,15 +79,15 @@ def train():
 
     # Check for binary behavior (missing mid-zone)
     mid_zone_pct = ((pred_series >= 0.60) & (pred_series < 0.80)).mean()
-    print(f"\nMid-zone predictions (0.6–0.8): {mid_zone_pct:.1%}")
+    print(f"\nMid-zone predictions (0.6ΓÇô0.8): {mid_zone_pct:.1%}")
     if mid_zone_pct < 0.15:
-        print("WARNING: Mid-zone (0.6–0.8) under-represented — model may be behaving binary.")
+        print("WARNING: Mid-zone (0.6ΓÇô0.8) under-represented ΓÇö model may be behaving binary.")
     else:
         print("OK: Mid-zone is populated.")
 
     # Check for clustering around 0.6
     mid_cluster = ((pred_series >= 0.55) & (pred_series <= 0.65)).mean()
-    print(f"Clustering around 0.6 (0.55–0.65): {mid_cluster:.1%}")
+    print(f"Clustering around 0.6 (0.55ΓÇô0.65): {mid_cluster:.1%}")
     if mid_cluster > 0.40:
         print("WARNING: Over 40% of predictions clustered around 0.6.")
     else:
@@ -95,10 +95,10 @@ def train():
 
     high_pred_pct = (pred_series >= 0.8).mean()
     low_pred_pct  = (pred_series < 0.4).mean()
-    print(f"High-confidence predictions (≥0.8): {high_pred_pct:.1%}")
+    print(f"High-confidence predictions (ΓëÑ0.8): {high_pred_pct:.1%}")
     print(f"Low-confidence predictions  (<0.4): {low_pred_pct:.1%}")
     if high_pred_pct < 0.10 or low_pred_pct < 0.10:
-        print("WARNING: Distribution may still be compressed — check dataset balance.")
+        print("WARNING: Distribution may still be compressed ΓÇö check dataset balance.")
 
     # Feature importance
     importances = pd.DataFrame({
@@ -121,10 +121,10 @@ def train():
     rule_imp_val = rule_imp[0] if len(rule_imp) > 0 else 0.0
     print(f"\nrule_score importance:       {rule_imp_val:.3f}")
     if rule_imp_val > 0.22:
-        print("WARNING: rule_score importance > 22% — model still over-reliant on risk score.")
+        print("WARNING: rule_score importance > 22% ΓÇö model still over-reliant on risk score.")
         print("         Consider increasing dropout rate in generate_dataset.py.")
     else:
-        print("OK: rule_score importance within target (≤22%).")
+        print("OK: rule_score importance within target (Γëñ22%).")
 
     # Check behavioral features gained importance
     behavioral = ['ambiguity_score', 'symptom_consistency_score', 'symptom_progression',
@@ -132,7 +132,7 @@ def train():
     beh_imp = importances[importances['feature'].isin(behavioral)]['importance'].sum()
     print(f"Behavioral features combined: {beh_imp:.3f}")
     if beh_imp < 0.40:
-        print("WARNING: Behavioral features combined importance < 40% — stability signals are weak.")
+        print("WARNING: Behavioral features combined importance < 40% ΓÇö stability signals are weak.")
     else:
         print("OK: Behavioral features are contributing meaningfully.")
 
@@ -167,3 +167,4 @@ def train():
 
 if __name__ == "__main__":
     train()
+
