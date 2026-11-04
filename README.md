@@ -1,8 +1,22 @@
-# SymptoSense – ML-Based Symptom Triage and Disease Prediction System
+# SymptoSense
 
-SymptoSense is a symptom-triage prototype built with Next.js, React, Prisma/SQLite, and a FastAPI model service. It supports English, Hindi, Marathi, voice input, assessments for yourself or a family member, saved reports, and optional outcome reminders.
+**ML-based symptom triage and disease-likelihood estimation — an educational decision-support prototype.**
 
-The rule score describes triage urgency on a **0–100** scale. Disease prediction uses classical machine learning on the synthetic DDXPlus patient dataset and shows the selected model's probabilities and evidence contributions. Calibration is compared on the validation split and deployed only when the report shows it improves both Brier score and log loss. The retained legacy confidence service uses synthetic heuristics and is separate from the disease classifier. **Not a medical diagnosis.** This repository does not establish clinical diagnostic accuracy.
+[![Verify](https://github.com/taksh1507/SymptoSense/actions/workflows/verify.yml/badge.svg)](https://github.com/taksh1507/SymptoSense/actions/workflows/verify.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+SymptoSense takes a structured symptom questionnaire (English, Hindi, Marathi; voice or typed), applies a deterministic clinical red-flag rule engine, then adds explainable machine-learning disease likelihood. It supports self or family-member assessments, saved reports, and optional outcome reminders.
+
+> **Not a medical diagnosis.** This repository is a research and engineering prototype. It does **not** establish clinical diagnostic accuracy and must not be used for real medical decisions.
+
+| | |
+| --- | --- |
+| **Stack** | Next.js 15 · React 19 · TypeScript · Prisma/SQLite · FastAPI (Python 3.14) |
+| **ML** | scikit-learn 1.8.0 · XGBoost 3.1.3 · SHAP |
+| **AI services** | Groq (symptom extraction + prose) · Sarvam (speech/translation) |
+| **CI** | GitHub Actions — lint, typecheck, 4 test suites, build, integration |
+
+---
 
 ## Screenshots
 
@@ -22,132 +36,213 @@ Captured from the running application; the committed originals are under `output
 
 Responsive ML Insights views and desktop explainability captures are in `outputs/ml-insights-verification/`.
 
+---
+
+## Key features
+
+- **Deterministic triage first.** A 0–100 rule score with emergency red flags that override everything. Medium begins at 28, High at 55; emergency findings force the score to 100.
+- **Explainable disease prediction.** Classical ML over the synthetic DDXPlus benchmark, returning class probabilities plus SHAP feature contributions.
+- **Three-tier diagnostic routing.** Specialized models by presentation type (see [Architecture](#architecture)).
+- **Safety-oriented failures.** Model outages return *unavailable*, never a fabricated percentage. Red-flag rules stay active even when prediction is down.
+- **Private by design.** Optional vendor credentials can be left blank; every external feature degrades to a local fallback.
+- **Multilingual + voice.** English, Hindi, Marathi input with speech-to-text and translation.
+- **Auditable history.** Reports store the rule-engine and model version with the full assessment payload.
+
+---
+
 ## Architecture
 
-The questionnaire provides canonical symptom selections and human-readable adaptive answers. Shared code extracts affirmed findings, checks all emergency indicators, and aggregates all selected symptoms and medical conditions. Emergency findings override the score to 100. Other scores are capped at 100; Medium starts at 28 and High at 55. Age is recorded and used by the legacy confidence model. Age, intensity and duration are not features of the disease dataset; the disease model does not claim to learn effects absent from its data. The current rule engine does not apply age-specific weights.
+### Request flow
 
-The browser shows the deterministic result immediately. Groq then extracts explicitly affirmed symptoms into the fixed dataset vocabulary. The rule engine checks the extracted findings before the augmented assessment is saved. Extraction failure continues with the completed questionnaire; Groq never diagnoses. Disease inference supplies raw model probabilities and SHAP, and Groq may explain this structured output without changing urgency. The authenticated assessment API recalculates it, obtains optional model output with a deadline, and atomically saves the complete questionnaire, result, version metadata, linked prediction log, and unique outcome check-in. Saving status and retry are visible. Optional Groq prose is loaded separately and cannot replace urgency or the fixed care action. Model outages return unavailable, never a fabricated percentage.
+```text
+Questionnaire (canonical symptoms + adaptive answers)
+        │
+        ▼
+Deterministic rule engine ──► emergency red flags override to High
+        │
+        ├──► Groq extracts explicitly affirmed symptoms into the fixed vocabulary
+        │        (extraction failure: continue with the questionnaire; Groq never diagnoses)
+        │
+        ├──► Disease inference ──► raw probabilities + SHAP
+        │        Groq may explain this structured output; it cannot change urgency
+        │
+        ▼
+Authenticated assessment API
+  • recalculates the score
+  • obtains optional model output with a deadline
+  • atomically saves questionnaire + result + version metadata
+    + linked prediction log + unique outcome check-in
+        │
+        ▼
+Saved report (browser shows the deterministic result immediately)
+```
 
-Standalone and serverless inference share ml-service/inference.py and ml-service/confidence_model.joblib. API rule_score is always raw 0–100 and is normalized once in Python. Historical results store their rule/model version and full assessment payload.
+**Scoring rules.** The browser shows the deterministic result immediately. Emergency findings override the score to 100. Other scores are capped at 100. Age is recorded and used by the legacy confidence model; age, intensity, and duration are **not** features of the disease dataset, so the disease model makes no claim to learn effects absent from its data. The current rule engine does not apply age-specific weights.
 
-## Local setup
+**Inference parity.** Standalone and serverless inference share `ml-service/inference.py` and `ml-service/confidence_model.joblib`. API `rule_score` is always raw 0–100 and is normalized once in Python. Historical results store their rule/model version and full assessment payload.
 
-Use Node.js 24+, Python 3.14 (the verified CI and local environment; pinned versions are in `ml-service/requirements.txt` and `requirements.lock.txt`), and npm. Model artifacts use scikit-learn 1.8.0; use the pinned Python environment.
+### Three-tier diagnostic architecture
 
-1. Copy .env.example to .env. Set a random NEXTAUTH_SECRET, for example using node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))". Do not commit the resulting .env. Leave optional vendor credentials blank to exercise fallbacks.
-2. Run npm ci.
-3. For a fresh database, run npm run db:deploy. For an existing SQLite database created by db push, run npm run db:adopt. Adoption makes an ignored local backup, refuses destructive schema reconciliation and duplicate check-ins, and records the repaired baseline without deleting records.
-4. Create a virtual environment: python -m venv .venv. On Windows install with .venv\Scripts\python.exe -m pip install -r ml-service/requirements.txt. On other systems use the virtual environment's Python executable.
-5. Generate/refresh the disease artifacts: run `cd ml-service` followed by `python train_pipeline.py` using the virtual environment, then return to the repository root. The raw DDXPlus files are local-only and ignored by Git; download the official files into `ml-service/data/ddxplus/` before training. Training regenerates the evidence vocabulary in both Python and Next.js.
-6. Start the model service with .venv\Scripts\python.exe ml-service/server.py. It binds to 127.0.0.1:8000 by default and resolves model/database paths relative to the project, independent of the working directory.
-7. Run npm run dev and open http://localhost:3000. Register with email/password. Google sign-in requires configured GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET.
+| Tier | Coverage | Method | Status |
+| --- | --- | --- | --- |
+| **1** | 41 core clinical conditions | Calibrated Random Forest on deduplicated clinical symptom–disease associations (304 unique patterns from 4,920 raw rows, eliminating train/test leakage); independent holdout | Evaluates first when clinical tokens match |
+| **2** | 801 CDC conditions | Literature-derived Bayesian conditional probability over 377 symptoms (CDC NAMCS/NHAMCS statistics) | **Unvalidated** broad differential lookup |
+| **3** | 49 DDXPlus pathologies | Calibrated XGBoost on the synthetic DDXPlus benchmark with input perturbation and selective prediction | Benchmark tier |
 
-DATABASE_URL=file:./dev.db resolves to prisma/dev.db. The Python service uses the same path unless SYMPTOSENSE_DB explicitly overrides it. The legacy nested prisma/prisma/dev.db file is not the configured database; retain it locally until any records that need recovery have been reviewed. Operational database files and local backups are ignored by Git.
+---
 
-The migration history has been replaced with a consistent SQLite baseline because the old SQL and lockfile targeted PostgreSQL. Existing databases with an already-recorded migration history require a reviewed migration plan; do not reset a database containing needed records. The adoption script is intended for the checked-in local databases, which had no migration ledger.
+## Quick start
 
-## Verification
+**Prerequisites:** Node.js 24+, Python 3.14 (the verified CI and local environment), npm. Model artifacts require `scikit-learn==1.8.0` — use the pinned Python environment.
 
-- npm run typecheck
-- npm run lint
-- npm test
-- npm run test:python
-- python -m pytest ml-service/tests -q
-- python ml-service/execute_notebook.py
-- npm run build
-- npm run test:integration (starts disposable local services and a separate fixture database)
+```bash
+# 1. Configure environment (never commit the resulting .env)
+cp .env.example .env
+node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"  # -> NEXTAUTH_SECRET
 
-Tests exercise canonical/multilingual/negated danger signs, all-answer scoring, feature validation, legacy/full-payload report reconstruction, voice matching, request limits, admin permissions, actual model inference, deployment parity, unavailable models, migrations, reminder dates and opt-in handling, and reviewed-outcome retraining gates. Integration fixtures never use operational patient records or real notification credentials.
+# 2. Install JavaScript dependencies and the database baseline
+npm ci
+npm run db:deploy          # fresh database; use db:adopt for an existing db push database
 
-## Production configuration
+# 3. Python environment for the model service
+python -m venv .venv
+.venv\Scripts\python.exe -m pip install -r ml-service/requirements.txt   # Windows
+# python -m pip install -r ml-service/requirements.txt                   # macOS/Linux
 
-Configure NEXTAUTH_SECRET, NEXTAUTH_URL, a durable database volume appropriate for SQLite, and a trusted reverse proxy. SQLite is the implemented provider; migrating to PostgreSQL requires changing the schema, migration history, and Python storage layer deliberately.
+# 4. Disease artifacts (raw DDXPlus files are local-only and gitignored)
+cd ml-service && python train_pipeline.py && cd ..
 
-Production API limits require RATE_LIMIT_REST_URL and RATE_LIMIT_REST_TOKEN for a Redis-compatible REST pipeline service. Requests fail closed if those are missing or the service fails. Development uses bounded per-process limits. Set TRUST_PROXY=true only when a trusted proxy overwrites incoming forwarding headers. Production instances must share the rate-limit store.
+# 5. Run the model service and the web app
+.venv\Scripts\python.exe ml-service/server.py     # binds 127.0.0.1:8000
+npm run dev                                        # http://localhost:3000
+```
 
-Use ML_SERVICE_URL as the model service base URL. The legacy ML_SERVER_URL can specify a full prediction endpoint and is normalized for administrative calls. The root requirements.txt and .python-version describe serverless inference dependencies. vercel.json excludes local data and development files from the Python bundle. Serverless code parity is tested locally; a live Vercel deployment is not verified. SQLite assessment storage requires a durable writable volume, so the full application is not ready for deployment on ephemeral serverless storage. On Vercel, prediction can use the serverless entry point, but administrative retraining/reminders require a separately hosted persistent Python service configured via ML_SERVICE_URL.
+Register with email/password. Google sign-in requires configured `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 
-Set ADMIN_EMAILS to a comma-separated allowlist and a nonempty RETRAIN_TOKEN shared by the web app and Python service. Missing values deny administrative access. The retrain/report endpoints require the token. A single active job is allowed. Model updates replace weights and version metadata; serving verifies their hash matches and returns unavailable during an incomplete promotion. Updates are reloaded without restarting prediction serving.
+**Database paths.** `DATABASE_URL=file:./dev.db` resolves to `prisma/dev.db`. The Python service uses the same path unless `SYMPTOSENSE_DB` overrides it. Operational database files and local backups are gitignored. The migration history was replaced with a consistent SQLite baseline because the old SQL and lockfile targeted PostgreSQL; adopt existing databases rather than resetting any that hold needed records.
 
-Reminders are disabled by default (SCHEDULER_DISABLED=1). Enable the scheduler explicitly and configure SMTP or WhatsApp credentials. Each account must opt in to the corresponding channel in Settings. Users can disable reminders or clear their phone number. Times are stored and compared as Prisma-compatible epoch milliseconds, and a short reservation prevents concurrent deliveries. Preview with python ml-service/followup_reminders.py --dry-run before enabling delivery.
+### Configuration
 
-## Disease ML pipeline and evaluation
+All variables are documented in [`.env.example`](.env.example). The most important:
 
-Disease prediction now uses the synthetic [DDXPlus dataset on Figshare](https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374), described in [the DDXPlus paper](https://arxiv.org/abs/2205.09148). Figshare identifies the release as CC BY 4.0. Provenance, license text hash, and input hashes are recorded in `ml-service/data/ddxplus/SOURCE.md` and each generated `ml_report.json`. The patient CSVs, conditions JSON, and evidence JSON are downloaded locally and ignored by Git.
+| Variable | Purpose |
+| --- | --- |
+| `NEXTAUTH_SECRET` / `NEXTAUTH_URL` | Session signing and canonical URL |
+| `DATABASE_URL` | SQLite path (`file:./dev.db`) |
+| `ML_SERVICE_URL` | FastAPI base URL for the model service |
+| `ADMIN_EMAILS` | Comma-separated admin allowlist. **Empty denies all admin access** |
+| `RETRAIN_TOKEN` | Shared secret required by retrain/report endpoints |
+| `RATE_LIMIT_REST_URL` / `RATE_LIMIT_REST_TOKEN` | Redis-compatible limiter. **Production fails closed without them** |
+| `SCHEDULER_DISABLED` | Reminders are off by default (`1`) |
+| `GROQ_API_KEY`, `SARVAM_API_KEY` | Optional AI services; leave blank to exercise fallbacks |
 
-The input schema was verified from the downloaded files: patient columns are AGE, DIFFERENTIAL_DIAGNOSIS, SEX, PATHOLOGY, EVIDENCES, and INITIAL_EVIDENCE. Evidence lists contain binary codes and categorical/multichoice values using `_@_`. Metadata defines 110 symptoms and 113 antecedents. INITIAL_EVIDENCE is excluded because the app does not collect it. Numeric age is mapped to the app groups Child (0–12), Teen (13–18), Adult (19–49), Elderly (50+); age 50 goes to Elderly to remove the questionnaire's overlapping boundary. Missing sex is represented as unknown, with 20% of training sex values masked for robustness.
+---
 
-Run `cd ml-service` then `.venv/Scripts/python.exe train_pipeline.py --train-rows 150000` on Windows (or `python train_pipeline.py --train-rows 150000` in the activated virtual environment). `DDXPLUS_TRAIN_ROWS` changes the default. The entry point uses seeded, pathology-stratified samples from the official train/validate/test splits; validation/test sample sizes scale proportionally. Preprocessing produces sparse features. The sample size, memory, training time, duplicate patterns, and exact-record overlap fingerprints are in `ml_report.json`. The release has no patient identifier, so the report cannot prove patient-level deduplication beyond exact record fingerprints. The sample budget limits representativeness and is a stated evaluation limitation.
+## Testing & verification
 
-Training compares Logistic Regression, Multinomial Naive Bayes, Random Forest, and XGBoost with five-fold stratified CV. It tunes the two CV leaders on training folds, selects by validation macro-F1, and only then evaluates the official test sample. The report contains model/baseline comparisons, top-k scores, per-class metrics, confusion matrix, ROC/AUC, calibration comparison, learning and robustness data, and SHAP outputs. Calibration is kept only if validation Brier score and log loss both improve; the live confidence uses the method recorded in `ml_report.json`. No performance number is asserted here: the dashboard and report are the source of actual trained metrics.
+```bash
+npm run lint          # ESLint
+npm run typecheck     # tsc --noEmit
+npm test              # Node test runner (JS/TS)
+npm run test:python   # pytest
+npm run test:ml       # ML pipeline tests
+npm run build         # production build
+npm run test:integration   # disposable services + separate fixture database
+```
 
-DDXPlus severity is lower-number-is-more-severe. The urgency research target maps severity 1–2 to High, 3 to Medium, and 4+ to Low; these are dataset-defined synthetic labels, not clinician-validated triage. The app combines urgency as the highest of the model result, red-flag override, and disease safety floor. **The disease safety floors are project safety choices, not clinical guidelines**: severity-1 Anaphylaxis, Larygospasm, Ebola, Possible NSTEMI / STEMI and acute pulmonary edema, plus severity-2 pulmonary embolism, unstable angina, spontaneous pneumothorax, Boerhaave, epiglottitis, Guillain-Barré syndrome, Croup and Myocarditis raise urgency to High. PSVT, Scombroid food poisoning, acute dystonic reactions and stable angina (severity 2) have a Medium floor. Red-flag findings always force High. The rule engine remains responsible for triage. The system is not a medical diagnosis tool.
+All of the above run in CI on every push (`.github/workflows/verify.yml`). Tests cover canonical/multilingual/negated danger signs, all-answer scoring, feature validation, legacy and full-payload report reconstruction, voice matching, request limits, admin permissions, real model inference, deployment parity, unavailable models, migrations, reminder dates and opt-in handling, and reviewed-outcome retraining gates. Integration fixtures never use operational patient records or real notification credentials.
 
-### Three-Tier Diagnostic Architecture
+> The notebook step (`ml-service/execute_notebook.py`) requires the local-only DDXPlus patient data, so CI **skips it with an explicit message** rather than failing. It runs on a machine where the dataset is present.
 
-SymptoSense dynamically routes symptom presentations through specialized diagnostic tiers:
-1. **Tier 1 (41 Core Clinical Conditions)**: Calibrated Random Forest model trained on clinical symptom-disease associations. Uses deduplicated unique patterns (304 unique patterns deduplicated from 4,920 raw rows, eliminating train/test leakage) with independent holdout evaluation. Evaluates first when clinical symptom tokens match.
-2. **Tier 2 (801 CDC Conditions)**: Literature-derived Bayesian conditional probability engine based on CDC NAMCS/NHAMCS outpatient statistics. Operates across 377 symptoms as an unvalidated broad differential knowledge-base lookup.
-3. **Tier 3 (49 DDXPlus Benchmark Pathologies)**: Calibrated gradient boosted model (XGBoost) trained on the DDXPlus synthetic patient benchmark with realistic input perturbation and selective prediction operating points.
+---
 
-Further engineering and dataset documentation is available in [`docs/`](docs/):
-- [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANALYSIS.md)
-- [`docs/FIXES.md`](docs/FIXES.md)
-- [`docs/DATASET_EXPANSION_GUIDE.md`](docs/DATASET_EXPANSION_GUIDE.md)
+## Disease ML pipeline & evaluation
 
-The notebook `ml-service/notebooks/SymptoSense_ML.ipynb` documents data, EDA, preprocessing, training/tuning, evaluation, baselines, robustness, explainability and limitations. `python ml-service/execute_notebook.py` executes and validates it. The derived models and report are generated artifacts; figures are in `ml-service/reports/figures/`. Authenticated app routes remain `/api/ml/extract` and `/api/ml/disease`; FastAPI exposes `/predict-disease`, `/ml-report`, and `/clinical-report`. Unknown evidences are returned in the ignored list; if none are recognized, the endpoint returns 422. Rule-engine red flags remain active even when prediction service is unavailable.
+Disease prediction uses the synthetic [DDXPlus dataset](https://figshare.com/articles/dataset/DDXPlus_Dataset/20043374) ([paper](https://arxiv.org/abs/2205.09148)), released under CC BY 4.0. Provenance, license-text hash, and input hashes are recorded in `ml-service/data/ddxplus/SOURCE.md` and each generated `ml_report.json`. The patient CSVs, conditions JSON, and evidence JSON are downloaded locally and ignored by Git.
+
+**Input schema.** Patient columns: `AGE, DIFFERENTIAL_DIAGNOSIS, SEX, PATHOLOGY, EVIDENCES, INITIAL_EVIDENCE`. Evidence lists use binary codes and categorical/multichoice values (`_@_`). Metadata defines 110 symptoms and 113 antecedents. `INITIAL_EVIDENCE` is excluded because the app does not collect it. Numeric age maps to app groups Child (0–12), Teen (13–18), Adult (19–49), Elderly (50+); age 50 goes to Elderly to remove the questionnaire's overlapping boundary. Missing sex is represented as *unknown*, with 20% of training sex values masked for robustness.
+
+**Training.** `python train_pipeline.py --train-rows 150000` uses seeded, pathology-stratified samples from the official train/validate/test splits. Training compares Logistic Regression, Multinomial Naive Bayes, Random Forest, and XGBoost with five-fold stratified CV, tunes the two CV leaders on training folds, selects by validation macro-F1, and only then evaluates the official test sample.
+
+**Calibration is earned, not assumed.** A calibration method ships only when the report shows it improving **both** validation Brier score and log loss. The live confidence uses whichever method `ml_report.json` records.
+
+> **No performance number is asserted in this README.** The ML Insights dashboard and `ml_report.json` are the source of the actual trained metrics — see the screenshots above.
+
+**Urgency mapping.** DDXPlus severity is lower-number-is-more-severe. The research target maps severity 1–2 → High, 3 → Medium, 4+ → Low. These are dataset-defined synthetic labels, not clinician-validated triage. The app takes urgency as the highest of the model result, red-flag override, and disease safety floor.
+
+> **The disease safety floors are project safety choices, not clinical guidelines.** Severity-1 Anaphylaxis, Laryngospasm, Ebola, Possible NSTEMI/STEMI, and acute pulmonary edema, plus severity-2 pulmonary embolism, unstable angina, spontaneous pneumothorax, Boerhaave, epiglottitis, Guillain–Barré, Croup, and Myocarditis raise urgency to High. PSVT, Scombroid food poisoning, acute dystonic reactions, and stable angina have a Medium floor. Red-flag findings always force High.
+
+### API and artifacts
+
+Authenticated app routes: `/api/ml/extract`, `/api/ml/disease`. FastAPI exposes `/predict-disease`, `/ml-report`, and `/clinical-report`. Unknown evidences are returned in the ignored list; if none are recognized the endpoint returns **422**. The notebook `ml-service/notebooks/SymptoSense_ML.ipynb` documents data, EDA, preprocessing, training, evaluation, baselines, robustness, explainability, and limitations; `python ml-service/execute_notebook.py` executes and validates it. Generated figures live in `ml-service/reports/figures/`.
+
+---
 
 ## Training on Google Colab
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/taksh1507/SymptoSense/blob/main/ml-service/notebooks/SymptoSense_Colab_Training.ipynb)
 
-A dedicated, self-contained Google Colab notebook is provided at [`ml-service/notebooks/SymptoSense_Colab_Training.ipynb`](ml-service/notebooks/SymptoSense_Colab_Training.ipynb) to train and compile all three diagnostic tiers end to end:
-1. **Tier 1 (41 Core Clinical Conditions)**: Calibrated Random Forest model trained on deduplicated clinical associations (`train_clinical.py`).
-2. **Tier 2 (801 CDC Conditions)**: Full SymCat outpatient conditional probability knowledge base parsed from CDC NAMCS/NHAMCS statistics (`parse_symcat_801.py`).
-3. **Tier 3 (49 DDXPlus Benchmark Pathologies)**: Calibrated gradient boosted model (XGBoost) trained on the DDXPlus patient benchmark with realistic input perturbation and selective prediction (`train_pipeline.py`).
+[`ml-service/notebooks/SymptoSense_Colab_Training.ipynb`](ml-service/notebooks/SymptoSense_Colab_Training.ipynb) trains and compiles all three tiers end to end.
 
-### Runtime Recommendations
-- **Hardware Acceleration**: GPU is optional. The pipeline runs on standard CPU or GPU runtimes. If a CUDA GPU (e.g., T4/V100/A100) is detected, `DDX_XGB_DEVICE=cuda` is configured automatically for XGBoost training.
-- **Session Durability**: Free Google Colab sessions can disconnect during longer training runs. Keep `USE_DRIVE = True` enabled so that intermediate logs (`training.log`) and output archives are saved directly to your Google Drive (`MyDrive/SymptoSense_Outputs`).
+- **Hardware:** GPU optional. If a CUDA GPU is detected, `DDX_XGB_DEVICE=cuda` is set automatically for XGBoost.
+- **Durability:** free Colab sessions can disconnect. Keep `USE_DRIVE = True` so logs and output archives persist to `MyDrive/SymptoSense_Outputs`.
+- **Output:** `symptosense_artifacts.zip` containing `ml-service/artifacts/`, `ml-service/artifacts/clinical/`, `ml-service/reports/`, `lib/ml/symptom-list.json`, and a `manifest.json` recording commit hash, Python version, pinned library versions, timestamp, row budget, and CLI flags.
 
-### What the Notebook Produces
-The training pipeline generates `symptosense_artifacts.zip` containing:
-- `ml-service/artifacts/` (`best_model.joblib`, `label_encoder.joblib`, `shap_background.joblib`, `urgency_model.joblib`, `feature_columns.json`, `symptom_list.json`, `red_flags.json`).
-- `ml-service/artifacts/clinical/` (`symcat_knowledge_base.json`, `clinical_model.joblib`, `clinical_encoder.joblib`, `disease_descriptions.json`, `disease_precautions.json`, `clinical_report.json`).
-- `ml-service/reports/` (`ml_report.json`, `clinical_report.json`, and all generated diagnostic evaluation figures).
-- `lib/ml/symptom-list.json` (frontend evidence schema).
-- `manifest.json` (environment provenance recording git commit hash, Python version, pinned library versions, timestamp, row budget, and CLI flags).
-
-### How to Copy Artifacts into the Repo
-Download `symptosense_artifacts.zip` (via Colab browser download or Google Drive), place it at your repository root, and run:
 ```bash
-# Python cross-platform:
-python -m zipfile -e symptosense_artifacts.zip .
-
-# Linux / macOS:
-unzip -o symptosense_artifacts.zip
-
-# Windows PowerShell:
-Expand-Archive -Path symptosense_artifacts.zip -DestinationPath . -Force
+# Extract artifacts at the repository root
+python -m zipfile -e symptosense_artifacts.zip .          # cross-platform
+unzip -o symptosense_artifacts.zip                        # Linux / macOS
+Expand-Archive -Path symptosense_artifacts.zip -DestinationPath . -Force   # Windows PowerShell
 ```
 
-### Library Version Pinning Warning
-Joblib-serialized model artifacts (`.joblib`) are sensitive to library versions. They only load reliably when evaluated using the exact same library versions they were trained with, especially `scikit-learn==1.8.0` and `xgboost==3.1.3`. The notebook installs the pinned versions from `ml-service/requirements.txt` and asserts them before training begins. Do not attempt to load artifacts across mismatched scikit-learn or xgboost versions.
+> **Version pinning.** Joblib artifacts load reliably only under the exact training library versions, especially `scikit-learn==1.8.0` and `xgboost==3.1.3`. The notebook installs and asserts these before training.
+>
+> **Large files.** Trained weights and SHAP backgrounds can exceed GitHub limits. Do not commit `.joblib` files directly — use Git LFS or attach them to tagged Releases.
 
-### Large Model Files and Version Control
-Trained model weights and background explanation matrices (`best_model.joblib`, `shap_background.joblib`, etc.) can exceed standard GitHub commit file size limits. Do not commit large binary `.joblib` files directly to Git; track them with Git LFS or attach them to tagged GitHub Releases.
+---
 
-## Retained legacy confidence and reviewed-outcome evaluation
+## Deployment
 
-The synthetic generator uses a fixed seed and the current shared rule weights/thresholds for the supported model symptom subset. It generates heuristic targets, not clinical correctness labels. Regenerating the dataset and model is an explicit development operation:
+- **Target host requirements:** a durable writable volume for SQLite, a trusted reverse proxy, and shared rate-limit storage across instances.
+- **Rate limiting:** production requires `RATE_LIMIT_REST_URL` + `RATE_LIMIT_REST_TOKEN`; requests **fail closed** when the limiter is missing or failing. Development uses bounded per-process limits. Set `TRUST_PROXY=true` only behind a proxy that overwrites forwarding headers.
+- **Serverless:** `vercel.json` excludes local data and development files from the Python bundle. Serverless code parity is tested locally, but **a live Vercel deployment is not verified**. SQLite assessment storage needs a durable volume, so the full app is not deployable on ephemeral serverless storage — on Vercel, prediction can use the serverless entry point while retraining/reminders require a separately hosted persistent Python service.
+- **Admin:** set `ADMIN_EMAILS` and a nonempty `RETRAIN_TOKEN`. Missing values deny access. One retraining job runs at a time; model updates verify their hash and return *unavailable* during an incomplete promotion, and reload without restarting prediction serving.
+- **PostgreSQL:** migrating requires deliberately changing the schema, migration history, and Python storage layer. SQLite is the implemented provider.
 
-- python ml-service/generate_dataset.py
-- python ml-service/train_model.py
+---
 
-Severity and duration each retain four distinct levels. The legacy generated dataset has no augmented copies before splitting. These commands replace development training artifacts; preserve/version artifacts that need comparison first. The model metadata identifies synthetic_heuristic as the target kind.
+## Retraining & outcome evaluation
 
-Outcome improvement or recovery alone is never treated as evidence that triage was correct. An authorized reviewer must explicitly verify appropriateness before an outcome can be used for retraining, through POST /api/model-health with action=review, followUpId, and reviewedCorrect. Assign that privilege only to suitable reviewers. Editing the patient's check-in clears its prior review.
+The legacy confidence service is separate from the disease classifier and uses **synthetic heuristics**, not clinical correctness labels. Regenerating it is an explicit development operation:
 
-Retraining requires at least 50 reviewed samples, enough distinct patients, both correctness classes, patient-separated calibration folds, and a fixed patient-level holdout. Synthetic labels are not mixed into that target. Promotion requires valid probabilities, improvement over the reviewed champion when present, and a Brier score better than both the constant 0.5 baseline and a baseline using the training prevalence. These engineering gates do not constitute clinical validation or deployment approval.
+```bash
+python ml-service/generate_dataset.py
+python ml-service/train_model.py
+```
 
-The manifest supplies a valid SVG icon. Offline operation and a service worker are not implemented. Family assessments store patient/relation metadata; persistent independent family health profiles are not implemented.
+Outcome improvement or recovery alone is never treated as evidence that triage was correct. An authorized reviewer must verify appropriateness (`POST /api/model-health` with `action=review`, `followUpId`, `reviewedCorrect`) before an outcome can inform retraining; editing a check-in clears its prior review. Retraining requires at least 50 reviewed samples, enough distinct patients, both correctness classes, patient-separated calibration folds, and a fixed patient-level holdout. Promotion requires valid probabilities and a Brier score better than both the constant-0.5 baseline and a training-prevalence baseline.
+
+> These engineering gates are not clinical validation and not deployment approval.
+
+---
+
+## Limitations & non-goals
+
+- **Not a medical device.** No clinical diagnostic accuracy is established; the questionnaire and models are a prototype.
+- **Synthetic disease data.** Tier 1/3 train on synthetic or literature-derived data. DDXPlus has no patient identifier, so the report cannot prove patient-level deduplication beyond exact-record fingerprints, and the sample budget limits representativeness.
+- **Unvalidated tier.** Tier 2 (801 CDC conditions) is an unvalidated differential lookup, presented as such.
+- **Legacy confidence is heuristic.** Its targets are generated, not measured probabilities that triage is correct.
+- **No offline mode.** A service worker is not implemented; the manifest supplies a valid SVG icon only.
+- **Family assessments, not profiles.** Patient/relation metadata is stored, but persistent independent family health profiles are not implemented.
+- **Serverless is partial.** See [Deployment](#deployment).
+
+---
+
+## Documentation & license
+
+- [`docs/PROJECT_ANALYSIS.md`](docs/PROJECT_ANALYSIS.md) — original engineering audit (historical; findings since repaired)
+- [`docs/FIXES.md`](docs/FIXES.md) — implemented changes and verification
+- [`docs/DATASET_EXPANSION_GUIDE.md`](docs/DATASET_EXPANSION_GUIDE.md) — dataset expansion
+- [`docs/ml-insights-redesign.md`](docs/ml-insights-redesign.md) — ML Insights dashboard redesign
+
+Licensed under the [MIT License](LICENSE).
