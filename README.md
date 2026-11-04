@@ -4,6 +4,24 @@ SymptoSense is a symptom-triage prototype built with Next.js, React, Prisma/SQLi
 
 The rule score describes triage urgency on a **0–100** scale. Disease prediction uses classical machine learning on the synthetic DDXPlus patient dataset and shows the selected model's probabilities and evidence contributions. Calibration is compared on the validation split and deployed only when the report shows it improves both Brier score and log loss. The retained legacy confidence service uses synthetic heuristics and is separate from the disease classifier. **Not a medical diagnosis.** This repository does not establish clinical diagnostic accuracy.
 
+## Screenshots
+
+Captured from the running application; the committed originals are under `outputs/`.
+
+| Landing | Assessment | Results |
+| --- | --- | --- |
+| ![Landing page](outputs/report-images/landing.png) | ![Assessment questionnaire](outputs/report-images/assessment.png) | ![Results](outputs/report-images/dashboard.png) |
+
+| ML report | Model health | Reports list |
+| --- | --- | --- |
+| ![ML report](outputs/report-images/ml-report.png) | ![Model health](outputs/report-images/model-health.png) | ![Reports](outputs/report-images/reports.png) |
+
+| Calibration | Learning curve | Evaluation |
+| --- | --- | --- |
+| ![Calibration](outputs/report-images/calibration.png) | ![Learning curve](outputs/report-images/learning-curve.png) | ![Evaluation](outputs/report-images/evaluation.png) |
+
+Responsive ML Insights views and desktop explainability captures are in `outputs/ml-insights-verification/`.
+
 ## Architecture
 
 The questionnaire provides canonical symptom selections and human-readable adaptive answers. Shared code extracts affirmed findings, checks all emergency indicators, and aggregates all selected symptoms and medical conditions. Emergency findings override the score to 100. Other scores are capped at 100; Medium starts at 28 and High at 55. Age is recorded and used by the legacy confidence model. Age, intensity and duration are not features of the disease dataset; the disease model does not claim to learn effects absent from its data. The current rule engine does not apply age-specific weights.
