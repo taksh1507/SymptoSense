@@ -11,7 +11,7 @@ export function mapAnswersToMLFeatures(data: Partial<FinalAssessmentPayload>): M
   const symptoms = new Set(collectSymptoms(data.symptoms ?? [], data.customSymptom, Object.values(data.aiAnswerLabels ?? {})));
   const conditions = new Set([...(data.medications ?? []), ...(data.customMedication ? [data.customMedication] : [])].filter(m => !isDeniedFinding(m)).map(m => normalizeClinicalValue(m).replace(/ /g, '_')));
   const severity = data.severity === 'moderate' ? 2 : data.severity === 'critical' ? 4 : data.severity === 'severe' ? 3 : 1;
-  const duration = data.duration === '1-3 days' ? 2 : data.duration === '> 1 week' ? 4 : data.duration === '4-7 days' ? 3 : 1;
+  const duration = data.duration === '1-3 days' ? 2 : (data.duration === '> 1 week' || data.duration === '4-12 weeks' || data.duration === '> 12 weeks') ? 4 : data.duration === '4-7 days' ? 3 : 1;
   const labels = Object.values(data.aiAnswerLabels ?? {}).join('. ').toLowerCase();
   const codes = Object.values(data.aiAnswers ?? {});
   const positive = labels.split(/[.;!?]|\bbut\b/).filter(t => !/\b(no|not|without|denies|none)\b/.test(t)).join(' ');

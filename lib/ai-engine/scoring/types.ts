@@ -40,7 +40,7 @@ export interface ScoringRules {
     medium: number;
     high: number;
   };
-  recommendations: Record<UrgencyLevel, { en: string; hi: string }>;
+  recommendations: Record<UrgencyLevel | 'Emergency', { en: string; hi: string }>;
 }
 
 // ── Shared result types (used by AppContext, sessions, useTestSession) ──

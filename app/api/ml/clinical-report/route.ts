@@ -4,6 +4,7 @@ import path from 'path';
 import { requireUser } from '@/lib/apiGuard';
 import { isAdmin } from '@/lib/admin';
 import { mlBaseUrl } from '@/lib/ml/service';
+import { loadClinicalDiagnostics } from '@/lib/ml/clinicalDiagnostics';
 
 async function loadReport(): Promise<Record<string, unknown>> {
   const filePath = path.join(process.cwd(), 'ml-service', 'reports', 'clinical_report.json');
@@ -23,7 +24,7 @@ export async function GET(req: Request) {
     if (report.schema_version !== 1 || !report.dataset || !report.holdout_test_metrics) {
       throw new Error('Invalid clinical report');
     }
-    return NextResponse.json(report, { headers: { 'Cache-Control': 'no-store' } });
+    return NextResponse.json({ ...report, insights: loadClinicalDiagnostics() }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {
     return NextResponse.json({ status: 'unavailable', error: 'Clinical report unavailable' }, { status: 503 });
   }

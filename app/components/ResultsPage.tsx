@@ -6,6 +6,7 @@ import { Button, Notice } from '@/components/ui/primitives';
 import { useUiText } from '@/components/ui/use-ui-text';
 import { generateRiskExplanation, generateRecommendations } from '@/lib/report/reasoningEngine';
 import { getWarningSigns, getDrugWarnings } from '@/lib/report/warnings';
+import { emergencyFindings } from '@/lib/assessment/findings';
 import { Printer, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
@@ -63,10 +64,17 @@ export default function ResultsPage({ onRestart }: { onRestart?: () => void } = 
   const onBloodThinners = medications.some(m => /blood.?thinner/.test(m));
   const drugWarnings = getDrugWarnings(onBloodThinners, [primarySymptom, ...additionalSymptoms, ...medications]);
 
+  const hasRedFlag =
+    (assessmentPayload as { hasRedFlag?: boolean })?.hasRedFlag ||
+    riskScore === 100 ||
+    emergencyFindings([primarySymptom, ...additionalSymptoms]).length > 0;
+
   const model: ReportModel = {
     language: langKey,
     urgency: riskLevel,
     score: riskScore,
+    hasRedFlag,
+    ageGroup: (assessmentPayload as { age?: string } | null)?.age,
     urgencyExplanation: riskReasoning,
     summary: displaySummary,
     factors: displayFactors,

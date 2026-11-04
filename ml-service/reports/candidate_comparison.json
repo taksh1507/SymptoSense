@@ -1,0 +1,143 @@
+{
+  "Baseline (Production)": {
+    "heldout_benchmark": {
+      "samples": 61,
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "macro_precision": 1.0,
+      "macro_recall": 1.0,
+      "macro_f1": 1.0,
+      "brier_score": 0.19731031413009414,
+      "log_loss": 0.5763034645376173
+    },
+    "symptom_omission_stress_test": {
+      "drop_1_symptom": {
+        "trials": 482,
+        "top1_accuracy": 0.9979253112033195,
+        "top3_accuracy": 1.0
+      },
+      "drop_2_symptoms": {
+        "trials": 212,
+        "top1_accuracy": 0.9905660377358491,
+        "top3_accuracy": 1.0
+      }
+    },
+    "noise_distractor_stress_test": {
+      "add_1_distractor": {
+        "trials": 305,
+        "top1_accuracy": 1.0,
+        "top3_accuracy": 1.0
+      },
+      "add_2_distractors": {
+        "trials": 305,
+        "top1_accuracy": 1.0,
+        "top3_accuracy": 1.0
+      }
+    },
+    "ambiguous_case_uncertainty": {
+      "symptoms": [
+        "stomach_pain",
+        "cough",
+        "mild_fever"
+      ],
+      "top_prediction": "GERD",
+      "top_confidence": 0.11967607170434343,
+      "margin": 0.03870636413966906,
+      "safe_abstention": true
+    }
+  },
+  "Candidate 1 (Regularized)": {
+    "heldout_benchmark": {
+      "samples": 61,
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "macro_precision": 1.0,
+      "macro_recall": 1.0,
+      "macro_f1": 1.0,
+      "brier_score": 0.22325952828294976,
+      "log_loss": 0.6277544369005349
+    },
+    "symptom_omission_stress_test": {
+      "drop_1_symptom": {
+        "trials": 482,
+        "top1_accuracy": 0.9979253112033195,
+        "top3_accuracy": 1.0
+      },
+      "drop_2_symptoms": {
+        "trials": 212,
+        "top1_accuracy": 0.9386792452830188,
+        "top3_accuracy": 1.0
+      }
+    },
+    "noise_distractor_stress_test": {
+      "add_1_distractor": {
+        "trials": 305,
+        "top1_accuracy": 1.0,
+        "top3_accuracy": 1.0
+      },
+      "add_2_distractors": {
+        "trials": 305,
+        "top1_accuracy": 0.9967213114754099,
+        "top3_accuracy": 1.0
+      }
+    },
+    "ambiguous_case_uncertainty": {
+      "symptoms": [
+        "stomach_pain",
+        "cough",
+        "mild_fever"
+      ],
+      "top_prediction": "GERD",
+      "top_confidence": 0.1602911146413323,
+      "margin": 0.0731798001373679,
+      "safe_abstention": true
+    }
+  },
+  "Candidate 2 (Perturbation-Augmented)": {
+    "heldout_benchmark": {
+      "samples": 61,
+      "top1_accuracy": 1.0,
+      "top3_accuracy": 1.0,
+      "macro_precision": 1.0,
+      "macro_recall": 1.0,
+      "macro_f1": 1.0,
+      "brier_score": 0.11566802337497421,
+      "log_loss": 0.3845257968341744
+    },
+    "symptom_omission_stress_test": {
+      "drop_1_symptom": {
+        "trials": 482,
+        "top1_accuracy": 0.9875518672199171,
+        "top3_accuracy": 0.9979253112033195
+      },
+      "drop_2_symptoms": {
+        "trials": 212,
+        "top1_accuracy": 0.9481132075471698,
+        "top3_accuracy": 0.9905660377358491
+      }
+    },
+    "noise_distractor_stress_test": {
+      "add_1_distractor": {
+        "trials": 305,
+        "top1_accuracy": 0.9573770491803278,
+        "top3_accuracy": 1.0
+      },
+      "add_2_distractors": {
+        "trials": 305,
+        "top1_accuracy": 0.9049180327868852,
+        "top3_accuracy": 1.0
+      }
+    },
+    "ambiguous_case_uncertainty": {
+      "symptoms": [
+        "stomach_pain",
+        "cough",
+        "mild_fever"
+      ],
+      "top_prediction": "Drug Reaction",
+      "top_confidence": 0.20855743271637295,
+      "margin": 0.07500747929688067,
+      "safe_abstention": true
+    }
+  }
+}

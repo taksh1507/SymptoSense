@@ -5,7 +5,8 @@ import vm from 'node:vm';
 import ts from 'typescript';
 import { evaluateAssessment, assessmentContext } from '@/lib/assessment/evaluate';
 import { calculateRisk } from '@/lib/ai-engine/scoring/engine';
-import { collectSymptoms } from '@/lib/assessment/findings';
+import { collectSymptoms, extractAffirmedSymptoms } from '@/lib/assessment/findings';
+import { canonicalFindingFromEvidence } from '@/lib/assessment/symptomPresentation';
 import { matchVoiceToOption } from '@/utils/matchVoiceInput';
 import * as flow from '@/components/ai-question-engine/questionFlow';
 
@@ -36,7 +37,11 @@ function harness(file: string, dependencies: Record<string, unknown>, globals: R
   };
 }
 const payload = { age: 'adult', symptoms: ['cough'], severity: 'mild', duration: '< 1 day', medications: [], aiAnswers: {}, aiAnswerLabels: {}, language: 'en' };
-const dependencies = { '@/lib/assessment/evaluate': { evaluateAssessment, assessmentContext } };
+const dependencies = {
+  '@/lib/assessment/evaluate': { evaluateAssessment, assessmentContext },
+  '@/lib/assessment/findings': { extractAffirmedSymptoms },
+  '@/lib/assessment/symptomPresentation': { canonicalFindingFromEvidence },
+};
 const settle = () => new Promise(resolve => setImmediate(resolve));
 const response = (data: unknown, ok = true) => ({ ok, json: async () => data });
 

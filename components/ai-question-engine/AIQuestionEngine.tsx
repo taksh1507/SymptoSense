@@ -105,31 +105,146 @@ export function AIQuestionEngine({
 
   if (stage === 'review' && engine.reviewPayload) {
     const data = engine.reviewPayload;
+
+    const formatAge = (val: string) => {
+      const map: Record<string, string> = {
+        child: 'Child (0–12)',
+        teen: 'Teen (13–18)',
+        adult: 'Adult (19–50)',
+        elderly: 'Elderly (50+)',
+      };
+      return map[val.toLowerCase()] || (val.charAt(0).toUpperCase() + val.slice(1));
+    };
+
+    const formatLanguage = (val: string) => {
+      const map: Record<string, string> = {
+        en: 'English',
+        hi: 'Hindi (हिंदी)',
+        mr: 'Marathi (मराठी)',
+      };
+      return map[val.toLowerCase()] || val;
+    };
+
+    const formatSeverity = (val: string) => {
+      const map: Record<string, string> = {
+        mild: 'Mild — Manage normally',
+        moderate: 'Moderate — Some activities harder',
+        severe: 'Severe — Mostly unable to function',
+        critical: 'Critical — Cannot get out of bed',
+      };
+      return map[val.toLowerCase()] || (val.charAt(0).toUpperCase() + val.slice(1));
+    };
+
+    const formatDuration = (val: string) => {
+      const map: Record<string, string> = {
+        '< 1 day': '< 24 hours',
+        '1-3 days': '1 – 3 days',
+        '4-7 days': '4 – 7 days',
+        '> 1 week': '1 – 4 weeks',
+        '4-12 weeks': '4 – 12 weeks',
+        '> 12 weeks': '12 weeks or longer',
+      };
+      return map[val] || val;
+    };
+
+    const symptomsList = [...data.symptoms, data.customSymptom]
+      .filter((s): s is string => Boolean(s))
+      .map(s => s.replaceAll('_', ' '))
+      .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(', ') || t('None reported', 'कोई नहीं', 'काही नाही');
+
+    const historyList = [...data.medications, data.customMedication]
+      .filter((m): m is string => Boolean(m))
+      .filter(m => m !== 'none')
+      .map(m => m.replaceAll('_', ' '))
+      .map(m => m.charAt(0).toUpperCase() + m.slice(1))
+      .join(', ') || t('None reported', 'कोई नहीं बताया', 'काही सांगितले नाही');
+
     return (
       <div className="question-flow">
         <ProgressStepper step={3} />
-        <Section title={t('Review your assessment', 'मूल्यांकन की समीक्षा करें', 'मूल्यांकनाचा आढावा घ्या')}>
-          <p>{t('Check your answers before submitting.', 'जमा करने से पहले अपने उत्तर जाँचें।', 'सादर करण्यापूर्वी तुमची उत्तरे तपासा.')}</p>
+        
+        <header className="mb-4">
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900">
+            {t('Review Your Assessment', 'अपने मूल्यांकन की समीक्षा करें', 'आपल्या मूल्यांकनाचा आढावा घ्या')}
+          </h1>
+          <p className="text-sm text-slate-600 mt-1">
+            {t(
+              'Please confirm your information before generating your results.',
+              'परिणाम तैयार करने से पहले कृपया अपनी जानकारी की पुष्टि करें।',
+              'निकाल तयार करण्यापूर्वी कृपया आपल्या माहितीची खात्री करा.'
+            )}
+          </p>
+        </header>
+
+        {/* Section 1: Personal Information */}
+        <Section title={t('Personal Information', 'व्यक्तिगत जानकारी', 'वैयक्तिक माहिती')}>
           <dl className="facts">
-            {([
-              [t('Age group', 'आयु वर्ग', 'वयोगट'), data.age],
-              [t('Symptoms', 'लक्षण', 'लक्षणे'), [...data.symptoms, data.customSymptom].filter(Boolean).join(', ').replaceAll('_', ' ')],
-              [t('Duration', 'अवधि', 'कालावधी'), data.duration],
-              [t('Severity', 'गंभीरता', 'तीव्रता'), data.severity],
-              [t('Health history', 'स्वास्थ्य इतिहास', 'आरोग्य इतिहास'), [...data.medications, data.customMedication].filter(Boolean).join(', ')],
-              [t('Language', 'भाषा', 'भाषा'), data.language],
-            ] as Array<[string, string]>).map(([label, value]) => (
-              <div key={label}><dt>{label}</dt><dd>{value}</dd></div>
-            ))}
-            {engine.reviewQuestions.map((item, i) => (
-              <div key={'ai_answer_' + i}><dt>{item.question}</dt><dd>{item.answer}</dd></div>
-            ))}
+            <div>
+              <dt>{t('Age Group', 'आयु वर्ग', 'वयोगट')}</dt>
+              <dd><strong>{formatAge(data.age)}</strong></dd>
+            </div>
+            <div>
+              <dt>{t('Language', 'भाषा', 'भाषा')}</dt>
+              <dd>{formatLanguage(data.language)}</dd>
+            </div>
           </dl>
-          <div className="row between">
-            <Button variant="secondary" onClick={engine.handleBack}>{t('Back to edit', 'संपादित करने के लिए वापस', 'बदल करण्यासाठी मागे')}</Button>
-            <Button onClick={engine.submitReview}>{t('Submit Assessment', 'मूल्यांकन जमा करें', 'मूल्यांकन सादर करा')}</Button>
-          </div>
         </Section>
+
+        {/* Section 2: Reported Symptoms */}
+        <Section title={t('Reported Symptoms', 'बताए गए लक्षण', 'नोंदवलेली लक्षणे')}>
+          <dl className="facts">
+            <div>
+              <dt>{t('Symptoms', 'लक्षण', 'लक्षणे')}</dt>
+              <dd><strong>{symptomsList}</strong></dd>
+            </div>
+            <div>
+              <dt>{t('Duration', 'अवधि', 'कालावधी')}</dt>
+              <dd>{formatDuration(data.duration)}</dd>
+            </div>
+            <div>
+              <dt>{t('Severity', 'गंभीरता', 'तीव्रता')}</dt>
+              <dd>{formatSeverity(data.severity)}</dd>
+            </div>
+            <div>
+              <dt>{t('Medical History', 'स्वास्थ्य इतिहास', 'आरोग्य इतिहास')}</dt>
+              <dd>{historyList}</dd>
+            </div>
+          </dl>
+        </Section>
+
+        {/* Section 3: Additional Information (Follow-up questions) */}
+        {engine.reviewQuestions.length > 0 && (
+          <Section title={t('Additional Information', 'अतिरिक्त जानकारी', 'अतिरिक्त माहिती')}>
+            <p className="text-xs text-slate-500 mb-3">
+              {t(
+                'Follow-up answers recorded during your consultation:',
+                'परामर्श के दौरान दर्ज किए गए अनुवर्ती उत्तर:',
+                'सल्ल्यादरम्यान नोंदवलेली पुढील उत्तरे:'
+              )}
+            </p>
+            <div className="space-y-3">
+              {engine.reviewQuestions.map((item, i) => (
+                <div key={'ai_answer_' + i} className="p-3 bg-slate-50 rounded-lg border border-slate-200">
+                  <p className="text-sm font-medium text-slate-800 break-words">{item.question}</p>
+                  <p className="text-sm font-semibold text-teal-800 mt-1">
+                    ↳ {item.answer}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Actions */}
+        <div className="row between pt-4">
+          <Button variant="secondary" onClick={engine.handleBack}>
+            {t('Edit Answers', 'उत्तर संपादित करें', 'उत्तरे बदला')}
+          </Button>
+          <Button onClick={engine.submitReview}>
+            {t('Generate Assessment Results', 'मूल्यांकन परिणाम तैयार करें', 'मूल्यांकन निकाल तयार करा')}
+          </Button>
+        </div>
       </div>
     );
   }

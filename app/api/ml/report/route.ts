@@ -23,7 +23,13 @@ export async function GET(req: Request) {
     if (typeof report.schema_version !== 'number' || !report.dataset || !report.evaluation || !report.training || !report.explainability || !report.calibration || !report.urgency) {
       throw new Error('Invalid report');
     }
-    return NextResponse.json(report, { headers: { 'Cache-Control': 'no-store' } });
+    // Optional display labels preserve original feature IDs and evaluation values.
+    let featureLabels: Record<string, string> = {};
+    try {
+      const vocabulary = JSON.parse(fs.readFileSync(path.join(process.cwd(), 'ml-service', 'artifacts', 'symptom_list.json'), 'utf8')) as Array<{ code: string; display_name: string }>;
+      featureLabels = Object.fromEntries(vocabulary.filter(item => typeof item.code === 'string' && typeof item.display_name === 'string').map(item => [item.code, item.display_name]));
+    } catch { /* Labels are optional; the report remains usable with original IDs. */ }
+    return NextResponse.json({ ...report, feature_labels: featureLabels }, { headers: { 'Cache-Control': 'no-store' } });
   } catch {
     return NextResponse.json({ status: 'unavailable', error: 'Training report unavailable' }, { status: 503 });
   }

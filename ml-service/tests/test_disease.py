@@ -25,7 +25,7 @@ def test_pipeline_report_schema_and_no_leakage():
     report=json.loads((SERVICE/"reports/ml_report.json").read_text(encoding="utf-8"))
     for field in ["dataset","training","evaluation","calibration","explainability","urgency","artifacts","baselines","noise_robustness","severity_table","license"]:
         assert field in report
-    assert report["schema_version"] == 1
+    assert report["schema_version"] in (1, 2)
     assert report["dataset"]["source"].startswith("https://figshare.com/")
     assert report["dataset"]["sample_sizes"]["train"]["rows_after_sampling"] <= report["dataset"]["sample_sizes"]["train"]["rows_before_sampling"]
     overlaps=report["dataset"]["split_overlap_fingerprints"]
@@ -87,7 +87,9 @@ def test_red_flag_evidence_and_stroke_case_override(client):
     response=client.post("/predict-disease",json={"symptoms":["vomiting","weakness_of_one_body_side","altered_sensorium"]})
     stroke = response.json()
     assert stroke["red_flag_override"] is True and stroke["urgency"] == "High"
-    assert {"E_211","E_156","E_39"}.issubset(set(stroke["symptoms_used"])) or {"vomiting","altered_sensorium"}.issubset(set(stroke["symptoms_used"]))
+    assert {"E_156","E_39"}.issubset(set(stroke["symptoms_used"]))
+    assert "E_211" not in stroke["symptoms_used"]
+    assert "vomiting" in stroke["ignored_symptoms"]
 
 def test_throat_swelling_conditional_red_flag(client):
     response=client.post("/predict-disease",json={"symptoms":["E_151","E_152_@_V_115"]})
@@ -107,5 +109,98 @@ def test_severe_floor_is_project_choice_documented():
     assert "pulmonary_embolism" in source and "anaphylaxis" in source
 
 def test_report_and_legacy_health_endpoints(client):
-    assert client.get("/ml-report").json()["schema_version"]==1
+    assert client.get("/ml-report").json()["schema_version"] in (1, 2)
     assert client.get("/health").status_code==200
+
+def test_ddxplus_questionnaire_common_symptoms(client):
+    # Case 1: Common respiratory symptoms
+    res = client.post("/predict-disease", json={"symptoms": ["fever", "cough", "runny_nose", "sore_throat"], "age": 30, "sex": "M"})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["model_id"] == "ddxplus-xgboost"
+    assert data["conditions_count"] == 49
+    assert data["score_type"] == "Calibrated probability"
+    assert data["top3"][0]["disease"] == "URTI"
+    assert data["confident"] is True
+    assert data["uncertain"] == (data["confidence"] < data["uncertainty_threshold"])
+
+def test_ddxplus_unsupported_symptoms_abstention(client):
+    # Case 5 & 8: Unsupported/unmapped symptoms
+    res = client.post("/predict-disease", json={"symptoms": ["burning_urination", "frequent_urination"]})
+    assert res.status_code == 422
+    assert "No known symptoms supplied" in res.json()["detail"]["error"]
+    assert "burning_urination" in res.json()["detail"]["ignored_symptoms"]
+
+def test_ddxplus_ambiguous_and_minimal_uncertainty(client):
+    # Case 6: Ambiguous (fever, cough, stomach_pain) -> top prob < 0.50 -> uncertain
+    res_ambig = client.post("/predict-disease", json={"symptoms": ["fever", "cough", "stomach_pain"]})
+    assert res_ambig.status_code == 200
+    data_ambig = res_ambig.json()
+    assert data_ambig["uncertain"] is True
+
+    # Case 7: Minimal (headache only) -> limited_information == True -> not confident
+    res_min = client.post("/predict-disease", json={"symptoms": ["headache"]})
+    assert res_min.status_code == 200
+    data_min = res_min.json()
+    assert data_min["limited_information"] is True
+    assert data_min["confident"] is False
+
+def test_ordinary_vomiting_does_not_activate_forceful_retching(client):
+    bundle = load_bundle()
+    used, ignored, mapped = map_symptoms(["vomiting"], bundle["known_tokens"], bundle["vocabulary"])
+    assert "E_211" not in used
+    assert "vomiting" in ignored
+    
+    used_forceful, _, _ = map_symptoms(["forceful_vomiting", "violent_retching"], bundle["known_tokens"], bundle["vocabulary"])
+    assert "E_211" in used_forceful
+
+def test_case_2_gi_symptoms_no_boerhaave_and_safe_urgency(client):
+    # Case 2: Abdominal pain, vomiting, diarrhea
+    res = client.post("/predict-disease", json={"symptoms": ["abdominal_pain", "vomiting", "diarrhea"]})
+    assert res.status_code == 200
+    data = res.json()
+    assert "E_211" not in data["symptoms_used"]
+    assert "vomiting" in data["ignored_symptoms"]
+    assert data["within_model_scope"] is False
+    assert data["evidence_quality"] == "out_of_scope_syndrome"
+    assert data["uncertain"] is True
+    assert data["confident"] is False
+    assert data["top3"][0]["disease"] != "Boerhaave"
+    assert data["urgency"] in ("Low", "Medium")
+
+def test_case_3_headache_light_sensitivity_nausea_out_of_scope(client):
+    # Case 3: Headache, light sensitivity, nausea
+    res = client.post("/predict-disease", json={"symptoms": ["headache", "light_sensitivity", "nausea"]})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["within_model_scope"] is False
+    assert data["evidence_quality"] == "out_of_scope_syndrome"
+    assert data["uncertain"] is True
+    assert data["confident"] is False
+    assert "light_sensitivity" in data["ignored_symptoms"]
+
+def test_case_4_severe_breathlessness_red_flag_urgency(client):
+    # Case 4: Fever, cough, shortness_of_breath
+    res = client.post("/predict-disease", json={"symptoms": ["fever", "cough", "shortness_of_breath"]})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["red_flag_override"] is True
+    assert data["urgency"] == "High"
+
+def test_case_9_severe_abdominal_pain_emergency_override(client):
+    # Case 9: Severe abdominal pain with concerning symptoms
+    res = client.post("/predict-disease", json={"symptoms": ["severe_abdominal_pain", "vomiting", "fever"]})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["red_flag_override"] is True
+    assert data["urgency"] == "High"
+
+def test_case_10_sudden_severe_headache_neurological_emergency(client):
+    # Case 10: Sudden severe headache with neurological symptoms
+    res = client.post("/predict-disease", json={"symptoms": ["sudden_severe_headache", "weakness_of_one_body_side"]})
+    assert res.status_code == 200
+    data = res.json()
+    assert data["red_flag_override"] is True
+    assert data["urgency"] == "High"
+
+

@@ -19,6 +19,9 @@ registerHooks({
     if (/\.tsx?$/.test(url)) {
       return { format: 'module', source: ts.transpileModule(fs.readFileSync(fileURLToPath(url), 'utf8'), { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.ESNext, jsx: ts.JsxEmit.ReactJSX }, fileName: fileURLToPath(url) }).outputText, shortCircuit: true };
     }
+    if (/\.json$/.test(url)) {
+      return { format: 'module', source: 'export default ' + fs.readFileSync(fileURLToPath(url), 'utf8') + ';', shortCircuit: true };
+    }
     return nextLoad(url, context);
   },
 });

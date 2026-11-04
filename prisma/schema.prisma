@@ -88,6 +88,7 @@ model TestSession {
   primaryAction        String?  // Groq primary action line
   recommendationSteps  String?  // JSON string of string[] — action steps
   keyInsights          String?  // JSON string of string[]
+  diseaseSnapshot      String?  // Structured snapshot of ML disease prediction at assessment time
   completed       Boolean  @default(false)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt

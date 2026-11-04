@@ -9,6 +9,8 @@ const eslintConfig = [
     ignores: [
       ".next/**",
       ".venv/**",
+      "**/.venv/**",
+      "ml-service/**",
       ".local/**",
       "out/**",
       "build/**",

@@ -2,6 +2,7 @@ import { SCORING_DATASET } from './rules';
 import { classifyUrgency } from './thresholds';
 import type { RiskAnalysis, SurveyResult } from './types';
 import { extractAffirmedSymptoms, emergencyFindings, normalizeClinicalValue, isDeniedFinding } from '@/lib/assessment/findings';
+import { formatSymptomName } from '@/lib/assessment/symptomPresentation';
 
 export const RULE_VERSION = '2026-10-13.2';
 export function calculateRisk(input: SurveyResult): RiskAnalysis {
@@ -11,7 +12,7 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   if (flags.length) return {
     score: 100, urgency: 'High', isRedFlag: true,
     factors: flags.map(id => ({ id, label: 'Emergency indicator: ' + id.replace(/_/g, ' '), score: 100, isRedFlag: true, category: 'red_flag' })),
-    explanation: ['Emergency indicators require immediate evaluation.'], recommendation: SCORING_DATASET.recommendations.High,
+    explanation: ['Emergency indicators require immediate evaluation.'], recommendation: SCORING_DATASET.recommendations.Emergency,
   };
   const factors: RiskAnalysis['factors'] = [];
   const add = (id: string, label: string, score: number, category: string) => {
@@ -27,15 +28,15 @@ export function calculateRisk(input: SurveyResult): RiskAnalysis {
   };
   const primary = [...new Set(rawPrimary.flatMap(canonical))];
   const additional = [...new Set(rawAdditional.flatMap(canonical))].filter(s => !primary.includes(s));
-  for (const symptom of primary) add('symptom_' + symptom, 'Reported symptom: ' + symptom.replace(/_/g, ' '), SCORING_DATASET.symptoms[symptom] ?? 15, 'symptom');
-  for (const symptom of additional) add('additional_' + symptom, 'Additional symptom: ' + symptom.replace(/_/g, ' '), SCORING_DATASET.additionalSymptoms[symptom] ?? SCORING_DATASET.symptoms[symptom] ?? 10, 'additional');
+  for (const symptom of primary) add('symptom_' + symptom, 'Reported symptom: ' + (formatSymptomName(symptom, 'en') || symptom.replace(/_/g, ' ')), SCORING_DATASET.symptoms[symptom] ?? 15, 'symptom');
+  for (const symptom of additional) add('additional_' + symptom, 'Additional symptom: ' + (formatSymptomName(symptom, 'en') || symptom.replace(/_/g, ' ')), SCORING_DATASET.additionalSymptoms[symptom] ?? SCORING_DATASET.symptoms[symptom] ?? 10, 'additional');
   add('severity', 'Severity: ' + input.severity, SCORING_DATASET.severity[input.severity.toLowerCase()] ?? 0, 'severity');
   add('duration', 'Duration: ' + input.duration, SCORING_DATASET.duration[input.duration.toLowerCase()] ?? 0, 'duration');
   const history = [...new Set((input.medicalHistory ?? (input.history ? [input.history] : [])).filter(h => !isDeniedFinding(h)).map(h => normalizeClinicalValue(h).replace(/ /g, '_')))].filter(h => h && h !== 'none');
   for (const condition of history) add('history_' + condition, 'History: ' + condition.replace(/_/g, ' '), SCORING_DATASET.medicalHistory[condition] ?? 10, 'history');
   const score = Math.min(100, factors.reduce((total, factor) => total + factor.score, 0));
   const urgency = classifyUrgency(score);
-  const symptomText = primary.map(s => s.replace(/_/g, ' ')).join(', ') || 'reported symptoms';
+  const symptomText = primary.map(s => (formatSymptomName(s, 'en') || s.replace(/_/g, ' ')).toLowerCase()).join(', ') || 'reported symptoms';
   return {
     score, urgency, isRedFlag: false, factors,
     explanation: factors.map(f => '+' + f.score + ' ' + f.label),

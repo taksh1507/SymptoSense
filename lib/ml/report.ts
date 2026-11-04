@@ -1,6 +1,7 @@
 /** Training report shape; chart values are supplied only by /api/ml/report. */
 type ExistingReport = typeof import('../../ml-service/reports/ml_report.json');
 export type MLReport = ExistingReport & {
+  feature_labels?: Record<string, string>;
   baselines?: { majority_class: Record<string, unknown>; nearest_neighbour: Record<string, unknown>; interpretation: string };
   noise_robustness?: { variant?: string; percent_wrong_evidence: number; accuracy: number; top3_accuracy: number; augmented_training_rows?: number }[];
   severity_table?: { disease: string; severity: number; urgency: string }[];
@@ -106,6 +107,7 @@ export interface SymcatDataset {
 }
 
 export interface ClinicalReport {
+  insights?: ClinicalDiagnostics | null;
   schema_version: number;
   model_name: string;
   created_at: string;
@@ -145,5 +147,19 @@ export interface ClinicalReport {
     cv: number;
   };
   disclaimer: string;
+}
+
+export interface ClinicalDiagnostics {
+  schema_version: number;
+  generated_at: string;
+  sklearn_version: string;
+  input_sha256: Record<string, string>;
+  methodology: string;
+  test_rows: number;
+  classes: string[];
+  confusion_matrix: number[][];
+  global_importance: { symptom: string; importance: number }[];
+  importance_method: string;
+  importance_limitations: string;
 }
 

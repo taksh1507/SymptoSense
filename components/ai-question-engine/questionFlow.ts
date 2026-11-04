@@ -64,7 +64,9 @@ export const Q9_DURATION: QuestionStep = {
     { label: { en: "Less than 24 hours", hi: "24 घंटे से कम", mr: "24 तासांपेक्षा कमी" }, value: "< 1 day", emoji: "" },
     { label: { en: "1 – 3 days", hi: "1 – 3 दिन", mr: "1 – 3 दिवस" }, value: "1-3 days", emoji: "" },
     { label: { en: "4 – 7 days", hi: "4 – 7 दिन", mr: "4 – 7 दिवस" }, value: "4-7 days", emoji: "" },
-    { label: { en: "More than a week", hi: "एक हफ्ते से ज़्यादा", mr: "एका आठवड्यापेक्षा जास्त" }, value: "> 1 week", emoji: "" },
+    { label: { en: "1 – 4 weeks", hi: "1 – 4 हफ्ते", mr: "1 – 4 आठवडे" }, value: "> 1 week", emoji: "" },
+    { label: { en: "4 – 12 weeks", hi: "4 – 12 हफ्ते", mr: "4 – 12 आठवडे" }, value: "4-12 weeks", emoji: "" },
+    { label: { en: "12 weeks or longer", hi: "12 हफ्ते या अधिक", mr: "12 आठवडे किंवा अधिक" }, value: "> 12 weeks", emoji: "" },
   ],
 };
 

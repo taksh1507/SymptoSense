@@ -1,0 +1,346 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-21T19:22:24.757794",
+  "models_evaluated": [
+    "clinical-41-rf",
+    "ddxplus-xgboost"
+  ],
+  "dataset_audit": {
+    "independent_dataset_available": false,
+    "statement": "Independent clinical evaluation on an external patient cohort has not been performed.",
+    "symcat_status": "Epidemiological prior matrix (CDC 801 conditions, 474 symptoms); not patient-level validation vignettes.",
+    "ddxplus_status": "Synthetic benchmark for 49 conditions (3 shared classes with RF: gerd, pneumonia, tuberculosis); incompatible feature schemas.",
+    "kaggle_status": "Closed 304-pattern template benchmark; linearly separable with 61.1% pathognomonic symptoms."
+  },
+  "calibration_verification": {
+    "random_forest": {
+      "wrapper": "sklearn.calibration.CalibratedClassifierCV",
+      "method": "sigmoid",
+      "cv_folds": 3,
+      "estimator": "RandomForestClassifier(n_estimators=100)",
+      "brier_score": 0.004812446686099857,
+      "log_loss": 0.5763034645376173,
+      "top1_confidence_mean": 0.567627120286932,
+      "margin_mean": 0.5509203336951852,
+      "inference_probability_mode": "sigmoid calibrated predict_proba"
+    },
+    "xgboost": {
+      "wrapper": "sklearn.calibration.CalibratedClassifierCV",
+      "method": "isotonic",
+      "brier_score": 0.0590420625270109,
+      "ece_before": 0.010692556072109637,
+      "ece_after": 0.0029180537641854557,
+      "inference_probability_mode": "isotonic calibrated predict_proba"
+    }
+  },
+  "uncertainty_thresholds": {
+    "random_forest": {
+      "confidence_floor": 0.2,
+      "margin_floor": 0.08,
+      "min_symptoms": 3,
+      "abstention_message": "Several conditions may share these symptoms. The model cannot reliably distinguish between them using the information provided."
+    },
+    "xgboost": {
+      "confidence_floor": 0.5,
+      "margin_floor": 0.1,
+      "min_symptoms": 3,
+      "abstention_message": "Several conditions may share these symptoms. The model cannot reliably distinguish between them using the information provided."
+    }
+  },
+  "scenario_evaluations": [
+    {
+      "category": "1. Complete presentation",
+      "name": "Canonical Acne (complete)",
+      "symptoms": [
+        "skin_rash",
+        "pus_filled_pimples",
+        "blackheads",
+        "scurring"
+      ],
+      "used_symptoms": [
+        "skin_rash",
+        "pus_filled_pimples",
+        "blackheads",
+        "scurring"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Acne",
+      "top1_probability": 0.6318573484204414,
+      "top2_disease": "Fungal infection",
+      "top2_probability": 0.011130998863921377,
+      "margin": 0.6207263495565201,
+      "uncertain": false,
+      "limited_information": false,
+      "status": "PREDICTED",
+      "ground_truth": true,
+      "expected_condition": "Acne",
+      "correct": true
+    },
+    {
+      "category": "1. Complete presentation",
+      "name": "Canonical GERD (complete)",
+      "symptoms": [
+        "stomach_pain",
+        "acidity",
+        "ulcers_on_tongue",
+        "vomiting",
+        "cough",
+        "chest_pain"
+      ],
+      "used_symptoms": [
+        "stomach_pain",
+        "acidity",
+        "ulcers_on_tongue",
+        "vomiting",
+        "cough",
+        "chest_pain"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "GERD",
+      "top1_probability": 0.6636518159776261,
+      "top2_disease": "Drug Reaction",
+      "top2_probability": 0.00922408501743163,
+      "margin": 0.6544277309601945,
+      "uncertain": false,
+      "limited_information": false,
+      "status": "PREDICTED",
+      "ground_truth": true,
+      "expected_condition": "GERD",
+      "correct": true
+    },
+    {
+      "category": "2. Incomplete presentation",
+      "name": "Isolated stomach pain (single symptom)",
+      "symptoms": [
+        "stomach_pain"
+      ],
+      "used_symptoms": [
+        "stomach_pain"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Drug Reaction",
+      "top1_probability": 0.15562239910015174,
+      "top2_disease": "GERD",
+      "top2_probability": 0.0604336350485141,
+      "margin": 0.09518876405163765,
+      "uncertain": true,
+      "limited_information": true,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    },
+    {
+      "category": "2. Incomplete presentation",
+      "name": "Cough and headache (two symptoms)",
+      "symptoms": [
+        "cough",
+        "headache"
+      ],
+      "used_symptoms": [
+        "cough",
+        "headache"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Bronchial Asthma",
+      "top1_probability": 0.06449744449207345,
+      "top2_disease": "GERD",
+      "top2_probability": 0.05106015154942262,
+      "margin": 0.013437292942650836,
+      "uncertain": true,
+      "limited_information": true,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    },
+    {
+      "category": "3. Overlapping symptoms",
+      "name": "Stomach pain, cough, fever (user prompt audit case)",
+      "symptoms": [
+        "stomach_pain",
+        "cough",
+        "mild_fever"
+      ],
+      "used_symptoms": [
+        "stomach_pain",
+        "cough",
+        "mild_fever"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "GERD",
+      "top1_probability": 0.11967607170434343,
+      "top2_disease": "Drug Reaction",
+      "top2_probability": 0.08096970756467436,
+      "margin": 0.03870636413966906,
+      "uncertain": true,
+      "limited_information": false,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    },
+    {
+      "category": "3. Overlapping symptoms",
+      "name": "Fatigue, headache, nausea, loss of appetite",
+      "symptoms": [
+        "fatigue",
+        "headache",
+        "nausea",
+        "loss_of_appetite"
+      ],
+      "used_symptoms": [
+        "fatigue",
+        "headache",
+        "nausea",
+        "loss_of_appetite"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Hepatitis C",
+      "top1_probability": 0.09149557024015414,
+      "top2_disease": "(vertigo) Paroymsal  Positional Vertigo",
+      "top2_probability": 0.056234324748726715,
+      "margin": 0.03526124549142743,
+      "uncertain": true,
+      "limited_information": false,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    },
+    {
+      "category": "4. Unrelated additional symptoms",
+      "name": "Acne with unrelated joint pain & shivering",
+      "symptoms": [
+        "blackheads",
+        "pus_filled_pimples",
+        "joint_pain",
+        "shivering"
+      ],
+      "used_symptoms": [
+        "blackheads",
+        "pus_filled_pimples",
+        "joint_pain",
+        "shivering"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Acne",
+      "top1_probability": 0.23691738535076448,
+      "top2_disease": "Allergy",
+      "top2_probability": 0.0636984291070277,
+      "margin": 0.1732189562437368,
+      "uncertain": false,
+      "limited_information": false,
+      "status": "PREDICTED",
+      "ground_truth": true,
+      "expected_condition": "Acne",
+      "correct": true
+    },
+    {
+      "category": "5. Common symptom synonyms",
+      "name": "Synonyms: belly pain, throw up, feeling dizzy",
+      "symptoms": [
+        "stomach_pain",
+        "vomiting",
+        "dizziness"
+      ],
+      "used_symptoms": [
+        "stomach_pain",
+        "vomiting",
+        "dizziness"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "GERD",
+      "top1_probability": 0.08629792898176286,
+      "top2_disease": "Hypertension",
+      "top2_probability": 0.07035584738296731,
+      "margin": 0.01594208159879555,
+      "uncertain": true,
+      "limited_information": false,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    },
+    {
+      "category": "6. Conversational symptom descriptions",
+      "name": "Conversational: \"bad cough, wheezing, and trouble catching breath\"",
+      "symptoms": [
+        "cough",
+        "breathlessness",
+        "fatigue"
+      ],
+      "used_symptoms": [
+        "cough",
+        "breathlessness",
+        "fatigue"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Bronchial Asthma",
+      "top1_probability": 0.2540417135691972,
+      "top2_disease": "Heart attack",
+      "top2_probability": 0.04373521880101394,
+      "margin": 0.21030649476818325,
+      "uncertain": false,
+      "limited_information": false,
+      "status": "PREDICTED",
+      "ground_truth": false,
+      "expected_condition": "Bronchial Asthma",
+      "correct": null
+    },
+    {
+      "category": "7. Multiple simultaneous patterns",
+      "name": "Comorbidity: Asthma (cough, breathlessness) + Diabetes (polyuria, excessive hunger)",
+      "symptoms": [
+        "cough",
+        "breathlessness",
+        "polyuria",
+        "excessive_hunger"
+      ],
+      "used_symptoms": [
+        "cough",
+        "breathlessness",
+        "polyuria",
+        "excessive_hunger"
+      ],
+      "ignored_symptoms": [],
+      "top1_disease": "Bronchial Asthma",
+      "top1_probability": 0.12182434224559652,
+      "top2_disease": "Diabetes",
+      "top2_probability": 0.059984410098255725,
+      "margin": 0.06183993214734079,
+      "uncertain": true,
+      "limited_information": false,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    },
+    {
+      "category": "8. Out-of-distribution / unsupported",
+      "name": "Unsupported: ringing in ears, hair loss, hiccups",
+      "symptoms": [
+        "tinnitus",
+        "hair_loss",
+        "hiccups"
+      ],
+      "used_symptoms": [],
+      "ignored_symptoms": [
+        "tinnitus",
+        "hair_loss",
+        "hiccups"
+      ],
+      "top1_disease": "Gastroenteritis",
+      "top1_probability": 0.03665204671594224,
+      "top2_disease": "Heart attack",
+      "top2_probability": 0.032838693515477586,
+      "margin": 0.0038133532004646503,
+      "uncertain": true,
+      "limited_information": true,
+      "status": "ABSTAIN/UNCERTAIN",
+      "ground_truth": false,
+      "expected_condition": null,
+      "correct": null
+    }
+  ]
+}

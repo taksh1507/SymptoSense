@@ -24,6 +24,26 @@ export interface DiseasePrediction {
     expected_precision: number;
     expected_coverage: number;
   } | null;
+  model_id?: string;
+  model_name?: string;
+  dataset_source?: string;
+  conditions_count?: number;
+  score_type?: string;
+  calibration_status?: string;
+  is_fallback?: boolean;
+  fallback_reason?: string | null;
+  within_model_scope?: boolean;
+  evidence_quality?: string;
+  scope_note?: string | null;
+  gate_reasons?: string[];
+  suggested_followups?: string[];
+}
+export interface DiseaseSnapshot {
+  schema_version: number;
+  timestamp: string;
+  status: 'ready' | 'unavailable';
+  error?: string | null;
+  prediction?: DiseasePrediction | null;
 }
 export interface DiseaseRequest { symptoms: string[]; age_group?: string; age?: number; sex?: string; severity?: string; duration?: string }
 export function parseDiseaseRequest(value: unknown): DiseaseRequest {
@@ -43,6 +63,15 @@ export function validateDiseasePrediction(value: unknown): DiseasePrediction {
   if (!Array.isArray(result.shap_top5) || result.shap_top5.length !== 5 || result.shap_top5.some(v => typeof v.symptom !== 'string' || !Number.isFinite(v.contribution) || typeof v.present !== 'boolean') || !Array.isArray(result.ignored_symptoms) || result.ignored_symptoms.some(v => typeof v !== 'string') || !Array.isArray(result.symptoms_used) || result.symptoms_used.some(v => typeof v !== 'string' || !v) || typeof result.model_version !== 'string' || typeof result.disclaimer !== 'string' || !(result.age_used === null || (typeof result.age_used === 'number' && Number.isFinite(result.age_used))) || !(result.age_group_used === null || typeof result.age_group_used === 'string') || typeof result.age_source !== 'string' || typeof result.sex_used !== 'string' || typeof result.probability_mode !== 'string') throw new Error('Invalid disease explanation');
   if (result.limited_information !== undefined && typeof result.limited_information !== 'boolean') throw new Error('Invalid limited_information flag');
   if (result.confident !== undefined && typeof result.confident !== 'boolean') throw new Error('Invalid confident flag');
+  if (result.model_id !== undefined && typeof result.model_id !== 'string') throw new Error('Invalid model_id');
+  if (result.model_name !== undefined && typeof result.model_name !== 'string') throw new Error('Invalid model_name');
+  if (result.dataset_source !== undefined && typeof result.dataset_source !== 'string') throw new Error('Invalid dataset_source');
+  if (result.conditions_count !== undefined && (typeof result.conditions_count !== 'number' || !Number.isFinite(result.conditions_count))) throw new Error('Invalid conditions_count');
+  if (result.within_model_scope !== undefined && typeof result.within_model_scope !== 'boolean') throw new Error('Invalid within_model_scope');
+  if (result.evidence_quality !== undefined && typeof result.evidence_quality !== 'string') throw new Error('Invalid evidence_quality');
+  if (result.scope_note !== undefined && result.scope_note !== null && typeof result.scope_note !== 'string') throw new Error('Invalid scope_note');
+  if (result.gate_reasons !== undefined && (!Array.isArray(result.gate_reasons) || result.gate_reasons.some(r => typeof r !== 'string'))) throw new Error('Invalid gate_reasons');
+  if (result.suggested_followups !== undefined && (!Array.isArray(result.suggested_followups) || result.suggested_followups.some(f => typeof f !== 'string'))) throw new Error('Invalid suggested_followups');
   return result;
 }
 export async function requestDisease(input: DiseaseRequest): Promise<DiseasePrediction> {

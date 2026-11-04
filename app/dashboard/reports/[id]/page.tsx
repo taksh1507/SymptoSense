@@ -13,9 +13,12 @@ import {
   generateRecommendations,
   type RiskLevel,
 } from '@/lib/report/reasoningEngine';
+import type { DiseasePrediction } from '@/lib/ml/disease';
 import { COLOR_THRESHOLDS } from '@/lib/ai-engine/scoring/thresholds';
 import { parseStoredAssessment } from '@/lib/report/parseAnswers';
 import { getWarningSigns, getDrugWarnings } from '@/lib/report/warnings';
+import { emergencyFindings } from '@/lib/assessment/findings';
+import { formatSymptomName } from '@/lib/assessment/symptomPresentation';
 
 interface ReportDetail {
   id: string;
@@ -42,6 +45,7 @@ interface ReportDetail {
   confidenceScore?: number;
   confidenceLevel?: string;
   confidenceExplanation?: string;
+  diseaseSnapshot?: string;     // JSON snapshot of DiseaseSnapshot
 }
 
 interface FollowUpRecord {
@@ -83,6 +87,9 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const [improved, setImproved] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [notes, setNotes] = useState('');
+  const [diseasePrediction, setDiseasePrediction] = useState<DiseasePrediction | null>(null);
+  const [diseaseStatus, setDiseaseStatus] = useState<string>('idle');
+  const [diseaseError, setDiseaseError] = useState<string>('');
 
   useEffect(() => {
     if (!id) return;
@@ -102,6 +109,29 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
       .catch(e => { setLoadError(e.message); setReport(null); })
       .finally(() => setLoading(false));
   }, [id]);
+
+  useEffect(() => {
+    if (!report) return;
+    if (report.diseaseSnapshot) {
+      try {
+        const snap = JSON.parse(report.diseaseSnapshot);
+        if (snap && typeof snap === 'object') {
+          setDiseasePrediction(snap.prediction ?? null);
+          setDiseaseStatus(snap.status ?? (snap.prediction ? 'ready' : 'unavailable'));
+          setDiseaseError(snap.error ?? '');
+          return;
+        }
+      } catch {
+        // Fall through to unrecorded state
+      }
+    }
+    // Older reports without stored ML snapshots:
+    // Clearly indicate that original ML estimates were not stored.
+    // Do not silently generate new estimates and present them as historical results.
+    setDiseasePrediction(null);
+    setDiseaseStatus('unavailable');
+    setDiseaseError('Original ML disease estimates were not stored with this historical assessment.');
+  }, [report]);
 
   const submitCheckIn = async () => {
     setCheckInSubmitting(true);
@@ -207,10 +237,13 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
   const onBloodThinners = medRaw.includes('blood_thinners') || medRaw.includes('blood_thinner') || medRaw.includes('blood thinner');
   const drugWarnings = getDrugWarnings(onBloodThinners, [...parsed.allSymptoms, ...additionalSymptoms, ...medRaw]);
 
+  const hasRedFlag = score === 100 || emergencyFindings([primarySymptom, ...additionalSymptoms]).length > 0;
+
   const model: ReportModel = {
     language: langKey,
     urgency: urgency as ReportUrgency,
     score,
+    hasRedFlag,
     urgencyExplanation: riskOneLiner,
     summary: displaySummary,
     factors: displayFactors,
@@ -223,10 +256,10 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
     medications: medRaw,
     warningSigns,
     drugWarnings,
-    disease: null,
-    diseaseStatus: 'unavailable',
-    diseaseError: '',
-    showConditions: false,
+    disease: diseasePrediction,
+    diseaseStatus,
+    diseaseError,
+    showConditions: true,
     ml: isLegacy ? null : {
       score: Math.round((report.confidenceScore as number) * 100),
       level: report.confidenceLevel || 'Medium',
@@ -270,8 +303,8 @@ export default function ReportDetailPage({ params }: { params: Promise<{ id: str
         <dl className="facts">{[
           { label: t('Assessment date', 'मूल्यांकन की तारीख', 'मूल्यांकनाची तारीख'), value: new Date(report.createdAt).toLocaleDateString(langKey === 'hi' ? 'hi-IN' : langKey === 'mr' ? 'mr-IN' : 'en-US', { year: 'numeric', month: 'short', day: 'numeric' }) },
           { label: t('Patient', 'मरीज़', 'रुग्ण'), value: report.personName === 'Myself' ? t('Self', 'स्वयं', 'स्वतः') : (report.personName || t('Self', 'स्वयं', 'स्वतः')) + relationLabel },
-          { label: t('Primary symptom', 'मुख्य लक्षण', 'मुख्य लक्षण'), value: primarySymptom.replace(/_/g, ' ').replace(/^./, c => c.toUpperCase()) },
-          { label: t('Other symptoms', 'अन्य लक्षण', 'इतर लक्षणे'), value: additionalSymptoms.length ? additionalSymptoms.slice(0, 4).map(s => s.replace(/_/g, ' ')).join(', ') : t('None reported', 'कोई नहीं बताया', 'काही सांगितले नाही') },
+          { label: t('Primary symptom', 'मुख्य लक्षण', 'मुख्य लक्षण'), value: formatSymptomName(primarySymptom, langKey) },
+          { label: t('Other symptoms', 'अन्य लक्षण', 'इतर लक्षणे'), value: additionalSymptoms.length ? additionalSymptoms.slice(0, 4).map(s => formatSymptomName(s, langKey)).filter(Boolean).join(', ') : t('None reported', 'कोई नहीं बताया', 'काही सांगितले नाही') },
           { label: t('Severity', 'गंभीरता', 'तीव्रता'), value: severity.replace(/^./, c => c.toUpperCase()) },
           { label: t('Duration', 'अवधि', 'कालावधी'), value: duration },
           { label: t('Urgency', 'तात्कालिकता', 'तातडी'), value: urgency + ' (' + score + '/100)' },

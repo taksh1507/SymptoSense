@@ -36,7 +36,23 @@ export async function PATCH(req: NextRequest) {
     if (!existing) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     const assessment = parseAssessment(body.assessment);
     const serialized = JSON.stringify(assessment);
+    let diseaseSnapshotStr: string | null = null;
+    if (body.diseaseSnapshot && typeof body.diseaseSnapshot === 'object') {
+      const snap = body.diseaseSnapshot as Record<string, unknown>;
+      diseaseSnapshotStr = JSON.stringify({
+        schema_version: typeof snap.schema_version === 'number' ? snap.schema_version : 1,
+        timestamp: typeof snap.timestamp === 'string' ? snap.timestamp : new Date().toISOString(),
+        status: snap.status === 'ready' ? 'ready' : 'unavailable',
+        error: typeof snap.error === 'string' ? snap.error : null,
+        prediction: snap.prediction ?? null,
+      });
+    }
     if (existing.completed) {
+      if (diseaseSnapshotStr && !existing.diseaseSnapshot) {
+        await prisma.testSession.update({ where: { id: sessionId }, data: { diseaseSnapshot: diseaseSnapshotStr } });
+        const updated = await prisma.testSession.findUniqueOrThrow({ where: { id: sessionId } });
+        return NextResponse.json({ success: true, result: storedResult(updated) });
+      }
       if (existing.assessmentPayload !== serialized) return NextResponse.json({ error: 'Completed assessments cannot be changed' }, { status: 409 });
       return NextResponse.json({ success: true, result: storedResult(existing) });
     }
@@ -53,7 +69,7 @@ export async function PATCH(req: NextRequest) {
         recommendation: result.recommendation, confidenceScore: result.confidenceScore, confidenceLevel: result.confidenceLevel,
         confidenceExplanation: result.confidenceExplanation, riskReasoning: result.riskReasoning, riskSummary: result.riskSummary,
         riskFactors: JSON.stringify(result.riskFactors), primaryAction: result.primaryAction, recommendationSteps: JSON.stringify(result.recommendationSteps),
-        keyInsights: JSON.stringify(result.keyInsights), ruleVersion: result.ruleVersion, modelVersion: result.modelVersion, completed: true,
+        keyInsights: JSON.stringify(result.keyInsights), diseaseSnapshot: diseaseSnapshotStr, ruleVersion: result.ruleVersion, modelVersion: result.modelVersion, completed: true,
       } });
       if (updated.count === 0) return;
       await tx.predictionLog.create({ data: { testSessionId: sessionId, userId, features: JSON.stringify(features), ruleScore: result.score,
@@ -66,7 +82,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true, result: storedResult(saved) });
   } catch (e) { return errorResponse(e); }
 }
-function storedResult(s: { score: number | null; urgency: string | null; factors: string | null; recommendation: string | null; primaryCategory: string | null; confidenceScore: number | null; confidenceLevel: string | null; confidenceExplanation: string | null; riskReasoning: string | null; riskSummary: string | null; riskFactors: string | null; primaryAction: string | null; recommendationSteps: string | null; keyInsights: string | null; ruleVersion: string | null; modelVersion: string | null }) {
+function storedResult(s: { score: number | null; urgency: string | null; factors: string | null; recommendation: string | null; primaryCategory: string | null; confidenceScore: number | null; confidenceLevel: string | null; confidenceExplanation: string | null; riskReasoning: string | null; riskSummary: string | null; riskFactors: string | null; primaryAction: string | null; recommendationSteps: string | null; keyInsights: string | null; diseaseSnapshot?: string | null; ruleVersion: string | null; modelVersion: string | null }) {
   const array = (value: string | null) => { try { const parsed = JSON.parse(value ?? '[]'); return Array.isArray(parsed) ? parsed : []; } catch { return []; } };
   return { ...s, factors: array(s.factors), riskFactors: array(s.riskFactors), recommendationSteps: array(s.recommendationSteps), keyInsights: array(s.keyInsights) };
 }

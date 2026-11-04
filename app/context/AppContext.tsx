@@ -3,7 +3,9 @@ import React, { createContext, useContext, useState, useRef, useEffect, ReactNod
 import type { FinalAssessmentPayload } from '@/components/ai-question-engine/types';
 import type { ScoreResult } from '@/lib/ai-engine/scoring/types';
 import { evaluateAssessment, assessmentContext } from '@/lib/assessment/evaluate';
-import type { DiseasePrediction } from '@/lib/ml/disease';
+import { extractAffirmedSymptoms } from '@/lib/assessment/findings';
+import { canonicalFindingFromEvidence } from '@/lib/assessment/symptomPresentation';
+import type { DiseasePrediction, DiseaseSnapshot } from '@/lib/ml/disease';
 
 export type TriageScreen = 'dashboard' | 'language' | 'person' | 'questions' | 'loading' | 'results';
 export type Language = 'English' | 'Hindi' | 'Marathi';
@@ -46,7 +48,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const generation = useRef(0);
   const diseaseController = useRef<AbortController | null>(null);
   const controller = useRef<AbortController | null>(null);
-  const pending = useRef<{ data: FinalAssessmentPayload; personName: string; isSelf: boolean; relation: Relation | null; gender: Gender | null; id: number; sessionId?: string } | null>(null);
+  const pending = useRef<{ data: FinalAssessmentPayload; personName: string; isSelf: boolean; relation: Relation | null; gender: Gender | null; id: number; sessionId?: string; diseaseSnapshot?: DiseaseSnapshot; saved?: boolean } | null>(null);
   const saving = useRef<number | null>(null);
   useEffect(() => () => { generation.current++; controller.current?.abort(); diseaseController.current?.abort(); }, []);
   useEffect(() => { try { const language = localStorage.getItem('symptosense_language'); if (language === 'English' || language === 'Hindi' || language === 'Marathi') setState(s => ({ ...s, language })); } catch { /* Storage can be disabled. */ } }, []);
@@ -79,13 +81,20 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (typeof body.sessionId !== 'string') throw new Error('Invalid assessment response.');
         request.sessionId = body.sessionId;
       }
+      const diseaseSnapshotPayload: DiseaseSnapshot | undefined = request.diseaseSnapshot ?? (state.diseasePrediction ? {
+        schema_version: 1,
+        timestamp: new Date().toISOString(),
+        status: 'ready',
+        prediction: state.diseasePrediction,
+      } : undefined);
       const res = await fetch('/api/sessions', { method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sessionId: request.sessionId, assessment: request.data }), signal: activeController.signal });
+        body: JSON.stringify({ sessionId: request.sessionId, assessment: request.data, diseaseSnapshot: diseaseSnapshotPayload }), signal: activeController.signal });
       if (!res.ok) throw new Error('Could not save the assessment. Please retry.');
       const body = await res.json();
       if (request.id !== generation.current) return;
       if (!body.result || !['Low', 'Medium', 'High'].includes(body.result.urgency) || typeof body.result.score !== 'number' || !Number.isFinite(body.result.score)) throw new Error('The server returned an invalid assessment. Please retry.');
       applyResult(body.result);
+      request.saved = true;
       setState(s => ({ ...s, saveStatus: 'saved', saveError: '', sessionId: request.sessionId ?? null }));
       // Reasoning is optional; the rule result and saved record are already available.
       void fetch('/api/explanation', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ sessionId: request.sessionId }), signal: AbortSignal.timeout(8000) })
@@ -99,6 +108,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const active = new AbortController(); diseaseController.current = active;
     const timer = setTimeout(() => active.abort(), 35000);
     setState(s => ({ ...s, diseaseStatus: 'loading', diseaseError: '' }));
+    let snapshot: DiseaseSnapshot | null = null;
+    let preparedData: FinalAssessmentPayload = data;
     try {
       const context = assessmentContext(data);
       const raw = [...data.symptoms, ...(data.customSymptom ? [data.customSymptom] : []), ...context.adaptive];
@@ -109,22 +120,51 @@ export function AppProvider({ children }: { children: ReactNode }) {
         if (response.ok) { const body = await response.json(); if (Array.isArray(body.symptoms)) extracted = body.symptoms; }
       } catch { /* Continue the existing question flow. */ }
       if (id !== generation.current) return;
-      const prepared = { ...data, symptoms: [...new Set([...data.symptoms, ...extracted])] };
-      const ruleResult = evaluateAssessment(prepared);
-      if (pending.current?.id === id) pending.current.data = prepared;
+      const normalizedExtracted = extracted
+        .map(code => canonicalFindingFromEvidence(code) || extractAffirmedSymptoms(code)[0] || null)
+        .filter((s): s is string => Boolean(s));
+      preparedData = { ...data, symptoms: [...new Set([...data.symptoms, ...normalizedExtracted])] };
+      const ruleResult = evaluateAssessment(preparedData);
+      if (pending.current?.id === id) pending.current.data = preparedData;
       applyResult(ruleResult);
-      setState(s => ({ ...s, assessmentPayload: assessmentContext(prepared) }));
+      setState(s => ({ ...s, assessmentPayload: assessmentContext(preparedData) }));
       void persist();
-      const symptoms = [...new Set([...context.selected, ...context.adaptive, ...extracted])].filter(s => s.length <= 100).slice(0, 132);
+      const symptoms = [...new Set([...context.selected, ...context.adaptive, ...normalizedExtracted, ...extracted])].filter(s => s.length <= 100).slice(0, 132);
       const modelSex = state.gender === 'Male' ? 'M' : state.gender === 'Female' ? 'F' : undefined;
       const response = await fetch('/api/ml/disease', { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Assessment-Language': data.language }, body: JSON.stringify({ symptoms, age_group: data.age, sex: modelSex, severity: data.severity, duration: data.duration }), signal: active.signal });
       const prediction = await response.json();
       if (!response.ok) throw new Error(response.status === 422 ? 'No supported dataset symptoms were found. Continue with the questionnaire triage and consult a doctor.' : 'Disease model unavailable. The rule triage result remains available.');
       if (id !== generation.current) return;
+      snapshot = {
+        schema_version: 1,
+        timestamp: new Date().toISOString(),
+        status: 'ready',
+        prediction: prediction as DiseasePrediction,
+      };
       setState(s => ({ ...s, diseasePrediction: prediction as DiseasePrediction, diseaseStatus: 'ready', diseaseError: '' }));
     } catch (error) {
-      if (id === generation.current) setState(s => ({ ...s, diseasePrediction: null, diseaseStatus: 'unavailable', diseaseError: error instanceof Error ? error.message : 'Disease model unavailable.' }));
-    } finally { clearTimeout(timer); }
+      const msg = error instanceof Error ? error.message : 'Disease model unavailable.';
+      snapshot = {
+        schema_version: 1,
+        timestamp: new Date().toISOString(),
+        status: 'unavailable',
+        error: msg,
+        prediction: null,
+      };
+      if (id === generation.current) setState(s => ({ ...s, diseasePrediction: null, diseaseStatus: 'unavailable', diseaseError: msg }));
+    } finally {
+      clearTimeout(timer);
+      if (snapshot && pending.current && pending.current.id === id) {
+        pending.current.diseaseSnapshot = snapshot;
+        if (pending.current.saved && pending.current.sessionId) {
+          void fetch('/api/sessions', {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sessionId: pending.current.sessionId, assessment: preparedData, diseaseSnapshot: snapshot }),
+          }).catch(() => {});
+        }
+      }
+    }
   };
   const handleAIComplete = (data: FinalAssessmentPayload) => {
     controller.current?.abort(); generation.current++;

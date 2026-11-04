@@ -13,7 +13,9 @@ export async function POST(req: Request) {
   try {
     const result = await requestDisease(input);
     if (redFlag) { result.urgency = 'High'; result.red_flag_override = true; }
-    result.explanation = await explainDisease(result, req.headers.get('X-Assessment-Language') === 'hi' ? 'Hindi' : req.headers.get('X-Assessment-Language') === 'mr' ? 'Marathi' : 'English');
+    const langHeader = (req.headers.get('X-Assessment-Language') || '').toLowerCase();
+    const language = (langHeader === 'hi' || langHeader === 'hindi') ? 'Hindi' : (langHeader === 'mr' || langHeader === 'marathi') ? 'Marathi' : 'English';
+    result.explanation = await explainDisease(result, language);
     return NextResponse.json(result);
   } catch (error) {
     const failure = error as { status?: number; detail?: unknown };

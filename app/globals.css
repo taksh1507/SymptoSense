@@ -720,6 +720,23 @@ progress::-moz-progress-bar { background: var(--color-primary); border-radius: v
 }
 .skip-link:focus { top: 16px; }
 
+/* ── Keyboard Accessibility & Focus Rings ────────────────────────── */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[role="button"]:focus-visible,
+[tabindex="0"]:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 /* ── Micro-animations ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: no-preference) {
   .btn, .nav-link, .option, .report-link, .action-card, .feature-card, .capability-card { transition: all var(--transition-fast); }

@@ -30,7 +30,7 @@ export function parseAssessment(value: unknown): FinalAssessmentPayload {
   return {
     age: choices(b.age, 'age', ['child', 'teen', 'adult', 'elderly']), symptoms, customSymptom,
     aiAnswers: answers(b.aiAnswers), aiAnswerLabels: answers(b.aiAnswerLabels),
-    duration: choices(b.duration, 'duration', ['< 1 day', '1-3 days', '4-7 days', '> 1 week']),
+    duration: choices(b.duration, 'duration', ['< 1 day', '1-3 days', '4-7 days', '> 1 week', '4-12 weeks', '> 12 weeks']),
     severity: choices(b.severity, 'severity', ['mild', 'moderate', 'severe', 'critical']),
     medications: strings(b.medications, 'medical history'),
     customMedication: b.customMedication ? text(b.customMedication, 'custom medication') : undefined,

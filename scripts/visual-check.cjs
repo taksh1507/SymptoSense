@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-require-imports */
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'playwright');
+const playwrightPath = process.env.PLAYWRIGHT_MODULE || 'C:/Users/dell/AppData/Roaming/npm/node_modules/n8n/node_modules/playwright';
+const { chromium } = require(playwrightPath);
 const fs = require('node:fs/promises');
 const base = process.env.UI_URL || 'http://127.0.0.1:3000';
 (async () => {
@@ -21,12 +22,13 @@ const base = process.env.UI_URL || 'http://127.0.0.1:3000';
       console.log('PASS',name,width,'no overflow or broken images');
     }
   }
-  if (process.env.UI_AUTH_CHECK) {
+  if (process.env.UI_AUTH_CHECK || process.argv.includes('--auth')) {
     const assert = require('node:assert/strict');
+    const fixtureEmail = `ui-fixture-${Date.now()}@example.test`;
     await page.setViewportSize({width:1440,height:900});
     await page.goto(base+'/auth/signup');
     await page.locator('#signup-name').fill('UI Test Fixture');
-    await page.locator('#login-email').fill('ui-fixture@example.test');
+    await page.locator('#login-email').fill(fixtureEmail);
     await page.locator('#login-password').fill('test-password-123');
     await page.locator('#signup-confirm').fill('test-password-123');
     await page.getByRole('button',{name:'Create Account',exact:true}).click();
@@ -66,9 +68,9 @@ const base = process.env.UI_URL || 'http://127.0.0.1:3000';
       if(step===0) await page.screenshot({path:'.local/ui-screenshots/details-1440.png',fullPage:true});
       await page.getByRole('button',{name:step===8?'Review answers':'Continue',exact:true}).click();
     }
-    await page.getByRole('button',{name:'Submit Assessment',exact:true}).waitFor();
+    await page.getByRole('button',{name:'Generate Assessment Results',exact:true}).waitFor();
     await page.screenshot({path:'.local/ui-screenshots/review-1440.png',fullPage:true});
-    await page.getByRole('button',{name:'Submit Assessment',exact:true}).click();
+    await page.getByRole('button',{name:'Generate Assessment Results',exact:true}).click();
     await page.getByText('Assessment saved to your account.',{exact:true}).waitFor({timeout:60000});
     await page.waitForFunction(()=>!document.body.innerText.includes('Reviewing symptoms and estimating'),{},{timeout:60000});
     for(const [width,height] of [[1440,900],[1280,800],[768,1024],[390,844],[360,800]]) {
@@ -86,14 +88,26 @@ const base = process.env.UI_URL || 'http://127.0.0.1:3000';
     await page.getByRole('button',{name:'Family Assessments',exact:true}).click();
     await page.locator('.assessment-row').first().waitFor();
     await page.locator('.assessment-row').first().click();
-    await page.getByText('This is historical guidance from the date of your assessment.',{exact:true}).waitFor();
+    await page.getByText('Saved report',{exact:true}).waitFor();
+    await page.getByText('Notes for your doctor',{exact:true}).waitFor();
+    assert.ok(await page.getByRole('button',{name:/Print \/ save PDF/i}).first().isVisible());
+    // Refresh historical report and verify results remain consistent
+    await page.reload({waitUntil:'networkidle'});
+    await page.getByText('Saved report',{exact:true}).waitFor();
+    await page.getByText('Notes for your doctor',{exact:true}).waitFor();
+    assert.ok(await page.getByRole('button',{name:/Print \/ save PDF/i}).first().isVisible());
     await page.screenshot({path:'.local/ui-screenshots/saved-report-1440.png',fullPage:true});
+    // Test Hindi localization
     await page.goto(base+'/dashboard/settings',{waitUntil:'networkidle'});
     await page.getByRole('tab',{name:'Language & Accessibility',exact:true}).click();
     await page.getByRole('button',{name:'हिन्दी (Hindi)',exact:true}).click();
     await page.reload({waitUntil:'networkidle'});
     assert.ok(await page.getByRole('heading',{name:'सेटिंग्स',exact:true}).isVisible());
-    console.log('PASS real registration/session, family assessment, back navigation, review, model-backed results, saved history, family grouping, language persistence');
+    // Test Marathi localization
+    await page.getByRole('button',{name:'मराठी (Marathi)',exact:true}).click();
+    await page.reload({waitUntil:'networkidle'});
+    assert.ok(await page.getByRole('heading',{name:'सेटिंग्ज',exact:true}).isVisible());
+    console.log('PASS real registration/session, family assessment, back navigation, review, model-backed results, saved history, family grouping, refresh persistence, multilingual settings');
   }
   if(errors.length) throw new Error(errors.join('\n'));
   } finally { await browser.close(); }

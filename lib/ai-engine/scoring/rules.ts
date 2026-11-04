@@ -16,9 +16,11 @@ export const SCORING_DATASET: ScoringRules = {
     dizziness: 18,
     headache: 12,
     sudden_severe_headache: 40,
-    // Infection / Fever
+    // Infection / Fever / Respiratory
     fever: 18,
     cough: 12,
+    runny_nose: 8,
+    sore_throat: 8,
     // GI
     nausea: 10,
     stomach_pain: 14,
@@ -46,11 +48,15 @@ export const SCORING_DATASET: ScoringRules = {
     "1-3 days": 10,
     "4-7 days": 18,
     "> 1 week": 25,
+    "4-12 weeks": 25,
+    "> 12 weeks": 25,
     "> 3 days": 20,
     // Normalised aliases
     "<1d": 0,
     "1-3d": 10,
     ">3d": 20,
+    "4-12w": 25,
+    ">12w": 25,
   },
 
   // Medical history — comorbidities that increase vulnerability
@@ -70,6 +76,8 @@ export const SCORING_DATASET: ScoringRules = {
 
   // Additional symptoms found during survey
   additionalSymptoms: {
+    runny_nose: 8,
+    sore_throat: 8,
     chills: 10,
     sweating: 8,
     vomiting: 14,
@@ -127,8 +135,12 @@ export const SCORING_DATASET: ScoringRules = {
       hi: "यह अनुशंसा की जाती है कि आप जल्द ही किसी डॉक्टर के साथ परामर्श निर्धारित करें या किसी स्वास्थ्य पेशेवर से बात करें। आपके लक्षणों को पेशेवर मूल्यांकन की आवश्यकता है।",
     },
     High: {
-      en: "EMERGENCY: Please seek immediate medical attention at the nearest emergency room or call emergency services right away.",
-      hi: "आपातकालीन: कृपया निकटतम आपातकालीन कक्ष में तुरंत चिकित्सा सहायता लें या तुरंत आपातकालीन सेवाओं को कॉल करें।",
+      en: "High Urgency: Prompt medical evaluation is strongly recommended today or within 12–24 hours. Your combined symptoms require professional clinical evaluation. If acute danger signs emerge, seek emergency care immediately.",
+      hi: "उच्च तात्कालिकता: आज या 12-24 घंटों के भीतर चिकित्सकीय परामर्श लेने की सलाह दी जाती है। यदि कोई आपातकालीन लक्षण दिखाई दे, तो तुरंत आपातकालीन सेवा लें।",
+    },
+    Emergency: {
+      en: "EMERGENCY: Please seek immediate medical attention at the nearest emergency room or call emergency services (108) right away.",
+      hi: "आपातकालीन: कृपया निकटतम आपातकालीन कक्ष में तुरंत चिकित्सा सहायता लें या तुरंत आपातकालीन सेवाओं (108) को कॉल करें।",
     },
   },
 };

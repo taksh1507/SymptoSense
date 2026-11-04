@@ -195,7 +195,7 @@ export default function ModelHealthPage() {
                 ) : (
                   <Card title="Champion" value="None" sub="first training run" />
                 )}
-                <Card title="Real rows" value={String(report.rows_real_used ?? report.rows_real ?? 0)} sub={`${report.rows_synthetic ?? 0} synthetic`} />
+                <Card title="Real rows" value={String(report.rows_real_used ?? report.rows_real ?? 0)} sub={`${report.rows_synthetic ?? 0} training rows`} />
               </div>
               {report.champion_error && (
                 <p  className="[font-size:var(--text-sm)] [color:#B45309] [margin:0_0_8px_0]">Champion could not be loaded: {report.champion_error}</p>
