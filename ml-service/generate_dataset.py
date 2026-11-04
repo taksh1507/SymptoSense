@@ -6,7 +6,7 @@ random.seed(42)
 np.random.seed(42)
 
 # Configuration
-OUTPUT_FILE = ROOT / "synthetic_data.csv"
+OUTPUT_FILE = ROOT / "data" / "synthetic_data.csv"
 PERTURBATIONS_PER_SAMPLE = 40
 TOTAL_TARGET = 30000
 
@@ -14,11 +14,11 @@ TOTAL_TARGET = 30000
 TARGET_DIST = {
     'low':    (0.00, 0.40, 0.32),  # (min, max, target_fraction)
     'mid_lo': (0.40, 0.60, 0.22),
-    'mid_hi': (0.60, 0.80, 0.30),  # ← the previously empty band
+    'mid_hi': (0.60, 0.80, 0.30),  # ΓåÉ the previously empty band
     'high':   (0.80, 1.00, 0.16),
 }
 
-# ── Scoring engine ────────────────────────────────────────────
+# ΓöÇΓöÇ Scoring engine ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 def score_engine(features, noisy=False):
     score = 0
@@ -68,7 +68,7 @@ static_columns = ['age_group', 'severity', 'duration', 'fever', 'cough',
                   'chest_pain', 'dizziness', 'fatigue', 'diabetes', 'heart_disease']
 symptom_pool = ['fever', 'cough', 'dizziness', 'fatigue', 'diabetes', 'heart_disease']
 
-# ── Phase 1: Generate base samples ───────────────────────────
+# ΓöÇΓöÇ Phase 1: Generate base samples ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 print(f"Phase 1: Generating {TOTAL_TARGET} base samples...")
 raw_data = []
@@ -93,7 +93,7 @@ while len(raw_data) < TOTAL_TARGET:
     if risk_counts[level] >= TOTAL_TARGET * (risk_target[level] + 0.05):
         continue
 
-    # ── Dynamic feature generation ────────────────────────────
+    # ΓöÇΓöÇ Dynamic feature generation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     intensity = float(np.clip(sample['severity'] + np.random.normal(0, 0.5), 1, 4))
 
     prog_weights = [0.3, 0.4, 0.3]
@@ -105,7 +105,7 @@ while len(raw_data) < TOTAL_TARGET:
     if instability > 15:
         ambiguity = random.uniform(0.45, 0.85)
     elif instability > 8:
-        ambiguity = random.uniform(0.25, 0.55)   # ← mid-zone ambiguity
+        ambiguity = random.uniform(0.25, 0.55)   # ΓåÉ mid-zone ambiguity
     else:
         ambiguity = random.uniform(0.0, 0.25)
 
@@ -113,7 +113,7 @@ while len(raw_data) < TOTAL_TARGET:
     if instability <= 8 and ambiguity < 0.2:
         noise_scale = 0.05   # stable
     elif instability <= 15:
-        noise_scale = 0.08   # mid — STEP 4: controlled noise for mid cases
+        noise_scale = 0.08   # mid ΓÇö STEP 4: controlled noise for mid cases
     else:
         noise_scale = 0.12   # unstable
 
@@ -127,13 +127,13 @@ while len(raw_data) < TOTAL_TARGET:
     active_count = sum(sample[k] for k in ['fever', 'cough', 'dizziness', 'fatigue', 'chest_pain'])
     density = active_count / 8
 
-    # ── STEP 1: Add noise to rule_score to reduce model dependency ──
+    # ΓöÇΓöÇ STEP 1: Add noise to rule_score to reduce model dependency ΓöÇΓöÇ
     rule_score_noisy = float(np.clip(rule_score + random.uniform(-5, 5), 0, 100))
 
-    # ── STEP 2: Normalize rule_score to 0–1 range ──
+    # ΓöÇΓöÇ STEP 2: Normalize rule_score to 0ΓÇô1 range ΓöÇΓöÇ
     rule_score_norm = rule_score_noisy / 100.0
 
-    # ── STEP 3: Feature dropout — mask rule_score for ~10% of samples ──
+    # ΓöÇΓöÇ STEP 3: Feature dropout ΓÇö mask rule_score for ~10% of samples ΓöÇΓöÇ
     # Use sentinel value -1 (out of normal range) so model learns to ignore it
     # Inference uses the complete authoritative rule score; no out-of-range sentinel.
 
@@ -152,7 +152,7 @@ while len(raw_data) < TOTAL_TARGET:
     raw_data.append(row)
     risk_counts[level] += 1
 
-# ── Phase 2: Confidence labeling ─────────────────────────────
+# ΓöÇΓöÇ Phase 2: Confidence labeling ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 print("Phase 2: Labeling confidence scores...")
 max_instability = max(r['instability_score'] for r in raw_data) or 1.0
@@ -161,14 +161,14 @@ instability_p10 = np.percentile(all_instabilities, 10)
 instability_p40 = np.percentile(all_instabilities, 40)
 instability_p70 = np.percentile(all_instabilities, 70)
 
-print(f"  Instability percentiles — p10: {instability_p10:.2f}, p40: {instability_p40:.2f}, "
+print(f"  Instability percentiles ΓÇö p10: {instability_p10:.2f}, p40: {instability_p40:.2f}, "
       f"p70: {instability_p70:.2f}, max: {max_instability:.2f}")
 
 final_data = []
 
 for row in raw_data:
     instability  = row['instability_score']
-    rule_score   = row['rule_score']   # normalized 0–1 (or -1 if masked)
+    rule_score   = row['rule_score']   # normalized 0ΓÇô1 (or -1 if masked)
     ambiguity    = row['ambiguity_score']
     consistency  = row['symptom_consistency_score']
     proxy        = row['answer_confidence_proxy']
@@ -178,16 +178,16 @@ for row in raw_data:
     # (masked rows use risk_level as proxy instead)
     raw_score_approx = rule_score * 100 if rule_score >= 0 else (row['risk_level'] * 40 + 10)
 
-    # ── STEP 1: Smooth instability → confidence curve (power 0.75) ──
+    # ΓöÇΓöÇ STEP 1: Smooth instability ΓåÆ confidence curve (power 0.75) ΓöÇΓöÇ
     normalized = instability / max_instability
     conf = 1.0 - (normalized ** 0.75)   # gentler curve vs linear, avoids sharp drops
 
-    # ── STEP 3: Softened penalties (reduced ~15–20%) ──
-    # Ambiguity: was 1-0.15x → now 1-0.12x
+    # ΓöÇΓöÇ STEP 3: Softened penalties (reduced ~15ΓÇô20%) ΓöÇΓöÇ
+    # Ambiguity: was 1-0.15x ΓåÆ now 1-0.12x
     conf *= (1.0 - 0.12 * ambiguity)
-    # Consistency: was 0.8+0.2x → now 0.82+0.18x
+    # Consistency: was 0.8+0.2x ΓåÆ now 0.82+0.18x
     conf *= (0.82 + 0.18 * consistency)
-    # Proxy: was 0.85+0.15x → now 0.87+0.13x
+    # Proxy: was 0.85+0.15x ΓåÆ now 0.87+0.13x
     conf *= (0.87 + 0.13 * proxy)
 
     # Boundary penalty (softened): near risk-level thresholds
@@ -199,8 +199,8 @@ for row in raw_data:
     if active == 0 and row['severity'] == 1:
         conf *= random.uniform(0.55, 0.80)
 
-    # ── STEP 2: Explicit mid-zone injection ──────────────────────
-    # Cases with moderate ambiguity + stable progression → land in 0.6–0.8
+    # ΓöÇΓöÇ STEP 2: Explicit mid-zone injection ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
+    # Cases with moderate ambiguity + stable progression ΓåÆ land in 0.6ΓÇô0.8
     is_mid_zone = (
         0.3 <= ambiguity <= 0.6 and
         0.5 <= consistency <= 0.75 and
@@ -211,13 +211,13 @@ for row in raw_data:
         base = random.uniform(0.60, 0.78)
         conf = float(np.clip(base + np.random.normal(0, 0.06), 0.55, 0.82))
 
-    # ── Extreme score overrides (clear-cut clinical cases) ───────
+    # ΓöÇΓöÇ Extreme score overrides (clear-cut clinical cases) ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     elif raw_score_approx >= 90:
         conf = random.uniform(0.82, 0.97)
     elif raw_score_approx < 10 and ambiguity < 0.15:
         conf = random.uniform(0.78, 0.93)
 
-    # ── Stable-case boost (only for genuinely stable, non-mid-zone) ──
+    # ΓöÇΓöÇ Stable-case boost (only for genuinely stable, non-mid-zone) ΓöÇΓöÇ
     elif (
         instability <= instability_p10 and
         ambiguity < 0.15 and
@@ -226,7 +226,7 @@ for row in raw_data:
         boost = random.uniform(0.08, 0.13)
         conf = min(1.0, conf + boost)
 
-    # ── STEP 4: Gaussian noise for mid-range cases ───────────────
+    # ΓöÇΓöÇ STEP 4: Gaussian noise for mid-range cases ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
     if instability_p10 < instability <= instability_p70:
         conf += np.random.normal(0, 0.05)
 
@@ -236,11 +236,11 @@ for row in raw_data:
 
 df = pd.DataFrame(final_data)
 
-# ── Phase 3: Distribution check & rebalancing ────────────────
+# ΓöÇΓöÇ Phase 3: Distribution check & rebalancing ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 
 print("\nPhase 3: Checking distribution and rebalancing...")
 bins   = [0.0, 0.40, 0.60, 0.80, 1.01]
-labels = ['<0.4 (low)', '0.4–0.6 (mid-lo)', '0.6–0.8 (mid-hi)', '0.8–1.0 (high)']
+labels = ['<0.4 (low)', '0.4ΓÇô0.6 (mid-lo)', '0.6ΓÇô0.8 (mid-hi)', '0.8ΓÇô1.0 (high)']
 
 def report_dist(dataframe, tag=""):
     dataframe['_bucket'] = pd.cut(dataframe['confidence'], bins=bins, labels=labels, right=False)
@@ -248,14 +248,15 @@ def report_dist(dataframe, tag=""):
     pcts   = (counts / len(dataframe) * 100).round(1)
     print(f"\n  {tag}Distribution ({len(dataframe)} rows):")
     for lbl in labels:
-        bar = '█' * int(pcts.get(lbl, 0) / 2)
+        bar = 'Γûê' * int(pcts.get(lbl, 0) / 2)
         print(f"    {lbl:20s}: {counts.get(lbl, 0):6d} ({pcts.get(lbl, 0):5.1f}%)  {bar}")
     dataframe.drop(columns=['_bucket'], inplace=True)
 
-report_dist(df, "Before rebalancing — ")
+report_dist(df, "Before rebalancing ΓÇö ")
 
 # Keep independently generated rows intact; do not augment before a holdout split.
 
-# ── Save ─────────────────────────────────────────────────────
+# ΓöÇΓöÇ Save ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ
 df.to_csv(OUTPUT_FILE, index=False, lineterminator='\n')
 print(f"\nDataset saved to '{OUTPUT_FILE}'. Total rows: {len(df)}")
+

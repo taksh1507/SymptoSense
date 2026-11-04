@@ -1,9 +1,9 @@
 /* ============================================================
-   SymptoSense — Complete UI Redesign
-   Reference: Sympto-senese.webp (repository root)
+   SymptoSense ΓÇö Complete UI Redesign
+   Reference: original design mockup (image removed from repository)
    ============================================================ */
 
-/* ── Base overrides ─────────────────────────────────────────── */
+/* ΓöÇΓöÇ Base overrides ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 body {
   --font: var(--font-body), var(--font-devanagari), Arial, sans-serif;
   --font-heading: var(--font-body), var(--font-devanagari), Arial, sans-serif;
@@ -11,7 +11,7 @@ body {
 }
 [hidden] { display: none !important; }
 
-/* ── Logo & Wordmark ────────────────────────────────────────── */
+/* ΓöÇΓöÇ Logo & Wordmark ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .logo-symbol {
   display: grid;
   place-items: center;
@@ -36,7 +36,7 @@ body {
   gap: 10px;
 }
 
-/* ── Button enhancements ────────────────────────────────────── */
+/* ΓöÇΓöÇ Button enhancements ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .btn-primary {
   background: linear-gradient(180deg, #4b9bff 0%, #2878F0 100%);
   box-shadow: 0 3px 8px rgba(40, 120, 240, 0.25);
@@ -50,7 +50,7 @@ body {
 }
 .btn-primary:active:not(:disabled) { transform: translateY(0); }
 
-/* ── Input enhancements ─────────────────────────────────────── */
+/* ΓöÇΓöÇ Input enhancements ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .input:focus {
   box-shadow: 0 0 0 3px rgba(40, 120, 240, 0.15);
   border-color: var(--color-primary);
@@ -62,13 +62,13 @@ body {
 }
 .input:hover:not(:disabled) { border-color: #bbc9e0; }
 
-/* ── Cards ──────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .section, .card {
   box-shadow: 0 2px 12px rgba(35, 75, 129, 0.06);
 }
 .card:hover { box-shadow: 0 4px 20px rgba(35, 75, 129, 0.10); }
 
-/* ── Badges ─────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Badges ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .badge {
   border: 0;
   font-weight: 600;
@@ -82,7 +82,7 @@ body {
   background: var(--bg-canvas);
 }
 
-/* ── Notices ─────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Notices ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .notice-success {
   background: var(--bg-mint);
   border-color: var(--urgency-low-border);
@@ -90,7 +90,7 @@ body {
 }
 .notice-success h2 { color: #08754f; }
 
-/* ── Public Navigation ──────────────────────────────────────── */
+/* ΓöÇΓöÇ Public Navigation ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .public-nav {
   height: 72px;
   padding: 0 max(32px, calc((100vw - 1300px) / 2));
@@ -121,7 +121,7 @@ body {
 }
 .mobile-menu-toggle { display: none; }
 
-/* ── Landing Hero ───────────────────────────────────────────── */
+/* ΓöÇΓöÇ Landing Hero ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .landing-top {
   background: linear-gradient(160deg, #f9fbff 0%, #eef5ff 60%, #f0f7ff 100%);
   padding: 0 32px 56px;
@@ -188,7 +188,7 @@ body {
 }
 .trust-row svg { width: 14px; height: 14px; color: var(--color-primary); }
 
-/* ── Hero Visual / Photo ────────────────────────────────────── */
+/* ΓöÇΓöÇ Hero Visual / Photo ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .hero-visual {
   min-width: 0;
   position: relative;
@@ -209,7 +209,7 @@ body {
   border-radius: 50% 46% 48% 44%;
 }
 
-/* ── Floating Feature Cards ─────────────────────────────────── */
+/* ΓöÇΓöÇ Floating Feature Cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .floating-feature {
   position: absolute;
   left: 0;
@@ -242,7 +242,7 @@ body {
 .feature-two { top: 46%; left: -20px; }
 .feature-three { top: 73%; left: 18px; }
 
-/* ── Capability Cards ───────────────────────────────────────── */
+/* ΓöÇΓöÇ Capability Cards ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .capability-grid {
   max-width: 1260px;
   margin: auto;
@@ -279,7 +279,7 @@ body {
   max-width: none;
 }
 
-/* ── Icon Tile ──────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Icon Tile ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .icon-tile {
   display: grid;
   place-items: center;
@@ -292,7 +292,7 @@ body {
 }
 .icon-tile .lucide { width: 20px; height: 20px; }
 
-/* ── Editorial / Section containers ────────────────────────── */
+/* ΓöÇΓöÇ Editorial / Section containers ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .editorial {
   max-width: 1320px;
   padding: 72px 32px;
@@ -307,7 +307,7 @@ body {
 .section-intro h2 { font-size: 30px; }
 .section-intro p { color: var(--text-secondary); font-size: 15px; }
 
-/* ── Feature Grid ───────────────────────────────────────────── */
+/* ΓöÇΓöÇ Feature Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .feature-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -329,7 +329,7 @@ body {
 .feature-card h3 { font-size: 16px; font-weight: 700; }
 .feature-card p { color: var(--text-secondary); font-size: 13.5px; }
 
-/* ── How It Works Section ───────────────────────────────────── */
+/* ΓöÇΓöÇ How It Works Section ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .how-section {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -369,7 +369,7 @@ body {
 .how-steps p { font-size: 13.5px; color: var(--text-secondary); margin-top: 5px; }
 .self-start { justify-self: start; }
 
-/* ── Footer ─────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Footer ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .footer-inner {
   max-width: 1260px;
   margin: auto;
@@ -396,7 +396,7 @@ body {
   font-size: 12px;
 }
 
-/* ── Auth Page ──────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Auth Page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .auth-page {
   min-height: 100dvh;
   padding: 32px;
@@ -560,7 +560,7 @@ body {
 }
 .password-toggle:hover { color: var(--text-heading); }
 
-/* ── App Shell / Topbar ─────────────────────────────────────── */
+/* ΓöÇΓöÇ App Shell / Topbar ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .app-shell { display: block; }
 .app-topbar {
   height: 68px;
@@ -668,13 +668,13 @@ body {
 }
 .profile-popover .lucide { width: 15px; height: 15px; }
 
-/* ── Page Layout ─────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Page Layout ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .page { padding: 44px 32px 72px; }
 .content-wrapper { max-width: 1260px; }
 .page-heading h1 { font-size: 30px; margin-bottom: 8px; letter-spacing: -0.025em; }
 .page-heading p { color: var(--text-secondary); font-size: 14px; }
 
-/* ── Dashboard Action Grid ───────────────────────────────────── */
+/* ΓöÇΓöÇ Dashboard Action Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .action-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
@@ -712,7 +712,7 @@ body {
   color: white;
   margin-bottom: 6px;
 }
-/* Card color variants — match reference image */
+/* Card color variants ΓÇö match reference image */
 .action-0 {
   background: linear-gradient(150deg, #f0f7ff, #e4f0ff);
   border-color: #c8dcff;
@@ -749,7 +749,7 @@ body {
 }
 .action-5 .icon-tile { background: #e08c25; }
 
-/* ── Assessment Row ─────────────────────────────────────────── */
+/* ΓöÇΓöÇ Assessment Row ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .assessment-row {
   display: flex;
   align-items: center;
@@ -788,7 +788,7 @@ body {
 .assessment-row.urgency-medium .icon-tile { background: var(--urgency-medium-bg); color: #b86d05; }
 .assessment-row.urgency-high .icon-tile { background: var(--urgency-high-bg); color: var(--urgency-high); }
 
-/* ── Dashboard Note ──────────────────────────────────────────── */
+/* ΓöÇΓöÇ Dashboard Note ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .dashboard-note {
   display: flex;
   gap: 18px;
@@ -805,7 +805,7 @@ body {
   max-width: none;
 }
 
-/* ── Progress Stepper ────────────────────────────────────────── */
+/* ΓöÇΓöÇ Progress Stepper ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .progress-stepper {
   list-style: none;
   display: flex;
@@ -859,7 +859,7 @@ body {
 .progress-stepper li::before { background: var(--border-subtle); }
 .progress-stepper .reached::before { background: var(--color-primary); }
 
-/* ── Assessment Layout ───────────────────────────────────────── */
+/* ΓöÇΓöÇ Assessment Layout ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .assessment-layout {
   max-width: 1020px;
   margin: auto;
@@ -890,7 +890,7 @@ body {
 .question-flow .progress-stepper { width: 100%; margin-bottom: 8px; }
 .question-flow > .section { padding: 36px 40px; }
 
-/* ── Symptom Picker ──────────────────────────────────────────── */
+/* ΓöÇΓöÇ Symptom Picker ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .symptom-options {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -926,7 +926,7 @@ body {
 .symptom-chips button:hover { background: #d8eaff; border-color: #a8c8ff; }
 .symptom-chips button .lucide { width: 13px; height: 13px; }
 
-/* ── History Toolbar ─────────────────────────────────────────── */
+/* ΓöÇΓöÇ History Toolbar ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .history-toolbar {
   display: flex;
   justify-content: space-between;
@@ -958,7 +958,7 @@ body {
 }
 .history-search { max-width: 320px; width: 100%; }
 
-/* ── Family Grid ─────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Family Grid ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .family-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -991,7 +991,7 @@ body {
 .family-card:nth-child(3n + 2) .family-avatar { background: #ede7ff; color: #7656cf; }
 .family-card:nth-child(3n) .family-avatar { background: #defaed; color: #13805e; }
 
-/* ── Settings ────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Settings ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .settings-layout {
   display: grid;
   grid-template-columns: 240px minmax(0, 1fr);
@@ -1035,7 +1035,7 @@ body {
 .settings-content { min-height: 420px; }
 .settings-content .section { height: 100%; align-content: start; }
 
-/* ── Results Page ────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Results Page ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .results-columns {
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
@@ -1065,14 +1065,14 @@ body {
   border: 1px solid var(--color-primary-border);
 }
 
-/* ── Report ──────────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Report ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 .report { max-width: 1100px; }
 .report .notice h2 { font-size: 22px; }
 .legal-page { max-width: 900px; }
 .legal-page h2 { margin-top: 20px; }
 .legal-page p { max-width: 100%; }
 
-/* ── Responsive ──────────────────────────────────────────────── */
+/* ΓöÇΓöÇ Responsive ΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇΓöÇ */
 @media (min-width: 768px) {
   .show-mobile { display: none !important; }
 }
