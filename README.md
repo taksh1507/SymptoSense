@@ -81,7 +81,7 @@ The notebook `ml-service/notebooks/SymptoSense_ML.ipynb` documents data, EDA, pr
 
 ## Training on Google Colab
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/taksh1507/SymptoSense/blob/new-master/ml-service/notebooks/SymptoSense_Colab_Training.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/taksh1507/SymptoSense/blob/main/ml-service/notebooks/SymptoSense_Colab_Training.ipynb)
 
 A dedicated, self-contained Google Colab notebook is provided at [`ml-service/notebooks/SymptoSense_Colab_Training.ipynb`](ml-service/notebooks/SymptoSense_Colab_Training.ipynb) to train and compile all three diagnostic tiers end to end:
 1. **Tier 1 (41 Core Clinical Conditions)**: Calibrated Random Forest model trained on deduplicated clinical associations (`train_clinical.py`).

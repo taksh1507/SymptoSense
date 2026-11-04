@@ -87,7 +87,7 @@ def build_colab_notebook():
         "from pathlib import Path\n"
         "import os\n\n"
         "REPO_URL = \"https://github.com/taksh1507/SymptoSense.git\"\n"
-        "BRANCH = \"new-master\"\n"
+        "BRANCH = \"main\"\n"
         "TRAIN_ROWS = 150000  # @param {type:\"integer\"}\n"
         "BUILD_SYMCAT = True  # @param {type:\"boolean\"}\n"
         "USE_DRIVE = True     # @param {type:\"boolean\"}\n"

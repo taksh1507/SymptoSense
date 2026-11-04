@@ -76,7 +76,7 @@ try {
   const alice = await login('alice@example.test'); const bob = await login('bob@example.test');
   const admin = await login('admin@example.test');
   await alice('/api/ml/report', 'GET', undefined, 403);
-  const mlReport = await admin('/api/ml/report'); assert.equal(mlReport.schema_version, 1);
+  const mlReport = await admin('/api/ml/report'); assert.ok([1, 2].includes(mlReport.schema_version), 'ml report schema_version must be 1 or 2');
   const insights = await admin('/dashboard/ml-insights'); assert.match(insights, /ML Insights/);
   await alice('/api/ml/extract', 'POST', { text: 'I have itching', language: 'English' }, 503);
   await alice('/api/ml/extract', 'POST', { text: 123 }, 400);
@@ -126,7 +126,10 @@ try {
   const diseaseOutage = await alice('/api/ml/disease', 'POST', { symptoms: ['itching'] }, 503);
   assert.equal(diseaseOutage.confidence, null); assert.equal(diseaseOutage.status, 'unavailable');
   assert.equal(diseaseOutage.top3, undefined);
-  await admin('/api/ml/report', 'GET', undefined, 503);
+  // Report routes serve the tracked report JSON first (Vercel has no ML service), so the
+  // report stays available from the bundled file even while inference is down.
+  const bundledReport = await admin('/api/ml/report', 'GET', undefined, 200);
+  assert.ok([1, 2].includes(bundledReport.schema_version), 'bundled report remains available without the ML service');
   const second = await alice('/api/sessions', 'POST', {});
   const low = { ...assessment, symptoms: ['cough'], aiAnswers: {}, aiAnswerLabels: {}, medications: [], customMedication: undefined, language: 'en' };
   const unavailable = await alice('/api/sessions', 'PATCH', { sessionId: second.sessionId, assessment: low });
